@@ -1,0 +1,1 @@
+ALTER TABLE public.empresa_setores ADD COLUMN IF NOT EXISTS ges TEXT;

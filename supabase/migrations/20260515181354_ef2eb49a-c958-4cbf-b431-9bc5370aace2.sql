@@ -1,0 +1,1 @@
+UPDATE public.plans SET max_avaliacoes = 300, max_empresas = 9999 WHERE nome = 'Consultor Starter';

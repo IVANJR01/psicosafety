@@ -1,0 +1,1 @@
+DELETE FROM public.respostas WHERE id = '1a89d8a2-3079-4a4f-bcc1-e851eca0aacd';
