@@ -85,8 +85,22 @@ supabase db push
 
 ## Deploy
 
-O app é um servidor Node comum. Funciona em qualquer lugar que rode Node 22:
-VPS, Docker, Render, Railway, Fly.io, EC2.
+### Vercel
+
+O `vercel.json` já está configurado — a Vercel serve `dist/client` pela CDN e
+manda o resto para uma Function (`api/index.mjs`), que roda o SSR. Não é
+preciso mexer em Build Command nem Output Directory ao importar o projeto.
+
+Cadastre as variáveis de ambiente **antes do primeiro deploy**: as `VITE_*` são
+embutidas no bundle durante o build, não lidas em tempo de execução. Se o build
+rodar sem elas, adicionar depois não resolve — é preciso buildar de novo.
+
+Cada push na branch `main` gera um novo deploy.
+
+### Qualquer servidor Node
+
+O app também é um servidor Node comum. Funciona em qualquer lugar que rode
+Node 22: VPS, Docker, Render, Railway, Fly.io, EC2.
 
 ```bash
 npm ci
