@@ -36,17 +36,31 @@ chaves do Supabase — todas estão no painel do Supabase em
 | `SUPABASE_URL` / `VITE_SUPABASE_URL` | sim | endereço do projeto Supabase |
 | `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | sim | chave pública, respeita RLS |
 | `SUPABASE_SERVICE_ROLE_KEY` | para operações admin | ignora RLS, **só no servidor** |
-| `VITE_PUBLIC_APP_ORIGIN` | recomendada em produção | domínio base dos links do questionário |
+| `VITE_PUBLIC_APP_ORIGIN` ou `PUBLIC_APP_ORIGIN` | em produção, sim | domínio base dos links do questionário |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | só com assinatura | cobrança via Stripe |
 
 Tudo que começa com `VITE_` **é embutido no bundle do navegador** e fica
 visível para qualquer visitante. Nunca coloque a `service_role` numa variável
 `VITE_`.
 
-`VITE_PUBLIC_APP_ORIGIN` é o domínio usado para montar os links do questionário
-(QR code, link copiado, e-mail). Sem ela o app usa o domínio em que está sendo
-servido, o que já funciona na maioria dos casos — defina-a quando o admin rodar
-num host diferente do questionário público.
+### O domínio dos links do questionário
+
+É o endereço usado para montar o link que vai para o QR code, para o campo de
+copiar e para o e-mail. A origem é resolvida nesta ordem:
+
+1. `VITE_PUBLIC_APP_ORIGIN` — escolhida no build, tem a palavra final
+2. no navegador, o domínio em que a página está servida
+3. no servidor, `PUBLIC_APP_ORIGIN` ou as variáveis automáticas da Vercel
+   (`VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL`)
+4. em desenvolvimento, `localhost`
+
+Vale definir uma das duas. Sem nenhuma, o servidor não tem como saber o domínio
+público: os links saem **relativos** (`/q/CODIGO`) e um aviso aparece no log do
+servidor. Relativo funciona no navegador, mas não serve para colar num e-mail.
+
+A diferença entre as duas: `VITE_PUBLIC_APP_ORIGIN` é embutida durante o build,
+então mudá-la exige publicar de novo; `PUBLIC_APP_ORIGIN` é lida a cada
+execução, o que permite corrigir o domínio sem rebuildar.
 
 ## Comandos
 
