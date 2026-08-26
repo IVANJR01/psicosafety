@@ -96,6 +96,25 @@ export function validarSetorGes(respostas: Resposta[], gesMap?: GesMap): Validac
   return { semGes, duplicados };
 }
 
+/**
+ * Abaixo deste número de respondentes o resultado não sustenta conclusão.
+ *
+ * O caso que motiva o corte é o mais perigoso do relatório: um domínio de
+ * assédio pontuando 0% com três respondentes sai impresso como se dissesse
+ * "não há assédio aqui". Não diz — diz que não há dado. E fica registrado num
+ * documento da empresa, que vira prova contrária se alguém denunciar depois.
+ *
+ * Cinco é também o piso usual de anonimato em pesquisa organizacional: abaixo
+ * disso, resultado por recorte começa a permitir identificar quem respondeu, o
+ * que enfraquece a garantia de anonimato que o Guia do MTE pede (p. 10).
+ */
+export const MIN_RESPONDENTES_CONCLUSAO = 5;
+
+/** O recorte tem respondentes suficientes para o resultado valer como conclusão? */
+export function amostraSuficiente(n: number): boolean {
+  return n >= MIN_RESPONDENTES_CONCLUSAO;
+}
+
 // ----- Probabilidade (1..5) baseada no % de respostas críticas -----
 export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
   if (pct >= 81) return 5;

@@ -25,6 +25,8 @@ import {
   MTE_MAPA,
   caracterizarExposicao,
   assertAgrupamentoGesAplicado,
+  amostraSuficiente,
+  MIN_RESPONDENTES_CONCLUSAO,
 } from "./aep-data";
 
 async function urlToDataUrl(url: string): Promise<string> {
@@ -609,22 +611,38 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           const leitura =
             leituraPreventivaPorDim[f.dim.id] ??
             "Consolidação da percepção coletiva dos trabalhadores para este domínio psicossocial.";
-          return [f.dim.title, `${f.scorePct}%`, classif, leitura];
+          // Amostra pequena: não imprime percentual nem classificação. Um "0%"
+          // com três respondentes é lido como ausência de risco quando na
+          // verdade é ausência de dado — e num domínio como assédio essa
+          // diferença decide se o documento protege ou incrimina a empresa.
+          if (!amostraSuficiente(f.n)) {
+            return [
+              f.dim.title,
+              String(f.n),
+              "—",
+              "AMOSTRA INSUFICIENTE",
+              `Apenas ${f.n} respondente(s) neste domínio — abaixo do mínimo de ` +
+                `${MIN_RESPONDENTES_CONCLUSAO} adotado para conclusão. O resultado não permite ` +
+                "afirmar presença nem ausência do fator. Ampliar a coleta antes de concluir.",
+            ];
+          }
+          return [f.dim.title, String(f.n), `${f.scorePct}%`, classif, leitura];
         })
-      : [["—", "—", "—", "—"]];
+      : [["—", "—", "—", "—", "—"]];
 
     autoTable(doc, {
       startY: y,
-      head: [["Domínio avaliado", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
+      head: [["Domínio avaliado", "n", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
       body: resultadoBody,
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle" },
       styles: { fontSize: 8, cellPadding: 3.5, valign: "top" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 95 },
-        1: { halign: "center", cellWidth: 30, fontStyle: "bold" },
-        2: { halign: "center", cellWidth: 50, fontStyle: "bold" },
-        3: { cellWidth: "auto" },
+        0: { fontStyle: "bold", cellWidth: 92 },
+        1: { halign: "center", cellWidth: 22 },
+        2: { halign: "center", cellWidth: 28, fontStyle: "bold" },
+        3: { halign: "center", cellWidth: 56, fontStyle: "bold" },
+        4: { cellWidth: "auto" },
       },
       didParseCell: (h) => {
         if (h.section === "body" && h.column.index === 2) {
