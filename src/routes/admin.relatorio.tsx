@@ -548,7 +548,16 @@ function Relatorio() {
 
                   etapa = "montar_dataset";
                   console.log("[AEP-PDF] Dados da empresa carregados");
+                  // Estrutura da versão em que as respostas foram dadas — mesmo
+                  // motivo do AEPModal: trocado o instrumento, os códigos de
+                  // `answers` não existem na versão nova e o escore zera.
+                  const versaoDoRecorte =
+                    respostasParaDataset.find((r) => r.versaoId)?.versaoId ?? null;
+                  const dimensoesDoRecorte = versaoDoRecorte
+                    ? await (await import("@/lib/copsoq")).dimensoesDaVersao(versaoDoRecorte)
+                    : undefined;
                   const dataset = buildAepDataset({
+                    dimensoes: dimensoesDoRecorte,
                     empresa: empresaObj as any,
                     empresaNome: empresaNomeLog,
                     setorFiltro: setorLog,

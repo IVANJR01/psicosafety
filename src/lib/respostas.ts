@@ -11,6 +11,17 @@ export type Resposta = {
   answers: Answers;
   criadoEm: string;
   campanhaId?: string | null;
+  /**
+   * Versão do instrumento sob a qual esta resposta foi coletada.
+   *
+   * `answers` é indexado pelo código da pergunta, e o mesmo código significa
+   * coisas diferentes em versões diferentes — "a2" era previsibilidade num
+   * instrumento e pode ser outra coisa no seguinte. Sem saber a versão, não há
+   * como pontuar corretamente.
+   *
+   * Nulo apenas em respostas anteriores ao versionamento.
+   */
+  versaoId?: string | null;
 };
 
 function mapRow(r: any): Resposta {
@@ -24,6 +35,7 @@ function mapRow(r: any): Resposta {
     answers: r.answers as Answers,
     criadoEm: r.created_at,
     campanhaId: r.campanha_id ?? null,
+    versaoId: r.versao_id ?? null,
   };
 }
 

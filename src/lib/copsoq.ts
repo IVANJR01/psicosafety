@@ -138,6 +138,83 @@ function applyDimensions(next: Dimension[]) {
 }
 
 /**
+ * Busca a estrutura de uma versão no banco. Não toca em DIMENSIONS.
+ *
+ * `somenteAtivas` separa dois usos que parecem o mesmo e não são:
+ *
+ * - montar o questionário que será respondido → só o que está ativo, porque
+ *   `ativo` é justamente o que decide se a pergunta vai para a tela;
+ * - pontuar respostas já dadas → TUDO da versão, ativo ou não. Uma versão
+ *   aposentada tem todas as perguntas desativadas, e ainda assim as respostas
+ *   coletadas sob ela precisam ser lidas. Filtrar por `ativo` aqui zeraria o
+ *   histórico inteiro no dia em que uma versão saísse de circulação.
+ */
+async function buscarEstrutura(
+  versaoId: string | null,
+  somenteAtivas: boolean,
+): Promise<Dimension[]> {
+  let dimQuery = supabase
+    .from("questionario_dimensoes")
+    .select("id,slug,titulo,descricao,ordem,ativo,versao_id");
+  if (somenteAtivas) dimQuery = dimQuery.eq("ativo", true);
+  if (versaoId) dimQuery = dimQuery.eq("versao_id", versaoId);
+
+  let qsQuery = supabase
+    .from("questionario_perguntas")
+    .select("id,dimensao_id,codigo,texto,escala,reverse,ordem,ativo");
+  if (somenteAtivas) qsQuery = qsQuery.eq("ativo", true);
+
+  const [dimsRes, qsRes, opsRes] = await Promise.all([
+    dimQuery.order("ordem"),
+    qsQuery.order("ordem"),
+    supabase.from("questionario_opcoes").select("pergunta_id,valor,rotulo,ordem").order("ordem"),
+  ]);
+  if (dimsRes.error || qsRes.error || opsRes.error) {
+    throw dimsRes.error || qsRes.error || opsRes.error;
+  }
+
+  const opsByPergunta = new Map<string, LikertOption[]>();
+  for (const o of opsRes.data ?? []) {
+    const arr = opsByPergunta.get(o.pergunta_id) ?? [];
+    arr.push({ value: o.valor, label: o.rotulo });
+    opsByPergunta.set(o.pergunta_id, arr);
+  }
+
+  return (dimsRes.data ?? []).map((d) => ({
+    id: d.slug,
+    title: d.titulo,
+    description: d.descricao,
+    questions: (qsRes.data ?? [])
+      .filter((q) => q.dimensao_id === d.id)
+      .map((q) => {
+        const scale =
+          q.escala === "freq" ? LIKERT_FREQ :
+          q.escala === "grau" ? LIKERT_GRAU :
+          (opsByPergunta.get(q.id) ?? []).sort((a, b) => b.value - a.value);
+        return { id: q.codigo, text: q.texto, scale, reverse: q.reverse } satisfies Question;
+      }),
+  }));
+}
+
+const cacheVersoes = new Map<string, Dimension[]>();
+
+/**
+ * Estrutura de uma versão específica, SEM mexer no DIMENSIONS global.
+ *
+ * DIMENSIONS é um vetor único que `applyDimensions` sobrescreve no lugar, então
+ * só existe uma estrutura viva por vez em toda a aplicação. Pontuar respostas de
+ * versões diferentes exige que duas coexistam — daí esta função devolver a
+ * estrutura em vez de instalá-la.
+ */
+export async function dimensoesDaVersao(versaoId: string): Promise<Dimension[]> {
+  const emCache = cacheVersoes.get(versaoId);
+  if (emCache) return emCache;
+  const dims = await buscarEstrutura(versaoId, false);
+  cacheVersoes.set(versaoId, dims);
+  return dims;
+}
+
+/**
  * Carrega a estrutura do questionário de UMA versão do instrumento.
  *
  * O filtro por versão não é detalhe: o banco guarda todas as versões lado a
@@ -164,40 +241,7 @@ export async function loadDimensions(force = false, versaoId?: string): Promise<
         versao = data?.id ?? null;
       }
 
-      let dimQuery = supabase
-        .from("questionario_dimensoes")
-        .select("id,slug,titulo,descricao,ordem,ativo,versao_id")
-        .eq("ativo", true);
-      if (versao) dimQuery = dimQuery.eq("versao_id", versao);
-
-      const [dimsRes, qsRes, opsRes] = await Promise.all([
-        dimQuery.order("ordem"),
-        supabase.from("questionario_perguntas").select("id,dimensao_id,codigo,texto,escala,reverse,ordem,ativo").eq("ativo", true).order("ordem"),
-        supabase.from("questionario_opcoes").select("pergunta_id,valor,rotulo,ordem").order("ordem"),
-      ]);
-      if (dimsRes.error || qsRes.error || opsRes.error) throw dimsRes.error || qsRes.error || opsRes.error;
-
-      const opsByPergunta = new Map<string, LikertOption[]>();
-      for (const o of opsRes.data ?? []) {
-        const arr = opsByPergunta.get(o.pergunta_id) ?? [];
-        arr.push({ value: o.valor, label: o.rotulo });
-        opsByPergunta.set(o.pergunta_id, arr);
-      }
-
-      const next: Dimension[] = (dimsRes.data ?? []).map((d) => ({
-        id: d.slug,
-        title: d.titulo,
-        description: d.descricao,
-        questions: (qsRes.data ?? [])
-          .filter((q) => q.dimensao_id === d.id)
-          .map((q) => {
-            const scale =
-              q.escala === "freq" ? LIKERT_FREQ :
-              q.escala === "grau" ? LIKERT_GRAU :
-              (opsByPergunta.get(q.id) ?? []).sort((a, b) => b.value - a.value);
-            return { id: q.codigo, text: q.texto, scale, reverse: q.reverse } satisfies Question;
-          }),
-      }));
+      const next = await buscarEstrutura(versao, true);
 
       if (next.length > 0) applyDimensions(next);
       loaded = true;

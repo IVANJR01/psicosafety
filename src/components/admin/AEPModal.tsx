@@ -16,6 +16,7 @@ import { gerarRelatorioAEPpdf } from "@/lib/exports/aep-pdf";
 import { gerarRelatorioAEPdocx } from "@/lib/exports/aep-docx";
 import { exportRespostasXlsx } from "@/lib/excel-export";
 import { getCurrentAccountInfo } from "@/lib/account";
+import { dimensoesDaVersao } from "@/lib/copsoq";
 import { CorrigirFuncoesDialog } from "./CorrigirFuncoesDialog";
 import { AEPErrorDialog, type AEPErrorInfo } from "./AEPErrorDialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -255,7 +256,16 @@ export function AEPModal({ open, onOpenChange }: Props) {
       }
     });
 
+    // Pontua contra a estrutura da versão em que as respostas foram dadas, não
+    // contra a vigente. Trocado o instrumento, os códigos gravados em `answers`
+    // deixam de existir na versão nova e todos os escores zerariam em silêncio.
+    const versaoDoRecorte = respostasFiltradas.find((r) => r.versaoId)?.versaoId ?? null;
+    const dimensoesDoRecorte = versaoDoRecorte
+      ? await dimensoesDaVersao(versaoDoRecorte)
+      : undefined;
+
     return buildAepDataset({
+      dimensoes: dimensoesDoRecorte,
       empresa,
       empresaNome,
       setorFiltro: setorSel === ALL ? "Todos" : setorSel,

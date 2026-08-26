@@ -708,9 +708,42 @@ export function buildAepDataset(opts: {
   rascunho?: boolean;
   /** Quando informado, bloqueia montagem do dataset com respostas fora do recorte selecionado. */
   escopoSetorialPermitido?: Array<{ nome: string; ges?: string | null }>;
+  /**
+   * Estrutura do instrumento contra a qual pontuar. Omitida, usa a versão
+   * carregada no global — comportamento correto enquanto existe uma só versão.
+   *
+   * Ao pontuar respostas de uma versão que não é a vigente, o chamador precisa
+   * informar a estrutura daquela versão (ver `dimensoesDaVersao`), senão os
+   * códigos de `answers` não encontram pergunta nenhuma e tudo zera.
+   */
+  dimensoes?: Dimension[];
 }): AepDataset {
   const respostas = opts.respostas;
   const agruparPorGes = opts.agruparPorGes ?? true;
+  const dims = opts.dimensoes ?? DIMENSIONS;
+
+  /*
+   * Um relatório cobre UMA versão do instrumento.
+   *
+   * Misturar não é questão de implementação, é de sentido: não se tira média
+   * entre "Demandas no trabalho" de um instrumento e "Exigências quantitativas"
+   * de outro — são construtos diferentes, medidos por perguntas diferentes.
+   * Um AEP que somasse as duas produziria número sem significado, e ninguém
+   * lendo o PDF teria como perceber.
+   *
+   * Por isso interrompe em vez de escolher sozinho: a decisão de qual recorte
+   * emitir é de quem assina o documento.
+   */
+  const versoesPresentes = new Set(
+    respostas.map((r) => r.versaoId).filter((v): v is string => !!v),
+  );
+  if (versoesPresentes.size > 1) {
+    throw new Error(
+      `O recorte selecionado mistura ${versoesPresentes.size} versões do questionário. ` +
+        "Escores de instrumentos diferentes não podem ser somados. " +
+        "Selecione uma campanha ou período que use uma única versão.",
+    );
+  }
 
   const escopoSetorialPermitido = opts.escopoSetorialPermitido ?? [];
   if (escopoSetorialPermitido.length > 0) {
@@ -785,7 +818,7 @@ export function buildAepDataset(opts: {
 
 
   // Fatores gerais
-  const fatoresGerais: LinhaFator[] = DIMENSIONS.map((d) => {
+  const fatoresGerais: LinhaFator[] = dims.map((d) => {
     const scores = respostas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
     const scorePct = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
     const prob = probabilidadeFromPct(scorePct);
@@ -825,7 +858,7 @@ export function buildAepDataset(opts: {
   const setores: LinhaSetorAep[] = [];
   buckets.forEach((b) => {
     const arr = b.items;
-    const fatores: LinhaFator[] = DIMENSIONS.map((d) => {
+    const fatores: LinhaFator[] = dims.map((d) => {
       const scores = arr.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
       const scorePct = scores.length ? Math.round(scores.reduce((a, b2) => a + b2, 0) / scores.length) : 0;
       const prob = probabilidadeFromPct(scorePct);
