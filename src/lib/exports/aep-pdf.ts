@@ -318,23 +318,43 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     y = (doc as any).lastAutoTable.finalY + 20;
 
     // ============== 02. SUMÁRIO ==============
+    /*
+     * O sumário é montado a partir das seções que serão REALMENTE emitidas.
+     *
+     * Antes era uma lista fixa, enquanto três seções são condicionais
+     * (Caracterização da Exposição, Plano de Ação e Anexos). Gerando o
+     * relatório sem o Plano de Ação, o sumário continuava anunciando uma seção
+     * inexistente e — pior — a numeração impressa no corpo, que vem de
+     * `secCount`, passava a divergir da numeração listada aqui.
+     *
+     * Derivar a lista e os números da mesma condição que decide a emissão
+     * elimina as duas divergências de uma vez.
+     */
     sectionTitle("Sumário");
-    const sumario = [
-      ["01", "Dados da Empresa"],
-      ["02", "Sumário"],
-      ["03", "Introdução"],
-      ["04", "Metodologia Aplicada"],
-      ["05", "Caracterização dos GES / Setores / Funções Avaliadas"],
-      ["06", "Resultado da Avaliação do Questionário COPSOQBR"],
-      ["07", "Distribuição dos Resultados por Domínio / GES"],
-      ["08", "Conclusões e Recomendações Preliminares"],
-      ["09", "Classificação e Avaliação dos Riscos Psicossociais"],
-      ["10", "Inventário de Riscos Ocupacionais para o PGR"],
-      ["11", "Caracterização da Exposição"],
-      ["12", "Plano de Ação Recomendado"],
-      ["13", "Conclusão Técnica"],
-      ["14", "Anexos"],
+    const temCaracterizacaoExposicao =
+      data.setores.length > 0
+        ? data.setores.some((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0)
+        : data.fatoresGerais.some((f) => f.n > 0);
+    const secoesEmitidas: string[] = [
+      "Dados da Empresa",
+      "Sumário",
+      "Introdução",
+      "Metodologia Aplicada",
+      "Caracterização dos GES / Setores / Funções Avaliadas",
+      "Resultado da Avaliação do Questionário COPSOQBR",
+      "Distribuição dos Resultados por Domínio / GES",
+      "Conclusões e Recomendações Preliminares",
+      "Classificação e Avaliação dos Riscos Psicossociais",
+      "Inventário de Riscos Ocupacionais para o PGR",
+      ...(temCaracterizacaoExposicao ? ["Caracterização da Exposição"] : []),
+      ...(incluirPlanoAcao ? ["Plano de Ação Recomendado"] : []),
+      "Conclusão Técnica",
+      ...(incluirAnexos ? ["Anexos"] : []),
     ];
+    const sumario = secoesEmitidas.map((titulo, i) => [
+      String(i + 1).padStart(2, "0"),
+      titulo,
+    ]);
     autoTable(doc, {
       startY: y,
       body: sumario,
@@ -1178,7 +1198,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
     }
 
-    if (carBody.length > 0) {
+    // Mesma condição usada para montar o sumário — as duas precisam concordar,
+    // senão a numeração impressa volta a divergir da listada.
+    if (temCaracterizacaoExposicao && carBody.length > 0) {
       doc.addPage("a4", "portrait");
       y = 60;
       sectionTitle("Caracterização da Exposição");
