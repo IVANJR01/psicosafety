@@ -273,6 +273,15 @@ export function textoInterpretacao(nivel: NivelRisco): string {
 // ----- Interpretação técnica profunda por fator (estilo consultoria) -----
 // Combina o id da dimensão (COPSOQ) com o nível de risco para gerar
 // um parágrafo técnico-executivo específico — não genérico.
+//
+// SEM USO no momento: o único consumidor era o gerador DOCX, removido por
+// nunca ter sido alcançável. Mantido como conteúdo técnico aproveitável, com
+// uma ressalva antes de religar: os textos de nível Baixo AFIRMAM ausência.
+// O de `ofensivos` diz "Não foram identificados indícios relevantes de
+// comportamentos ofensivos" — uma declaração de ausência de assédio que,
+// impressa a partir de três respondentes, é exatamente o que o piso de
+// MIN_RESPONDENTES_CONCLUSAO existe para impedir. Quem voltar a consumir este
+// mapa precisa passar por amostraSuficiente() antes, como o PDF faz.
 const INTERPRETACAO_FATOR: Record<string, Record<NivelRisco, string>> = {
   demandas: {
     Baixo: "Os indicadores apontam carga de trabalho percebida como compatível com os recursos disponíveis. Recomenda-se preservar o equilíbrio entre demandas quantitativas, cognitivas e emocionais, monitorando picos sazonais e mudanças organizacionais.",
