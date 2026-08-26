@@ -4,7 +4,7 @@ import {
   Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageBreak,
 } from "docx";
 import { toast } from "sonner";
-import { textoInterpretacao, alertaEspecial, PROB_LABEL, SEV_LABEL, assertAgrupamentoGesAplicado, type AepDataset, type NivelRisco } from "./aep-data";
+import { textoInterpretacao, alertaEspecial, PROB_LABEL, SEV_LABEL, assertAgrupamentoGesAplicado, amostraSuficiente, MIN_RESPONDENTES_CONCLUSAO, type AepDataset, type NivelRisco } from "./aep-data";
 import { getRecomendacoes } from "@/lib/recomendacoes";
 
 const FILL: Record<NivelRisco, string> = { Baixo: "DCFCE7", Médio: "FEF08A", Alto: "FED7AA", Crítico: "FECACA" };
@@ -87,23 +87,44 @@ export async function gerarRelatorioAEPdocx(data: AepDataset) {
       ["5", "Crítica", "Dano grave / OBRIGATÓRIO p/ assédio, violência e discriminação"],
     ]));
 
+    // Mesma regra do PDF: "n" sempre visível e conclusão só quando a amostra a
+    // sustenta. Os dois formatos saem do mesmo dataset e vão para o mesmo
+    // fiscal — divergir entre eles seria pior do que o problema original.
     sec1Children.push(P("4. Resultados gerais por fator", { heading: HeadingLevel.HEADING_1 }));
-    sec1Children.push(table([3500, 1300, 800, 800, 1000, 1600],
-      ["Fator", "% Críticas", "P", "S", "Risco", "Nível"],
-      data.fatoresGerais.map((f) => [
-        f.dim.title, `${f.scorePct}%`, String(f.prob), String(f.sev),
-        String(f.risco.valor), { text: f.risco.nivel, fill: FILL[f.risco.nivel] },
-      ]),
+    sec1Children.push(table([3100, 700, 1100, 700, 700, 900, 1600],
+      ["Fator", "n", "% Críticas", "P", "S", "Risco", "Nível"],
+      data.fatoresGerais.map((f) => amostraSuficiente(f.n)
+        ? [
+            f.dim.title, String(f.n), `${f.scorePct}%`, String(f.prob), String(f.sev),
+            String(f.risco.valor), { text: f.risco.nivel, fill: FILL[f.risco.nivel] },
+          ]
+        : [
+            f.dim.title, String(f.n), "—", "—", "—", "—",
+            { text: "AMOSTRA INSUFICIENTE", fill: "F3F4F6" },
+          ]),
     ));
+    if (data.fatoresGerais.some((f) => !amostraSuficiente(f.n))) {
+      sec1Children.push(P(
+        `A coluna "n" indica quantos trabalhadores responderam a cada fator. Fatores com menos de ` +
+        `${MIN_RESPONDENTES_CONCLUSAO} respondentes aparecem como AMOSTRA INSUFICIENTE: o resultado não ` +
+        `permite afirmar presença nem ausência do risco, e não deve ser lido como risco baixo.`
+      ));
+    }
 
     sec1Children.push(P("5. Resultados por GES", { heading: HeadingLevel.HEADING_1 }));
     sec1Children.push(table([3500, 1500, 1500, 1500, 1000],
       ["GES / Setores", "Respondentes", "Maior Risco", "Nível", "Ação"],
-      data.setores.map((s) => [
-        s.label, String(s.n), String(s.riscoMaior.valor),
-        { text: s.riscoMaior.nivel, fill: FILL[s.riscoMaior.nivel] },
-        s.riscoMaior.acao,
-      ]),
+      data.setores.map((s) => amostraSuficiente(s.n)
+        ? [
+            s.label, String(s.n), String(s.riscoMaior.valor),
+            { text: s.riscoMaior.nivel, fill: FILL[s.riscoMaior.nivel] },
+            s.riscoMaior.acao,
+          ]
+        : [
+            s.label, String(s.n), "—",
+            { text: "AMOSTRA INSUFICIENTE", fill: "F3F4F6" },
+            `Ampliar a coleta neste GES até ao menos ${MIN_RESPONDENTES_CONCLUSAO} respondentes antes de concluir.`,
+          ]),
     ));
 
     sec1Children.push(P("6. Inventário de riscos psicossociais (GRO)", { heading: HeadingLevel.HEADING_1 }));
@@ -119,11 +140,38 @@ export async function gerarRelatorioAEPdocx(data: AepDataset) {
       inv.length ? inv : [["—", "Sem dados", "—", "—", "—", "—"]],
     ));
 
+    // Esta é a seção que afirma em texto corrido. O texto de nível Baixo para
+    // "ofensivos" diz "Não foram identificados indícios relevantes de
+    // comportamentos ofensivos no recorte avaliado" — uma declaração de
+    // ausência de assédio. Impressa a partir de três respondentes, é a frase
+    // que mais expõe a empresa em juízo, porque afirma o que o dado não mostra.
+    //
+    // O alerta de assédio segue regra oposta, de propósito: se o escore bruto
+    // é Alto ou Crítico, ele é emitido mesmo com amostra pequena. Sinalizar
+    // indício fraco de assédio custa uma apuração; silenciar custa a pessoa.
     sec1Children.push(P("7. Interpretação técnica", { heading: HeadingLevel.HEADING_1 }));
     data.fatoresGerais.filter((f) => f.n > 0).forEach((f) => {
-      sec1Children.push(P(`${f.dim.title} — ${f.scorePct}% • Risco ${f.risco.valor} (${f.risco.nivel})`, { bold: true }));
-      sec1Children.push(P(textoInterpretacao(f.risco.nivel)));
-      if (f.dim.id === "ofensivos" && (f.risco.nivel === "Alto" || f.risco.nivel === "Crítico")) {
+      const suficiente = amostraSuficiente(f.n);
+      const ofensivoGrave = f.dim.id === "ofensivos" && (f.risco.nivel === "Alto" || f.risco.nivel === "Crítico");
+      if (suficiente) {
+        sec1Children.push(P(`${f.dim.title} — n=${f.n} • ${f.scorePct}% • Risco ${f.risco.valor} (${f.risco.nivel})`, { bold: true }));
+        sec1Children.push(P(textoInterpretacao(f.risco.nivel)));
+      } else {
+        sec1Children.push(P(`${f.dim.title} — n=${f.n} • AMOSTRA INSUFICIENTE`, { bold: true }));
+        sec1Children.push(P(
+          `Apenas ${f.n} respondente(s) neste fator, abaixo do mínimo de ${MIN_RESPONDENTES_CONCLUSAO} ` +
+          `adotado para conclusão. Não é possível afirmar presença nem ausência do risco neste domínio, ` +
+          `e o resultado não deve ser interpretado como risco baixo. Ampliar a coleta antes de concluir.`
+        ));
+      }
+      if (ofensivoGrave) {
+        if (!suficiente) {
+          sec1Children.push(P(
+            `Ainda que a amostra deste fator seja insuficiente para classificação, os indícios ` +
+            `registrados exigem tratamento imediato — em assédio, indício fraco se apura, não se descarta.`,
+            { bold: true, color: "B91C1C" },
+          ));
+        }
         sec1Children.push(P(alertaEspecial("ASSÉDIO MORAL, SEXUAL, VIOLÊNCIA OU DISCRIMINAÇÃO"), { bold: true, color: "B91C1C" }));
       }
     });
@@ -152,6 +200,16 @@ export async function gerarRelatorioAEPdocx(data: AepDataset) {
       : data.contagemNiveis.Médio > 0 ? "Médio" : "Baixo";
     sec1Children.push(P(`Nível geral predominante: ${nivelGeral.toUpperCase()}.`, { bold: true }));
     sec1Children.push(P(textoInterpretacao(nivelGeral)));
+    if (!amostraSuficiente(data.totalRespostas)) {
+      sec1Children.push(P(
+        `RESSALVA DE AMOSTRA: esta avaliação reuniu ${data.totalRespostas} resposta(s) válida(s), abaixo do ` +
+        `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} adotado neste relatório para conclusão por domínio. Os ` +
+        `resultados têm caráter exploratório e não sustentam afirmação de presença nem de ausência de risco ` +
+        `psicossocial na organização. Este documento não deve ser utilizado como demonstração de ` +
+        `conformidade sem nova coleta com participação ampliada.`,
+        { bold: true, color: "B91C1C" },
+      ));
+    }
 
     sec1Children.push(P(""));
     sec1Children.push(P("___________________________________________"));

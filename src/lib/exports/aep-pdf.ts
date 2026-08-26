@@ -641,14 +641,24 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         0: { fontStyle: "bold", cellWidth: 92 },
         1: { halign: "center", cellWidth: 22 },
         2: { halign: "center", cellWidth: 28, fontStyle: "bold" },
-        3: { halign: "center", cellWidth: 56, fontStyle: "bold" },
+        // 70pt, não 56: autoTable não quebra palavra, e "INSUFICIENTE" exige
+        // 62,4pt neste corpo. Em 56pt o texto sairia clipado no PDF.
+        3: { halign: "center", cellWidth: 70, fontStyle: "bold" },
         4: { cellWidth: "auto" },
       },
       didParseCell: (h) => {
-        if (h.section === "body" && h.column.index === 2) {
+        // Índice 3: a coluna "n" empurrou a classificação uma posição à direita.
+        if (h.section === "body" && h.column.index === 3) {
+          const raw = String(h.cell.raw ?? "");
           const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
-          const lvl = map[String(h.cell.raw)];
+          const lvl = map[raw];
           if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
+          else if (raw === "AMOSTRA INSUFICIENTE") {
+            // Cinza neutro: não é um nível de risco, e não pode parecer um.
+            h.cell.styles.fillColor = [243, 244, 246];
+            h.cell.styles.textColor = [75, 85, 99];
+            h.cell.styles.fontSize = 7;
+          }
         }
       },
       margin: { left: margin, right: margin },
@@ -674,49 +684,86 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (data.setores.length === 0) {
       paragraph("Sem dados por setor no recorte.");
     } else {
+      // O recorte por GES divide a amostra: um GES de dois respondentes recebia
+      // percentual e classificação com o mesmo peso visual de um GES de
+      // cinquenta. Aqui a regra é a mesma da seção anterior — a linha continua
+      // visível (o GES foi avaliado e some-lo esconderia cobertura), mas a
+      // conclusão só é impressa quando a amostra a sustenta.
       const distBody: any[] = [];
+      let distInsuficientes = 0;
       data.setores.forEach((s) => {
         const fp = s.fatorPrincipal;
         if (!fp || fp.n === 0) return;
+        const suficiente = amostraSuficiente(fp.n);
+        if (!suficiente) distInsuficientes += 1;
         distBody.push([
           formatLabelGes(s.label),
           fp.dim.title,
-          `${fp.scorePct}%`,
-          fp.classifPsico.toUpperCase(),
+          String(fp.n),
+          suficiente ? `${fp.scorePct}%` : "—",
+          suficiente ? fp.classifPsico.toUpperCase() : "AMOSTRA INSUFICIENTE",
         ]);
       });
 
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Domínio crítico", "%", "Classif.\nPsicoss."]],
-        body: distBody.length ? distBody : [["—", "—", "—", "—"]],
+        head: [["GES / Setores", "Domínio crítico", "n", "%", "Classif.\nPsicoss."]],
+        body: distBody.length ? distBody : [["—", "—", "—", "—", "—"]],
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
         styles: { fontSize: 9, cellPadding: 4, valign: "middle", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { fontStyle: "bold", cellWidth: 200 },
-          1: { cellWidth: 160 },
-          2: { halign: "center", cellWidth: 40, fontStyle: "bold" },
-          3: { halign: "center", cellWidth: 90, fontStyle: "bold" },
+          0: { fontStyle: "bold", cellWidth: 175 },
+          1: { cellWidth: 150 },
+          2: { halign: "center", cellWidth: 26 },
+          3: { halign: "center", cellWidth: 40, fontStyle: "bold" },
+          4: { halign: "center", cellWidth: 90, fontStyle: "bold", fontSize: 8 },
         },
         didParseCell: (h) => {
-          if (h.section === "body" && h.column.index === 3) {
+          if (h.section === "body" && h.column.index === 4) {
             const raw = String(h.cell.raw ?? "").toUpperCase();
             const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
             const lvl = map[raw];
             if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
+            else if (raw === "AMOSTRA INSUFICIENTE") {
+              h.cell.styles.fillColor = [243, 244, 246];
+              h.cell.styles.textColor = [75, 85, 99];
+            }
           }
         },
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 18;
+
+      if (distInsuficientes > 0) {
+        paragraph(
+          `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
+          `${distInsuficientes} GES ficaram abaixo do mínimo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes ` +
+          `adotado para conclusão e aparecem como AMOSTRA INSUFICIENTE: o resultado não permite afirmar ` +
+          `presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a coleta, não ` +
+          `concluir por risco baixo.`
+        );
+      }
     }
 
     // ============== 08. CONCLUSÕES E RECOMENDAÇÕES PRELIMINARES ==============
     sectionTitle("Conclusões e Recomendações Preliminares");
 
+    // A priorização é a parte do relatório que a empresa usa para decidir onde
+    // investir, e ordenar exige comparar. Um domínio medido em três pessoas não
+    // sustenta uma posição no ranking — mas também não pode simplesmente sumir:
+    // sai da lista ordenada e é nomeado logo abaixo dela, com o pedido de
+    // ampliar a coleta.
+    //
+    // O corte por amostra vem ANTES do corte por "BAIXO", e essa ordem importa:
+    // num domínio de amostra pequena a própria classificação é que não se
+    // sustenta. Filtrar "BAIXO" primeiro descartaria em silêncio exatamente o
+    // caso mais perigoso — o 0% em assédio com três respondentes, que não é
+    // ausência de assédio, é ausência de dado.
     const classifRankTop: Record<string, number> = { CRÍTICO: 4, ALTO: 3, MÉDIO: 2, BAIXO: 1 };
-    const topDominios = [...fatoresValidos]
+    const dominiosSemAmostra = fatoresValidos.filter((f) => !amostraSuficiente(f.n));
+    const topDominios = fatoresValidos
+      .filter((f) => amostraSuficiente(f.n))
       .filter((f) => (f.classifPsico ?? "").toUpperCase() !== "BAIXO")
       .sort((a, b) => {
         const ca = classifRankTop[(a.classifPsico ?? "").toUpperCase()] ?? 0;
@@ -726,7 +773,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       })
       .slice(0, 5);
     const classifRank: Record<string, number> = { CRÍTICO: 4, ALTO: 3, MÉDIO: 2, BAIXO: 1 };
-    const setoresCriticos = [...data.setores]
+    const setoresComDado = data.setores.filter((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0);
+    const setoresSemAmostra = setoresComDado.filter((s) => !amostraSuficiente(s.fatorPrincipal!.n));
+    const setoresCriticos = setoresComDado
+      .filter((s) => amostraSuficiente(s.fatorPrincipal!.n))
       .filter((s) => {
         const c = (s.fatorPrincipal?.classifPsico ?? "").toUpperCase();
         return c && c !== "BAIXO";
@@ -742,49 +792,64 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     subTitle("Priorização dos domínios com maior risco");
     autoTable(doc, {
       startY: y,
-      head: [["#", "Domínio avaliado", "%", "Classif.\nPsicoss."]],
+      head: [["#", "Domínio avaliado", "n", "%", "Classif.\nPsicoss."]],
       body: topDominios.length
-        ? topDominios.map((f, i) => [String(i + 1), f.dim.title, `${f.scorePct}%`, f.classifPsico.toUpperCase()])
-        : [["—", "Sem dados no recorte", "—", "—"]],
+        ? topDominios.map((f, i) => [String(i + 1), f.dim.title, String(f.n), `${f.scorePct}%`, f.classifPsico.toUpperCase()])
+        : [["—", "Sem domínio com amostra suficiente e risco acima de baixo no recorte", "—", "—", "—"]],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
         0: { halign: "center", cellWidth: 30, fontStyle: "bold" },
         1: { fontStyle: "bold" },
-        2: { halign: "center", cellWidth: 60 },
-        3: { halign: "center", fontStyle: "bold", cellWidth: 110 },
+        2: { halign: "center", cellWidth: 30 },
+        3: { halign: "center", cellWidth: 50 },
+        4: { halign: "center", fontStyle: "bold", cellWidth: 100 },
       },
-      didParseCell: colorirNivel(3),
+      didParseCell: colorirNivel(4),
       margin: { left: margin, right: margin },
     });
     y = (doc as any).lastAutoTable.finalY + 14;
+
+    if (dominiosSemAmostra.length > 0) {
+      const listaDom = dominiosSemAmostra
+        .map((f) => `${f.dim.title} (n=${f.n})`)
+        .join("; ");
+      paragraph(
+        `Fora da priorização por amostra insuficiente — abaixo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes: ` +
+        `${listaDom}. Estes domínios não foram classificados nem ordenados acima porque o número de ` +
+        `respostas não sustenta conclusão em nenhum sentido: não indicam risco baixo, indicam ausência de ` +
+        `dado suficiente. Devem ser cobertos na próxima aplicação antes de qualquer leitura de resultado.`
+      );
+    }
 
 
     subTitle("Priorização dos GES mais críticos");
     autoTable(doc, {
       startY: y,
-      head: [["#", "GES / Setores", "Domínio crítico", "%", "Classif.\nPsicoss."]],
+      head: [["#", "GES / Setores", "Domínio crítico", "n", "%", "Classif.\nPsicoss."]],
       body: setoresCriticos.length
         ? setoresCriticos.map((s, i) => [
             String(i + 1),
             formatLabelGes(s.label),
             s.fatorPrincipal?.dim.title ?? "—",
+            String(s.fatorPrincipal?.n ?? 0),
             s.fatorPrincipal ? `${Math.round(s.fatorPrincipal.scorePct)}%` : "—",
             (s.fatorPrincipal?.classifPsico ?? "—").toUpperCase(),
           ])
-        : [["—", "Sem dados", "—", "—", "—"]],
+        : [["—", "Sem GES com amostra suficiente e risco acima de baixo no recorte", "—", "—", "—", "—"]],
 
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4, overflow: "linebreak" },
       columnStyles: {
         0: { halign: "center", cellWidth: 30, fontStyle: "bold" },
-        1: { fontStyle: "bold", cellWidth: 150 },
-        2: { cellWidth: 140 },
-        3: { halign: "center", cellWidth: 40, fontStyle: "bold" },
-        4: { halign: "center", fontStyle: "bold", cellWidth: 90 },
+        1: { fontStyle: "bold", cellWidth: 140 },
+        2: { cellWidth: 130 },
+        3: { halign: "center", cellWidth: 26 },
+        4: { halign: "center", cellWidth: 40, fontStyle: "bold" },
+        5: { halign: "center", fontStyle: "bold", cellWidth: 85, fontSize: 8 },
       },
       didParseCell: (h) => {
-        if (h.section === "body" && h.column.index === 4) {
+        if (h.section === "body" && h.column.index === 5) {
           const raw = String(h.cell.raw ?? "").toUpperCase();
           const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
           const lvl = map[raw];
@@ -794,6 +859,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       margin: { left: margin, right: margin },
     });
     y = (doc as any).lastAutoTable.finalY + 14;
+
+    if (setoresSemAmostra.length > 0) {
+      const listaGes = setoresSemAmostra
+        .map((s) => `${formatLabelGes(s.label)} (n=${s.fatorPrincipal!.n})`)
+        .join("; ");
+      paragraph(
+        `Fora da priorização por amostra insuficiente — abaixo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes: ` +
+        `${listaGes}. A ausência destes GES na lista acima não significa que estejam em risco baixo: ` +
+        `significa que a participação foi pequena demais para classificar o grupo. Ampliar a adesão ` +
+        `nesses GES é ação prioritária do próximo ciclo.`
+      );
+    }
 
 
     paragraph(
@@ -1368,6 +1445,21 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "metodologia técnica integrada à NR-01 (GRO/PGR) e NR-17 (Ergonomia), com nomenclatura " +
       "alinhada ao Guia de Fatores de Riscos Psicossociais do MTE."
     );
+
+    // Ressalva de amostra no nível do documento inteiro. Sem ela, uma AEP de
+    // três respondentes é lida como uma AEP qualquer — e é justamente a que
+    // menos sustenta o que conclui. Vem antes do resumo para que ninguém leia
+    // o resultado sem ler a limitação.
+    if (!amostraSuficiente(data.totalRespostas)) {
+      callout(
+        `RESSALVA DE AMOSTRA: esta avaliação reuniu ${data.totalRespostas} resposta(s) válida(s), abaixo do ` +
+        `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} adotado neste relatório para conclusão por domínio. ` +
+        `Os resultados apresentados têm caráter exploratório e não sustentam afirmação de presença nem de ` +
+        `ausência de risco psicossocial na organização. Este documento não deve ser utilizado como ` +
+        `demonstração de conformidade sem nova coleta com participação ampliada.`,
+        NIVEL_COR["Alto"],
+      );
+    }
 
     const totalCad = data.gesCadastrados.length;
     const totalAva = data.gesAvaliados.length;
