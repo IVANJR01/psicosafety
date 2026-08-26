@@ -379,16 +379,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "para a composição do Inventário de Riscos do PGR e, quando indicado, para a realização da " +
       "Análise Ergonômica do Trabalho (AET) aprofundada."
     );
+    // A ressalva de "não é diagnóstico clínico" era dita duas vezes seguidas —
+    // no parágrafo e no destaque logo abaixo. Fica só no destaque, que é onde
+    // o leitor olha.
     paragraph(
       "Os fatores psicossociais aqui avaliados são tratados como riscos ocupacionais relacionados à " +
-      "organização do trabalho, à gestão e às relações no ambiente laboral. NÃO se trata de diagnóstico " +
-      "clínico individual: o foco é ocupacional, organizacional e preventivo, com linguagem alinhada ao " +
+      "organização do trabalho, à gestão e às relações no ambiente laboral, com linguagem alinhada ao " +
       "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
     );
     callout(
-      "Este relatório não substitui avaliação clínica individual. Os resultados refletem a percepção " +
-      "coletiva dos trabalhadores no momento da aplicação e devem subsidiar decisões de prevenção, " +
-      "controle e mitigação de riscos ocupacionais conforme NR-01.",
+      "NÃO se trata de diagnóstico clínico individual, e este relatório não substitui avaliação " +
+      "clínica. Os resultados refletem a percepção coletiva dos trabalhadores no momento da aplicação " +
+      "e devem subsidiar decisões de prevenção, controle e mitigação de riscos ocupacionais " +
+      "conforme NR-01.",
       ACCENT,
     );
 
@@ -687,16 +690,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     // ============== 07. DISTRIBUIÇÃO POR GES ==============
     sectionTitle("Distribuição dos Resultados por Domínio / GES");
+    // Dois parágrafos viraram um: o segundo explicava, em quatro linhas, que um
+    // GES pode superar a média da empresa — o que a própria tabela mostra.
     paragraph(
-      "Visão consolidada por GES com o domínio psicossocial crítico, o percentual de criticidade e a " +
-      "classificação psicossocial correspondente. Perigos, possíveis consequências e matriz PGR " +
-      "(Probabilidade × Severidade) são apresentados nas seções 09 e 10."
-    );
-    paragraph(
-      "Observação técnica: o resultado geral do questionário psicossocial representa a consolidação das respostas de " +
-      "todos os GES avaliados. Já a distribuição por GES apresenta a criticidade específica de cada " +
-      "grupo. Por isso, um GES pode apresentar classificação psicossocial superior ao resultado geral " +
-      "da empresa para determinado domínio."
+      "Domínio crítico de cada GES, com percentual de criticidade e classificação psicossocial. " +
+      "Perigos, possíveis consequências e matriz PGR (Probabilidade × Severidade) estão nas seções " +
+      "09 e 10. Um GES pode superar o resultado geral da empresa em determinado domínio: o resultado " +
+      "geral consolida todos os GES, a distribuição mostra cada um."
     );
 
     if (data.setores.length === 0) {
@@ -1463,11 +1463,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
-      paragraph(
-        "Observação: a classificação psicossocial do questionário psicossocial foi utilizada apenas como apoio " +
-        "interpretativo, sem alterar a prioridade formal do Plano de Ação, que segue o Nível de " +
-        "Risco PGR do Inventário."
-      );
+      // A ressalva de que a classificação psicossocial é só apoio interpretativo
+      // já abre esta mesma seção; repeti-la depois da tabela não acrescenta.
       y += 8;
     }
 
