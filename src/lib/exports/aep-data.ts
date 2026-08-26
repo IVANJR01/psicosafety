@@ -124,8 +124,11 @@ export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
   return 1;
 }
 
+// Chance de ocorrência, não magnitude. Mesmo vocabulário do eixo da matriz
+// 5x5 e da Escala de Probabilidade do AEP — se divergirem, o relatório volta a
+// ter duas escalas para o mesmo número.
 export const PROB_LABEL: Record<number, string> = {
-  1: "Baixa", 2: "Moderada", 3: "Significativa", 4: "Alta", 5: "Muito alta",
+  1: "Rara", 2: "Pouco provável", 3: "Possível", 4: "Provável", 5: "Muito provável",
 };
 
 // ----- Severidade por fator (1..5) — assédio/violência/discriminação = 5 -----
