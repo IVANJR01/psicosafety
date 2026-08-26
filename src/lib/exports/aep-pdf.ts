@@ -23,6 +23,7 @@ import {
   NIVEL5_FAIXA,
   mteParaDim,
   MTE_MAPA,
+  caracterizarExposicao,
   assertAgrupamentoGesAplicado,
 } from "./aep-data";
 
@@ -329,9 +330,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       ["08", "Conclusões e Recomendações Preliminares"],
       ["09", "Classificação e Avaliação dos Riscos Psicossociais"],
       ["10", "Inventário de Riscos Ocupacionais para o PGR"],
-      ["11", "Plano de Ação Recomendado"],
-      ["12", "Conclusão Técnica"],
-      ["13", "Anexos"],
+      ["11", "Caracterização da Exposição"],
+      ["12", "Plano de Ação Recomendado"],
+      ["13", "Conclusão Técnica"],
+      ["14", "Anexos"],
     ];
     autoTable(doc, {
       startY: y,
@@ -1132,6 +1134,80 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         },
         margin: { left: margin, right: margin },
       });
+    }
+
+    // ============== CARACTERIZAÇÃO DA EXPOSIÇÃO ==============
+    // Exigida pelo Guia de Fatores de Riscos Psicossociais (MTE), no capítulo
+    // sobre implementação: "Na caracterização da exposição deve-se fazer uma
+    // descrição relatando como a atividade é realizada. Devem ser incluídos
+    // aspectos importantes como a duração do trabalho, a frequência e a
+    // intensidade da exposição".
+    //
+    // Os três eixos são derivados de P e S — a mesma escala que classifica o
+    // risco —, o que os torna coerentes com o Inventário, mas os mantém como
+    // LEITURA DO INSTRUMENTO. O Guia atribui a caracterização ao profissional,
+    // que avalia "a partir das condições encontradas e do seu conhecimento e
+    // expertise"; por isso a tabela sai marcada como preliminar, para ser
+    // confirmada em campo pelo responsável técnico.
+    const carBody: any[] = [];
+    if (data.setores.length > 0) {
+      data.setores.forEach((s) => {
+        const fp = s.fatorPrincipal;
+        if (!fp || fp.n === 0) return;
+        const c = caracterizarExposicao(fp);
+        carBody.push([
+          formatLabelGes(s.label),
+          protectWords(fp.dim.title),
+          c.duracao,
+          c.frequencia,
+          c.intensidade,
+          c.grupo,
+        ]);
+      });
+    } else {
+      fatoresValidos.forEach((f) => {
+        const c = caracterizarExposicao(f);
+        carBody.push([
+          protectWords(data.empresaNome),
+          protectWords(f.dim.title),
+          c.duracao,
+          c.frequencia,
+          c.intensidade,
+          c.grupo,
+        ]);
+      });
+    }
+
+    if (carBody.length > 0) {
+      doc.addPage("a4", "portrait");
+      y = 60;
+      sectionTitle("Caracterização da Exposição");
+      paragraph(
+        "Descrição da exposição aos fatores de risco psicossociais identificados, considerando duração, " +
+          "frequência e intensidade, conforme orienta o Guia de Fatores de Riscos Psicossociais do MTE. " +
+          "Os valores abaixo derivam da probabilidade e da severidade apuradas no instrumento aplicado e " +
+          "constituem caracterização PRELIMINAR: nos termos da NR-17 (subitem 17.3.1.1), a avaliação pode " +
+          "ser qualitativa e cabe ao responsável técnico confirmá-la a partir das condições encontradas na " +
+          "atividade real de trabalho.",
+      );
+      autoTable(doc, {
+        startY: y,
+        head: [["GES / Setores", "Domínio", "Duração", "Frequência", "Intensidade", "Grupo exposto"]],
+        body: carBody,
+        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle", cellPadding: 3 },
+        styles: { fontSize: 7.5, cellPadding: 3, valign: "top", overflow: "linebreak" },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 95 },
+          1: { cellWidth: 85 },
+          2: { cellWidth: 68, halign: "center" },
+          3: { cellWidth: 78, halign: "center" },
+          4: { cellWidth: 60, halign: "center" },
+          5: { halign: "center" },
+        },
+        margin: { left: margin, right: margin },
+      });
+      y = (doc as any).lastAutoTable.finalY + 18;
     }
 
     // Próxima seção só ganha página nova SE existir (evita página em branco).
