@@ -736,12 +736,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y = (doc as any).lastAutoTable.finalY + 18;
 
       if (distInsuficientes > 0) {
+        const um = distInsuficientes === 1;
         paragraph(
           `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
-          `${distInsuficientes} GES ficaram abaixo do mínimo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes ` +
-          `adotado para conclusão e aparecem como AMOSTRA INSUFICIENTE: o resultado não permite afirmar ` +
-          `presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a coleta, não ` +
-          `concluir por risco baixo.`
+          `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes adotado para conclusão e ${um ? "aparece" : "aparecem"} ` +
+          `como AMOSTRA INSUFICIENTE: o resultado não permite afirmar presença nem ausência do fator ` +
+          `naquele grupo, e a leitura correta é ampliar a coleta, não concluir por risco baixo.`
         );
       }
     }
