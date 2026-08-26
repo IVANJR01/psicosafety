@@ -12,7 +12,10 @@ export const Route = createFileRoute("/empresa/classificacao")({
 });
 
 const SEV_LABEL: Record<Nivel, string> = { 1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica" };
-const PROB_LABEL: Record<Nivel, string> = { 1: "Baixa", 2: "Moderada", 3: "Significativa", 4: "Alta", 5: "Muito alta" };
+// Mesmo vocabulário do eixo da matriz e da Escala de Probabilidade do AEP.
+// Probabilidade é CHANCE de ocorrência, não magnitude — "Moderada" e "Alta"
+// aqui descreviam intensidade e colidiam com os rótulos de severidade acima.
+const PROB_LABEL: Record<Nivel, string> = { 1: "Rara", 2: "Pouco provável", 3: "Possível", 4: "Provável", 5: "Muito provável" };
 
 function ClassificacaoEmpresa() {
   const [respostas, setRespostas] = useState<Resposta[]>([]);
