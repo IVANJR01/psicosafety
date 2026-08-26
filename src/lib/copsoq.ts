@@ -137,12 +137,41 @@ function applyDimensions(next: Dimension[]) {
   ALL_QUESTIONS = DIMENSIONS.flatMap((d) => d.questions);
 }
 
-export async function loadDimensions(force = false): Promise<Dimension[]> {
+/**
+ * Carrega a estrutura do questionário de UMA versão do instrumento.
+ *
+ * O filtro por versão não é detalhe: o banco guarda todas as versões lado a
+ * lado para que respostas antigas continuem sendo pontuadas pela estrutura em
+ * que foram dadas. Sem o filtro, carregar "tudo que está ativo" traria as
+ * dimensões de duas versões somadas — o questionário apareceria com o dobro
+ * de blocos e os escores misturariam instrumentos diferentes.
+ *
+ * Sem `versaoId`, usa a versão vigente. Bancos anteriores ao versionamento não
+ * têm a tabela nem a coluna: nesse caso cai no comportamento antigo, de
+ * carregar todas as dimensões ativas.
+ */
+export async function loadDimensions(force = false, versaoId?: string): Promise<Dimension[]> {
   if (!force && loadPromise) return loadPromise;
   loadPromise = (async () => {
     try {
+      let versao = versaoId ?? null;
+      if (!versao) {
+        const { data } = await supabase
+          .from("questionario_versoes")
+          .select("id")
+          .eq("vigente", true)
+          .maybeSingle();
+        versao = data?.id ?? null;
+      }
+
+      let dimQuery = supabase
+        .from("questionario_dimensoes")
+        .select("id,slug,titulo,descricao,ordem,ativo,versao_id")
+        .eq("ativo", true);
+      if (versao) dimQuery = dimQuery.eq("versao_id", versao);
+
       const [dimsRes, qsRes, opsRes] = await Promise.all([
-        supabase.from("questionario_dimensoes").select("id,slug,titulo,descricao,ordem,ativo").eq("ativo", true).order("ordem"),
+        dimQuery.order("ordem"),
         supabase.from("questionario_perguntas").select("id,dimensao_id,codigo,texto,escala,reverse,ordem,ativo").eq("ativo", true).order("ordem"),
         supabase.from("questionario_opcoes").select("pergunta_id,valor,rotulo,ordem").order("ordem"),
       ]);

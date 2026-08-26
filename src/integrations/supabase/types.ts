@@ -609,31 +609,72 @@ export type Database = {
           ativo: boolean
           created_at: string
           descricao: string
+          dominio: string | null
           id: string
           ordem: number
           slug: string
           titulo: string
           updated_at: string
+          versao_id: string | null
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           descricao?: string
+          dominio?: string | null
           id?: string
           ordem?: number
           slug: string
           titulo: string
           updated_at?: string
+          versao_id?: string | null
         }
         Update: {
           ativo?: boolean
           created_at?: string
           descricao?: string
+          dominio?: string | null
           id?: string
           ordem?: number
           slug?: string
           titulo?: string
           updated_at?: string
+          versao_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionario_dimensoes_versao_id_fkey"
+            columns: ["versao_id"]
+            isOneToOne: false
+            referencedRelation: "questionario_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionario_versoes: {
+        Row: {
+          codigo: string
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          vigente: boolean
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          vigente?: boolean
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          vigente?: boolean
         }
         Relationships: []
       }
@@ -730,6 +771,7 @@ export type Database = {
           id: string
           nome_empresa: string
           setor: string | null
+          versao_id: string | null
         }
         Insert: {
           answers: Json
@@ -741,6 +783,7 @@ export type Database = {
           id?: string
           nome_empresa: string
           setor?: string | null
+          versao_id?: string | null
         }
         Update: {
           answers?: Json
@@ -752,8 +795,16 @@ export type Database = {
           id?: string
           nome_empresa?: string
           setor?: string | null
+          versao_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "respostas_versao_id_fkey"
+            columns: ["versao_id"]
+            isOneToOne: false
+            referencedRelation: "questionario_versoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "respostas_campanha_id_fkey"
             columns: ["campanha_id"]
