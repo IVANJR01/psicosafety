@@ -130,7 +130,7 @@ export function SiteLayout() {
             <ul className="space-y-1.5 text-muted-foreground text-[13px] md:text-sm">
               <li className="flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> LGPD</li>
               <li>NR-01 / NR-17</li>
-              <li>COPSOQ III</li>
+              <li>Domínios COPSOQ</li>
               <li>PGR / GRO</li>
             </ul>
           </div>

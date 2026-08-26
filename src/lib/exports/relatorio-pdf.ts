@@ -449,17 +449,17 @@ async function exportarRelatorioPDF({
     });
     y = (doc as any).lastAutoTable.finalY + 18;
 
-    // ===================== FLUXO INTELIGENTE COPSOQBR → PGR =====================
+    // ===================== FLUXO INTELIGENTE QUESTIONÁRIO → PGR =====================
     doc.addPage(); y = margin;
-    sectionTitle("Fluxo Técnico — do COPSOQBR ao Plano de Ação", true);
+    sectionTitle("Fluxo Técnico — do questionário psicossocial ao Plano de Ação", true);
 
     paragraph(
-      "O sistema converte automaticamente as percepções coletadas pelo COPSOQBR em fatores de risco ocupacionais, integrando o resultado ao GRO/PGR conforme NR-01, NR-17 e Guia de Riscos Psicossociais do MTE. A lógica técnica segue a sequência abaixo:",
+      "O sistema converte automaticamente as percepções coletadas pelo questionário psicossocial em fatores de risco ocupacionais, integrando o resultado ao GRO/PGR conforme NR-01, NR-17 e Guia de Riscos Psicossociais do MTE. A lógica técnica segue a sequência abaixo:",
     );
 
     // Diagrama horizontal do fluxo
     const flowSteps = [
-      "COPSOQBR",
+      "QUESTIONÁRIO PSICOSSOCIAL",
       "DOMÍNIO",
       "AGENTE / SITUAÇÃO",
       "PERIGO (FATOR DE RISCO)",
@@ -497,7 +497,7 @@ async function exportarRelatorioPDF({
     doc.roundedRect(margin, y, pageW - margin * 2, 38, 6, 6, "FD");
     doc.setFontSize(8.5); doc.setTextColor(120, 53, 15);
     const aviso = doc.splitTextToSize(
-      "IMPORTANTE: o COPSOQBR NÃO constitui diagnóstico médico ou psicológico. Os resultados representam exposição ocupacional a fatores de risco psicossociais relacionados ao trabalho, com foco organizacional e preventivo, subsidiando o GRO/PGR (NR-01) e a AEP (NR-17).",
+      "IMPORTANTE: o questionário psicossocial NÃO constitui diagnóstico médico ou psicológico. Os resultados representam exposição ocupacional a fatores de risco psicossociais relacionados ao trabalho, com foco organizacional e preventivo, subsidiando o GRO/PGR (NR-01) e a AEP (NR-17).",
       pageW - margin * 2 - 16,
     );
     doc.text(aviso, margin + 8, y + 14);
@@ -542,7 +542,7 @@ async function exportarRelatorioPDF({
 
     autoTable(doc, {
       startY: y,
-      head: [["DOMÍNIO COPSOQBR", "%", "AGENTES / SITUAÇÕES", "PERIGO (FATOR DE RISCO)", "POSSÍVEL CONSEQUÊNCIA (LESÃO/AGRAVO)", "CLASS."]],
+      head: [["DOMÍNIO AVALIADO", "%", "AGENTES / SITUAÇÕES", "PERIGO (FATOR DE RISCO)", "POSSÍVEL CONSEQUÊNCIA (LESÃO/AGRAVO)", "CLASS."]],
       body: apuracaoGeral
         .filter((l) => l.n > 0)
         .map((l) => {

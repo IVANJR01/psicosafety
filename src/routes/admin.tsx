@@ -23,7 +23,7 @@ const items = [
 
   // 2. AVALIAÇÕES
   { to: "/admin/campanhas", label: "Campanhas", icon: Megaphone, exact: false as boolean, group: "Avaliações" },
-  { to: "/admin/questionario", label: "Questionário COPSOQBR", icon: ClipboardList, exact: false as boolean, group: "Avaliações" },
+  { to: "/admin/questionario", label: "Questionário Psicossocial", icon: ClipboardList, exact: false as boolean, group: "Avaliações" },
   { to: "/admin/import-respostas", label: "Importar Respostas", icon: History, exact: false as boolean, group: "Avaliações" },
   { to: "/admin/comparativo", label: "Comparativo", icon: GitCompare, exact: false as boolean, group: "Avaliações" },
 

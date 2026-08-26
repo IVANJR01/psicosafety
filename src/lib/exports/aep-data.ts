@@ -484,11 +484,11 @@ export function agravosPara(nomeFator: string): string {
 
 // =====================================================================
 // MAPEAMENTO OBRIGATÓRIO — Guia de Fatores de Riscos Psicossociais (MTE)
-// COPSOQBR → Agente/Situação → Perigo (fator de risco) → Possível agravo
+// Questionário psicossocial → Agente/Situação → Perigo (fator de risco) → Possível agravo
 // O sistema NÃO inventa: o agravo só pode vir desta tabela.
 // =====================================================================
 export type MteFator = {
-  dominio: string;        // Domínio COPSOQBR
+  dominio: string;        // Domínio avaliado
   agente: string;         // Agente / situação relacionada
   perigo: string;         // Perigo (fator de risco) — nomenclatura MTE
   consequencia: string;   // Possível consequência (lesão / agravo) — Guia MTE

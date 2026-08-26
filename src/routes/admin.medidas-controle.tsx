@@ -39,7 +39,7 @@ const EFICACIA_OPTS = Object.entries(EFFECTIVENESS_LABEL) as [EffectivenessStatu
 
 const NIVEIS_PGR = ["TRIVIAL", "TOLERÁVEL", "MODERADO", "SUBSTANCIAL", "INTOLERÁVEL"];
 
-// Perigos/fatores de risco sugeridos por domínio COPSOQBR (alinhados ao Guia MTE / Anexo I do relatório).
+// Perigos/fatores de risco sugeridos por domínio avaliado (alinhados ao Guia MTE / Anexo I do relatório).
 // Precisam bater com o texto usado no Inventário do PDF para o lookup encontrar a medida.
 const PERIGOS_POR_DOMINIO: Record<string, string[]> = {
   demandas: [
@@ -219,7 +219,7 @@ function MedidasControlePage() {
     if (!form.empresa_id) { toast.error("Selecione a empresa"); return; }
     if (!form.description.trim()) { toast.error("Descreva a medida de controle"); return; }
     if (form.control_type === "existente") {
-      if (!form.dominio) { toast.error("Selecione o Domínio COPSOQBR para vincular ao Inventário"); return; }
+      if (!form.dominio) { toast.error("Selecione o Domínio avaliado para vincular ao Inventário"); return; }
       if (!form.perigo.trim()) { toast.error("Selecione o Perigo / fator de risco"); return; }
       if (!form.risk_level_pgr) { toast.error("Selecione o Nível de risco PGR"); return; }
     }
@@ -452,7 +452,7 @@ function MedidasControlePage() {
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">
-                Domínio COPSOQBR{form.control_type === "existente" ? " *" : ""}
+                Domínio avaliado{form.control_type === "existente" ? " *" : ""}
               </label>
               <Select value={form.dominio || "none"} onValueChange={(v) => setForm({ ...form, dominio: v === "none" ? "" : v, perigo: "" })}>
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
@@ -492,7 +492,7 @@ function MedidasControlePage() {
                 <Input
                   value={form.perigo}
                   onChange={(e) => setForm({ ...form, perigo: e.target.value })}
-                  placeholder="Selecione primeiro o Domínio COPSOQBR"
+                  placeholder="Selecione primeiro o Domínio avaliado"
                   disabled={!form.dominio}
                 />
               )}

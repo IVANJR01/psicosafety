@@ -2,7 +2,7 @@
 // AEP — AVALIAÇÃO ERGONÔMICA PRELIMINAR
 // FOCO: RISCOS PSICOSSOCIAIS (NR-01 / NR-17)
 // Estrutura técnico-legal premium — 13 seções
-// Lógica: COPSOQBR → Agente/Situação → Perigo → Consequência (Guia MTE) →
+// Lógica: questionário psicossocial → Agente/Situação → Perigo → Consequência (Guia MTE) →
 //          Prob × Sev → Nível → Inventário PGR → Plano de Ação
 // =====================================================================
 
@@ -341,7 +341,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Introdução",
       "Metodologia Aplicada",
       "Caracterização dos GES / Setores / Funções Avaliadas",
-      "Resultado da Avaliação do Questionário COPSOQBR",
+      "Resultado da Avaliação do Questionário Psicossocial",
       "Distribuição dos Resultados por Domínio / GES",
       "Conclusões e Recomendações Preliminares",
       "Classificação e Avaliação dos Riscos Psicossociais",
@@ -419,29 +419,31 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     paragraph(
       "A metodologia está organizada em duas camadas complementares, para evitar sobreposição " +
-      "de conceitos: (1) avaliação psicossocial pelo COPSOQBR, que gera a Classificação " +
-      "Psicossocial em percentual de criticidade; e (2) integração ocupacional ao GRO/PGR, que " +
-      "aplica a matriz Probabilidade × Severidade e gera o Nível de Risco PGR, o Inventário de " +
-      "Riscos e o Plano de Ação."
+      "de conceitos: (1) avaliação psicossocial por questionário estruturado, que gera a " +
+      "Classificação Psicossocial em percentual de criticidade; e (2) integração ocupacional ao " +
+      "GRO/PGR, que aplica a matriz Probabilidade × Severidade e gera o Nível de Risco PGR, o " +
+      "Inventário de Riscos e o Plano de Ação."
     );
 
     subTitle("4.1 Coleta dos dados");
     paragraph(
-      "Aplicação do questionário COPSOQBR (versão brasileira do COPSOQ III) aos trabalhadores " +
-      "participantes, com respostas anônimas e tratamento coletivo. A finalidade é ocupacional " +
-      "e preventiva — o relatório não possui finalidade diagnóstica clínica individual."
+      "Aplicação de questionário psicossocial estruturado sobre os domínios do COPSOQ " +
+      "(Copenhagen Psychosocial Questionnaire), adotado como referência conceitual para a " +
+      "organização dos fatores avaliados. As respostas são anônimas e recebem tratamento " +
+      "coletivo. A finalidade é ocupacional e preventiva — o relatório não possui finalidade " +
+      "diagnóstica clínica individual."
     );
 
     subTitle("4.2 Tratamento dos resultados psicossociais");
     paragraph(
-      "As respostas são consolidadas por domínio do COPSOQBR e convertidas em percentual de " +
+      "As respostas são consolidadas por domínio avaliado e convertidas em percentual de " +
       "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
       "Psicossocial segue as faixas: 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
     );
 
     subTitle("4.3 Mapeamento técnico ocupacional");
     paragraph(
-      "Cada domínio do COPSOQBR é relacionado a um agente / situação, a um perigo (fator de " +
+      "Cada domínio avaliado é relacionado a um agente / situação, a um perigo (fator de " +
       "risco) e a uma possível consequência, utilizando nomenclatura alinhada ao Guia de " +
       "Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
     );
@@ -452,7 +454,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "PGR por meio da matriz Probabilidade × Severidade (5×5), gerando o Nível de Risco PGR. " +
       "A matriz 5×5 foi adotada como critério técnico interno para integração dos achados " +
       "psicossociais ao Inventário de Riscos do PGR — ela não representa o resultado direto do " +
-      "COPSOQBR, mas sim a etapa de integração ocupacional."
+      "questionário psicossocial, mas sim a etapa de integração ocupacional."
     );
 
     subTitle("4.5 Inventário de Riscos e Plano de Ação");
@@ -463,7 +465,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     );
 
     callout(
-      "COPSOQBR = percentual e Classificação Psicossocial. " +
+      "Questionário psicossocial = percentual e Classificação Psicossocial. " +
       "PGR = matriz P × S, Nível de Risco, Inventário e Plano de Ação. " +
       "Os dois conceitos são complementares e não devem ser confundidos.",
       ACCENT,
@@ -574,11 +576,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     }
 
 
-    // ============== 06. RESULTADO DA AVALIAÇÃO COPSOQBR ==============
-    sectionTitle("Resultado da Avaliação do Questionário COPSOQBR");
+    // ============== 06. RESULTADO DA AVALIAÇÃO PSICOSSOCIAL ==============
+    sectionTitle("Resultado da Avaliação do Questionário Psicossocial");
     paragraph(
       "Os resultados abaixo representam exclusivamente a consolidação dos domínios avaliados pelo " +
-      "COPSOQBR, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
+      "questionário psicossocial, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
       "perigo, possível consequência, controles e nível de risco PGR é apresentada posteriormente no " +
       "Inventário de Riscos Ocupacionais (seções 09 e 10). Faixas: 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
     );
@@ -613,7 +615,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     autoTable(doc, {
       startY: y,
-      head: [["Domínio COPSOQBR", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
+      head: [["Domínio avaliado", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
       body: resultadoBody,
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle" },
       styles: { fontSize: 8, cellPadding: 3.5, valign: "top" },
@@ -645,7 +647,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "(Probabilidade × Severidade) são apresentados nas seções 09 e 10."
     );
     paragraph(
-      "Observação técnica: o resultado geral do COPSOQBR representa a consolidação das respostas de " +
+      "Observação técnica: o resultado geral do questionário psicossocial representa a consolidação das respostas de " +
       "todos os GES avaliados. Já a distribuição por GES apresenta a criticidade específica de cada " +
       "grupo. Por isso, um GES pode apresentar classificação psicossocial superior ao resultado geral " +
       "da empresa para determinado domínio."
@@ -722,7 +724,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     subTitle("Priorização dos domínios com maior risco");
     autoTable(doc, {
       startY: y,
-      head: [["#", "Domínio COPSOQBR", "%", "Classif.\nPsicoss."]],
+      head: [["#", "Domínio avaliado", "%", "Classif.\nPsicoss."]],
       body: topDominios.length
         ? topDominios.map((f, i) => [String(i + 1), f.dim.title, `${f.scorePct}%`, f.classifPsico.toUpperCase()])
         : [["—", "Sem dados no recorte", "—", "—"]],
@@ -1247,7 +1249,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       paragraph(
         "Plano consolidado a partir do Inventário de Riscos Ocupacionais para o PGR. A prioridade " +
         "e o prazo seguem o Nível de Risco PGR (Probabilidade × Severidade), e não a classificação " +
-        "psicossocial do COPSOQBR — esta última serve apenas como apoio interpretativo (observação). " +
+        "psicossocial do questionário psicossocial — esta última serve apenas como apoio interpretativo (observação). " +
         "Para atender à NR-01 (item 1.5.5), cada ação deve ter, na devolutiva técnica da empresa: " +
         "responsável formal, forma de acompanhamento, evidência esperada, data prevista e status atualizado. " +
         "Enquanto esses campos não estiverem pactuados, o Plano possui caráter técnico-preliminar."
@@ -1329,7 +1331,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
       y = (doc as any).lastAutoTable.finalY + 10;
       paragraph(
-        "Observação: a classificação psicossocial do COPSOQBR foi utilizada apenas como apoio " +
+        "Observação: a classificação psicossocial do questionário psicossocial foi utilizada apenas como apoio " +
         "interpretativo, sem alterar a prioridade formal do Plano de Ação, que segue o Nível de " +
         "Risco PGR do Inventário."
       );
@@ -1440,7 +1442,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirAnexos) {
       sectionTitle("Anexos");
 
-      subTitle("Anexo I — Mapeamento técnico COPSOQBR - Guia MTE");
+      subTitle("Anexo I — Mapeamento técnico Domínios avaliados - Guia MTE");
       paragraph(
         "Tabela de conversão obrigatória utilizada pelo sistema. O sistema NÃO inventa perigos nem " +
         "agravos: o campo 'Possível consequência' segue exclusivamente o Guia de Fatores de Riscos " +
@@ -1448,7 +1450,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       );
       autoTable(doc, {
         startY: y,
-        head: [["Domínio COPSOQBR", "Agente / Situação", "Perigo (fator de risco)", "Possível consequência (Guia MTE)"]],
+        head: [["Domínio avaliado", "Agente / Situação", "Perigo (fator de risco)", "Possível consequência (Guia MTE)"]],
         body: MTE_MAPA.map((m) => [m.dominio, m.agente, m.perigo, m.consequencia]),
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center" },
         styles: { fontSize: 8, cellPadding: 4, valign: "top" },
@@ -1469,7 +1471,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         "NR-17 — Ergonomia.",
         "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho — MTE.",
         "Lei nº 14.457/2022 — CIPA e prevenção do assédio.",
-        "COPSOQ III — Copenhagen Psychosocial Questionnaire (versão brasileira).",
+        "COPSOQ — Copenhagen Psychosocial Questionnaire: referência conceitual adotada para " +
+          "organizar os domínios psicossociais avaliados. O questionário aplicado é instrumento " +
+          "próprio, estruturado sobre esses domínios, e não reproduz a versão validada do COPSOQ.",
       ]);
     }
 

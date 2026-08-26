@@ -1,5 +1,5 @@
 // Glossário de microtextos do PSICOSAFETY.
-// Centraliza mensagens para garantir consistência e nomenclatura (GES, AEP, COPSOQBR).
+// Centraliza mensagens para garantir consistência e nomenclatura (GES, AEP, questionário psicossocial).
 
 export const COPY = {
   // Termos oficiais — usar sempre estes nomes na UI.
@@ -8,7 +8,7 @@ export const COPY = {
     gesShort: "GES",
     aep: "AEP Premium (Avaliação Ergonômica Preliminar)",
     aepShort: "AEP Premium",
-    copsoq: "COPSOQBR",
+    copsoq: "Questionário psicossocial",
     inventario: "Inventário de Riscos",
     plano: "Plano de Ação",
     nivelRisco: "Nível de Risco PGR",
