@@ -334,27 +334,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     });
     y = (doc as any).lastAutoTable.finalY + 20;
 
-    // ============== 02. SUMÁRIO ==============
     /*
-     * O sumário é montado a partir das seções que serão REALMENTE emitidas.
-     *
-     * Antes era uma lista fixa, enquanto três seções são condicionais
-     * (Caracterização da Exposição, Plano de Ação e Anexos). Gerando o
-     * relatório sem o Plano de Ação, o sumário continuava anunciando uma seção
-     * inexistente e — pior — a numeração impressa no corpo, que vem de
-     * `secCount`, passava a divergir da numeração listada aqui.
-     *
-     * Derivar a lista e os números da mesma condição que decide a emissão
-     * elimina as duas divergências de uma vez.
+     * `secoesEmitidas` não é mais impresso como sumário — num relatório com as
+     * seções numeradas e tituladas no corpo, a página de sumário só gastava
+     * espaço. A lista continua existindo porque é dela que sai a referência
+     * cruzada à seção do Plano de Ação, que precisa acompanhar as três seções
+     * condicionais (Caracterização da Exposição, Plano de Ação e Anexos).
      */
-    sectionTitle("Sumário");
     const temCaracterizacaoExposicao =
       data.setores.length > 0
         ? data.setores.some((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0)
         : data.fatoresGerais.some((f) => f.n > 0);
     const secoesEmitidas: string[] = [
       "Dados da Empresa",
-      "Sumário",
       "Introdução",
       "Metodologia Aplicada",
       "Caracterização dos GES / Setores / Funções Avaliadas",
@@ -368,24 +360,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Conclusão Técnica",
       ...(incluirAnexos ? ["Anexos"] : []),
     ];
-    const sumario = secoesEmitidas.map((titulo, i) => [
-      String(i + 1).padStart(2, "0"),
-      titulo,
-    ]);
-    autoTable(doc, {
-      startY: y,
-      body: sumario,
-      theme: "plain",
-      styles: { fontSize: 10, cellPadding: 4 },
-      columnStyles: {
-        0: { cellWidth: 40, halign: "center", fontStyle: "bold", textColor: ACCENT },
-        1: { textColor: PRIMARY },
-      },
-      margin: { left: margin, right: margin },
-    });
-    y = (doc as any).lastAutoTable.finalY + 18;
-
-    // ============== 03. INTRODUÇÃO ==============
+    // ============== 02. INTRODUÇÃO ==============
     sectionTitle("Introdução");
     paragraph(
       "A Avaliação Ergonômica Preliminar (AEP) integra as ações de identificação, reconhecimento e " +
@@ -484,27 +459,14 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
     );
 
+    // 4.4 e 4.5 eram dois blocos dizendo a mesma sequência, e o destaque que
+    // vinha depois repetia os dois de novo em outras palavras. Um bloco basta.
     subTitle("4.4 Integração ao GRO/PGR");
     paragraph(
-      "Após a Classificação Psicossocial, os achados são integrados ao Inventário de Riscos do " +
-      "PGR por meio da matriz Probabilidade × Severidade (5×5), gerando o Nível de Risco PGR. " +
-      "A matriz 5×5 foi adotada como critério técnico interno para integração dos achados " +
-      "psicossociais ao Inventário de Riscos do PGR — ela não representa o resultado direto do " +
-      "questionário psicossocial, mas sim a etapa de integração ocupacional."
-    );
-
-    subTitle("4.5 Inventário de Riscos e Plano de Ação");
-    paragraph(
-      "O Inventário de Riscos apresenta os perigos psicossociais reconhecidos, controles " +
-      "existentes, probabilidade, severidade e Nível de Risco PGR. O Plano de Ação é derivado " +
-      "do Inventário, com prazos e prioridades definidos a partir do Nível de Risco PGR."
-    );
-
-    callout(
-      "Questionário psicossocial = percentual e Classificação Psicossocial. " +
-      "PGR = matriz P × S, Nível de Risco, Inventário e Plano de Ação. " +
-      "Os dois conceitos são complementares e não devem ser confundidos.",
-      ACCENT,
+      "Os achados são integrados ao Inventário de Riscos do PGR pela matriz Probabilidade × " +
+      "Severidade (5×5), gerando o Nível de Risco PGR — critério técnico interno para a etapa " +
+      "de integração ocupacional, que não é o resultado direto do questionário. O Plano de Ação " +
+      "deriva do Inventário, com prazos e prioridades definidos pelo Nível de Risco PGR."
     );
 
 
@@ -512,8 +474,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     sectionTitle("Caracterização dos GES / Setores / Funções Avaliadas");
     paragraph(
       "Identificação dos Grupos de Exposição Similar (GES) avaliados, suas funções, número de " +
-      "trabalhadores e a representatividade na amostra. Esta seção é apenas de caracterização — " +
-      "a análise de risco psicossocial é apresentada nas seções 06 a 10."
+      "trabalhadores e a representatividade na amostra."
     );
 
     if (data.setores.length === 0) {
@@ -615,11 +576,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // ============== 06. RESULTADO DA AVALIAÇÃO PSICOSSOCIAL ==============
     sectionTitle("Resultado da Avaliação do Questionário Psicossocial");
     paragraph(
-      "Os resultados abaixo representam exclusivamente a consolidação dos domínios avaliados pelo " +
-      "questionário psicossocial, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
-      "perigo, possível consequência, controles e nível de risco PGR é apresentada posteriormente no " +
-      "Inventário de Riscos Ocupacionais (seções 09 e 10). Faixas do critério metodológico interno " +
-      "(item 4.2): 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
+      "Consolidação dos domínios avaliados, com percentual de criticidade e Classificação " +
+      "Psicossocial. Faixas do critério metodológico interno (item 4.2): 0–33% = BAIXO · " +
+      "34–66% = MÉDIO · 67–100% = ALTO."
     );
 
     const fatoresValidos = data.fatoresGerais.filter((f) => f.n > 0);
@@ -709,9 +668,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // GES pode superar a média da empresa — o que a própria tabela mostra.
     paragraph(
       "Domínio crítico de cada GES, com percentual de criticidade e classificação psicossocial. " +
-      "Perigos, possíveis consequências e matriz PGR (Probabilidade × Severidade) estão nas seções " +
-      "09 e 10. Um GES pode superar o resultado geral da empresa em determinado domínio: o resultado " +
-      "geral consolida todos os GES, a distribuição mostra cada um."
+      "Um GES pode superar o resultado geral da empresa: o geral consolida todos, a distribuição " +
+      "mostra cada um."
     );
 
     if (data.setores.length === 0) {
@@ -1129,6 +1087,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // anterior para evitar página quase-vazia (apenas título).
 
     const invBody: any[] = [];
+    // Quantas linhas cairiam no texto padrão de "controle não evidenciado".
+    // A frase é a mesma para todas: repeti-la linha a linha inchava a coluna
+    // sem acrescentar informação. Vira "—" na célula e uma nota única sob a
+    // tabela. Linhas que TÊM controle registrado seguem mostrando o texto real.
+    let linhasSemControle = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
     const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
@@ -1212,6 +1175,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // Uma função por linha → autoTable nunca precisa quebrar dentro da palavra.
         const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "—";
         const controleTxt = textoControleParaLinha(s.setor, fp.dim.id);
+        const semControle = controleTxt === CONTROLE_PADRAO;
+        if (semControle) linhasSemControle += 1;
         invBody.push([
           formatLabelGes(s.label),
           funcoesTxt,
@@ -1219,7 +1184,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
-          protectWords(controleTxt),
+          semControle ? "—" : protectWords(controleTxt),
           String(fp.prob),
           String(fp.sev),
           fp.risco.nivel5,
@@ -1231,6 +1196,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (data.setores.length === 0) {
       fatoresValidos.forEach((f) => {
         const mte = mteParaDim(f.dim.id, f.risco.nivel);
+        linhasSemControle += 1;
         invBody.push([
           protectWords(data.empresaNome),
           "—",
@@ -1238,7 +1204,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
-          protectWords(CONTROLE_PADRAO),
+          "—",
           String(f.prob),
           String(f.sev),
           f.risco.nivel5,
@@ -1294,6 +1260,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       didParseCell: (h: any) => { colorirNivel(9)(h); },
       margin: { left: margin, right: margin },
     });
+
+    // A nota substitui a frase que antes se repetia em cada linha da coluna
+    // "Controles". Só aparece se alguma linha de fato caiu no padrão.
+    if (linhasSemControle > 0) {
+      const yNota = (doc as any).lastAutoTable.finalY + 10;
+      rgb([90, 90, 90]); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
+      doc.text(
+        'Nota: nas linhas marcadas com "—" na coluna Controles, os controles existentes não foram ' +
+        "evidenciados no momento da avaliação e deverão ser validados em campo pela empresa.",
+        margin, yNota, { maxWidth: doc.internal.pageSize.getWidth() - margin * 2 } as any,
+      );
+      doc.setFont("helvetica", "normal"); rgb([30, 30, 30]);
+    }
 
     // ---- GES cadastrados pendentes de avaliação (sem P/S, sem nível) ----
     if (!somenteAvaliados && data.gesSemAvaliacao.length > 0) {
@@ -1371,13 +1350,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y = 60;
       sectionTitle("Caracterização da Exposição");
       paragraph(
-        "Descrição da exposição aos fatores de risco psicossociais identificados, considerando duração, " +
-          "frequência e intensidade, conforme orienta o Guia de Fatores de Riscos Psicossociais do MTE. " +
-          "Os valores de probabilidade e severidade constituem avaliação técnica PRELIMINAR, considerando " +
-          "as condições de trabalho observadas, as informações coletadas e os critérios de avaliação de " +
-          "riscos estabelecidos pela organização. Nos termos da NR-17 (subitem 17.3.1.1), a avaliação pode " +
-          "ser qualitativa e cabe ao responsável técnico confirmá-la a partir das condições encontradas na " +
-          "atividade real de trabalho.",
+        "Caracterização PRELIMINAR da duração, frequência e intensidade da exposição aos fatores " +
+          "identificados, considerando as condições observadas, as informações coletadas e os " +
+          "critérios da organização. Cabe ao responsável técnico confirmá-la em campo (NR-17, " +
+          "subitem 17.3.1.1).",
       );
       autoTable(doc, {
         startY: y,
@@ -1412,12 +1388,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano consolidado a partir do Inventário de Riscos Ocupacionais para o PGR. A prioridade " +
-        "e o prazo seguem o Nível de Risco PGR (Probabilidade × Severidade), e não a classificação " +
-        "psicossocial do questionário psicossocial — esta última serve apenas como apoio interpretativo (observação). " +
-        "Para atender à NR-01 (item 1.5.5), cada ação deve ter, na devolutiva técnica da empresa: " +
-        "responsável formal, forma de acompanhamento, evidência esperada, data prevista e status atualizado. " +
-        "Enquanto esses campos não estiverem pactuados, o Plano possui caráter técnico-preliminar."
+        "Plano PRELIMINAR derivado do Inventário; prioridade e prazo seguem o Nível de Risco PGR. " +
+        "Responsáveis, forma de acompanhamento, evidências, datas e status deverão ser definidos na " +
+        "devolutiva técnica da empresa, conforme a NR-01 (item 1.5.5)."
       );
 
 
@@ -1508,9 +1481,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       data.contagemNiveis.Médio > 0 ? "Médio" : "Baixo";
 
     paragraph(
-      "A AEP identificou e classificou os perigos psicossociais relacionados ao trabalho conforme " +
-      "metodologia técnica integrada à NR-01 (GRO/PGR) e NR-17 (Ergonomia), com nomenclatura " +
-      "alinhada ao Guia de Fatores de Riscos Psicossociais do MTE."
+      "A AEP identificou e classificou os perigos psicossociais relacionados ao trabalho, " +
+      "integrando os resultados ao GRO/PGR (NR-01) e à NR-17 conforme os critérios adotados " +
+      "neste relatório."
     );
 
     // Ressalva de amostra no nível do documento inteiro. Sem ela, uma AEP de
@@ -1574,17 +1547,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       );
     }
 
-    // Notas de conformidade adicionais (participação e caráter preliminar)
+    // Duas notas viraram uma: participação da CIPA e caráter preliminar são a
+    // mesma pendência — o que falta acontecer na devolutiva técnica.
     paragraph(
-      "Participação dos trabalhadores / CIPA na análise: a lógica participativa do GRO/PGR pressupõe " +
-      "envolvimento da CIPA (ou representantes dos trabalhadores) na análise dos resultados, na " +
-      "priorização das ações e no acompanhamento das medidas de controle. A empresa deve registrar " +
-      "formalmente essa participação na devolutiva técnica."
-    );
-    paragraph(
-      "O presente relatório possui caráter técnico-preliminar quando houver controles, responsáveis " +
-      "ou evidências pendentes de validação pela empresa em campo. A consolidação final integra-se ao " +
-      "Inventário de Riscos e ao Plano de Ação do PGR após a devolutiva técnica."
+      "A participação da CIPA ou dos representantes dos trabalhadores na análise dos resultados, " +
+      "na priorização e no acompanhamento das medidas deve ser registrada formalmente na " +
+      "devolutiva técnica, junto com os controles, responsáveis e evidências pendentes de " +
+      "validação em campo. Até lá o relatório tem caráter técnico-preliminar."
     );
 
 
@@ -1620,16 +1589,29 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirAnexos) {
       sectionTitle("Anexos");
 
-      subTitle("Anexo I — Mapeamento técnico Domínios avaliados - Guia MTE");
+      // Só os domínios que este relatório efetivamente usou. Antes saía o
+      // MTE_MAPA inteiro — um dicionário de todos os fatores possíveis, quase
+      // duas páginas, a maior parte sobre domínios que não aparecem em lugar
+      // nenhum do documento. O anexo existe para dar rastreabilidade ao que
+      // foi afirmado, não para catalogar o que não foi.
+      const dominiosUsados = new Set<string>();
+      (data.setores.length > 0
+        ? data.setores.map((s) => s.fatorPrincipal).filter((f) => f && f.n > 0)
+        : fatoresValidos
+      ).forEach((f) => { if (f) dominiosUsados.add(mteParaDim(f.dim.id, f.risco.nivel).dominio); });
+      const mapaAplicado = MTE_MAPA.filter((m) => dominiosUsados.has(m.dominio));
+      const linhasAnexo = mapaAplicado.length > 0 ? mapaAplicado : MTE_MAPA;
+
+      subTitle("Anexo I — Mapeamento técnico aplicado (Guia MTE)");
       paragraph(
-        "Tabela de conversão obrigatória utilizada pelo sistema. O sistema NÃO inventa perigos nem " +
-        "agravos: o campo 'Possível consequência' segue exclusivamente o Guia de Fatores de Riscos " +
-        "Psicossociais do MTE."
+        "Domínios efetivamente utilizados neste relatório e sua conversão em agente, perigo e " +
+        "possível consequência. O campo 'Possível consequência' segue exclusivamente o Guia de " +
+        "Fatores de Riscos Psicossociais do MTE."
       );
       autoTable(doc, {
         startY: y,
         head: [["Domínio avaliado", "Agente / Situação", "Perigo (fator de risco)", "Possível consequência (Guia MTE)"]],
-        body: MTE_MAPA.map((m) => [m.dominio, m.agente, m.perigo, m.consequencia]),
+        body: linhasAnexo.map((m) => [m.dominio, m.agente, m.perigo, m.consequencia]),
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center" },
         styles: { fontSize: 8, cellPadding: 4, valign: "top" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -1643,15 +1625,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
       y = (doc as any).lastAutoTable.finalY + 18;
 
+      // Lista de referências, não repetição da metodologia: o que cada norma
+      // é já foi dito na seção 03. A ressalva do COPSOQ fica porque afirma o
+      // que o instrumento NÃO é — isso não é explicação, é delimitação.
       subTitle("Anexo II — Base normativa");
       bullets([
-        "NR-01 — Disposições Gerais e Gerenciamento de Riscos Ocupacionais (GRO/PGR).",
+        "NR-01 — Gerenciamento de Riscos Ocupacionais (GRO/PGR).",
         "NR-17 — Ergonomia.",
         "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho — MTE.",
         "Lei nº 14.457/2022 — CIPA e prevenção do assédio.",
-        "COPSOQ — Copenhagen Psychosocial Questionnaire: referência conceitual adotada para " +
-          "organizar os domínios psicossociais avaliados. O questionário aplicado é instrumento " +
-          "próprio, estruturado sobre esses domínios, e não reproduz a versão validada do COPSOQ.",
+        "COPSOQ — referência conceitual para organizar os domínios. O questionário aplicado é " +
+          "instrumento próprio e não reproduz a versão validada.",
       ]);
     }
 
