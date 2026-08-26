@@ -440,7 +440,23 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     paragraph(
       "As respostas são consolidadas por domínio avaliado e convertidas em percentual de " +
       "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
-      "Psicossocial segue as faixas: 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
+      "Psicossocial é critério metodológico interno adotado para interpretação dos resultados " +
+      "do instrumento aplicado, e segue as faixas: 0–33% = BAIXO · 34–66% = MÉDIO · " +
+      "67–100% = ALTO. O MTE não define nem sugere metodologia específica para ferramentas de " +
+      "avaliação, questionários ou pesquisas — cabe à organização, com seus profissionais de " +
+      "SST, selecionar e declarar os critérios que utiliza, conforme o capítulo 1.5 da NR-1."
+    );
+
+    subTitle("4.2.1 Amostra mínima para conclusão por recorte");
+    paragraph(
+      `Para fins deste relatório adotou-se, como critério metodológico interno, o mínimo de ` +
+      `${MIN_RESPONDENTES_CONCLUSAO} respondentes para interpretação específica por domínio ou ` +
+      `por GES. Abaixo desse número o relatório informa o "n" e registra AMOSTRA INSUFICIENTE, ` +
+      "sem imprimir percentual ou classificação: um resultado baixo obtido de poucas respostas " +
+      "indica ausência de dado, não ausência de risco, e a distinção é decisiva em domínios como " +
+      "assédio. O número também preserva o anonimato de quem respondeu, condição da própria " +
+      "coleta. Não se trata de exigência normativa: o MTE não estabelece número mínimo de " +
+      "respondentes para validação de GES."
     );
 
     subTitle("4.3 Mapeamento técnico ocupacional");
@@ -584,7 +600,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Os resultados abaixo representam exclusivamente a consolidação dos domínios avaliados pelo " +
       "questionário psicossocial, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
       "perigo, possível consequência, controles e nível de risco PGR é apresentada posteriormente no " +
-      "Inventário de Riscos Ocupacionais (seções 09 e 10). Faixas: 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
+      "Inventário de Riscos Ocupacionais (seções 09 e 10). Faixas do critério metodológico interno " +
+      "(item 4.2): 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO."
     );
 
     const fatoresValidos = data.fatoresGerais.filter((f) => f.n > 0);
@@ -622,8 +639,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
               "—",
               "AMOSTRA INSUFICIENTE",
               `Apenas ${f.n} respondente(s) neste domínio — abaixo do mínimo de ` +
-                `${MIN_RESPONDENTES_CONCLUSAO} adotado para conclusão. O resultado não permite ` +
-                "afirmar presença nem ausência do fator. Ampliar a coleta antes de concluir.",
+                `${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno (item 4.2.1). O ` +
+                "resultado não permite afirmar presença nem ausência do fator. Ampliar a coleta " +
+                "antes de concluir.",
             ];
           }
           return [f.dim.title, String(f.n), `${f.scorePct}%`, classif, leitura];
@@ -740,9 +758,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         paragraph(
           `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
           `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
-          `${MIN_RESPONDENTES_CONCLUSAO} respondentes adotado para conclusão e ${um ? "aparece" : "aparecem"} ` +
-          `como AMOSTRA INSUFICIENTE: o resultado não permite afirmar presença nem ausência do fator ` +
-          `naquele grupo, e a leitura correta é ampliar a coleta, não concluir por risco baixo.`
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item 4.2.1) ` +
+          `e ${um ? "aparece" : "aparecem"} como AMOSTRA INSUFICIENTE: o resultado não permite ` +
+          `afirmar presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a ` +
+          `coleta, não concluir por risco baixo.`
         );
       }
     }
@@ -874,9 +893,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     }
 
 
-    paragraph(
-      "As recomendações preventivas detalhadas e o plano de ação estão apresentados na seção 11 — Plano de Ação Recomendado, elaborado a partir do Inventário de Riscos Ocupacionais para o PGR."
-    );
+    // Número derivado de `secoesEmitidas`, não fixo: com a Caracterização da
+    // Exposição emitida o Plano de Ação é a seção 12, sem ela é a 11. Estava
+    // escrito "seção 11" à mão e apontava para a seção errada no caso comum —
+    // mesma armadilha que o sumário numerado à mão tinha.
+    if (incluirPlanoAcao) {
+      const numPlano = String(
+        secoesEmitidas.indexOf("Plano de Ação Recomendado") + 1,
+      ).padStart(2, "0");
+      paragraph(
+        `As recomendações preventivas detalhadas e o plano de ação estão apresentados na seção ${numPlano} — ` +
+        "Plano de Ação Recomendado, elaborado a partir do Inventário de Riscos Ocupacionais para o PGR."
+      );
+    }
 
 
 
@@ -987,16 +1016,23 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     y = matY + matCellH * 6 + 24;
 
     // ---- Tabelas Probabilidade / Severidade / Controle ----
+    // Os rótulos são os mesmos do eixo da matriz acima (probLabels). Antes esta
+    // tabela descrevia CONDIÇÃO ("Ambiente saudável", "Problema frequente")
+    // enquanto o eixo da matriz descrevia CHANCE ("Rara", "Muito provável") —
+    // duas escalas diferentes para o mesmo número, na mesma página. A NR-1
+    // (subitem 1.5.4.4.2) define o nível de risco como combinação de severidade
+    // com a PROBABILIDADE de ocorrência, então é a chance que precisa ser
+    // nomeada aqui.
     subTitle("Escala de Probabilidade");
     autoTable(doc, {
       startY: y,
-      head: [["Probabilidade", "Interpretação"]],
+      head: [["Probabilidade", "Chance de ocorrência"]],
       body: [
-        ["1", "Ambiente saudável"],
-        ["2", "Boa condição"],
-        ["3", "Atenção"],
-        ["4", "Problema frequente"],
-        ["5", "Problema crítico"],
+        ["1", "Rara"],
+        ["2", "Pouco provável"],
+        ["3", "Possível"],
+        ["4", "Provável"],
+        ["5", "Muito provável"],
       ],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4 },
@@ -1305,8 +1341,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       paragraph(
         "Descrição da exposição aos fatores de risco psicossociais identificados, considerando duração, " +
           "frequência e intensidade, conforme orienta o Guia de Fatores de Riscos Psicossociais do MTE. " +
-          "Os valores abaixo derivam da probabilidade e da severidade apuradas no instrumento aplicado e " +
-          "constituem caracterização PRELIMINAR: nos termos da NR-17 (subitem 17.3.1.1), a avaliação pode " +
+          "Os valores de probabilidade e severidade constituem avaliação técnica PRELIMINAR, considerando " +
+          "as condições de trabalho observadas, as informações coletadas e os critérios de avaliação de " +
+          "riscos estabelecidos pela organização. Nos termos da NR-17 (subitem 17.3.1.1), a avaliação pode " +
           "ser qualitativa e cabe ao responsável técnico confirmá-la a partir das condições encontradas na " +
           "atividade real de trabalho.",
       );
@@ -1454,7 +1491,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (!amostraSuficiente(data.totalRespostas)) {
       callout(
         `RESSALVA DE AMOSTRA: esta avaliação reuniu ${data.totalRespostas} resposta(s) válida(s), abaixo do ` +
-        `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} adotado neste relatório para conclusão por domínio. ` +
+        `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno adotado neste relatório ` +
+        `para conclusão por domínio (item 4.2.1). ` +
         `Os resultados apresentados têm caráter exploratório e não sustentam afirmação de presença nem de ` +
         `ausência de risco psicossocial na organização. Este documento não deve ser utilizado como ` +
         `demonstração de conformidade sem nova coleta com participação ampliada.`,
