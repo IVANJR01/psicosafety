@@ -155,14 +155,29 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const ensure = (h: number) => { if (y + h > pageH - 60) { doc.addPage(); y = margin + 30; } };
 
     let secCount = 0;
+
+    // Espaço útil mínimo para uma seção continuar na página corrente: o título
+    // ocupa 46pt, então isto garante o título mais um primeiro bloco de
+    // conteúdo e evita título órfão no pé da folha.
+    const ESPACO_MINIMO_SECAO = 200;
+
     const sectionTitle = (titulo: string, opts?: { samePageIfFits?: number }) => {
       step(`seção: ${titulo}`);
 
-      // Por padrão cada capítulo principal inicia em nova página.
-      // Se samePageIfFits for informado e couber na página atual, mantém na mesma página.
+      // Uma seção só abre página nova quando não cabe mais nada de útil na
+      // atual. Antes toda seção forçava quebra, e o relatório saía com seis
+      // das dezesseis páginas carregando menos de 25 linhas — meia folha em
+      // branco entre um capítulo e o seguinte. O parâmetro samePageIfFits
+      // continua aceito para quem quiser exigir mais espaço que o padrão.
       if (secCount > 0) {
-        const fits = opts?.samePageIfFits && (y + opts.samePageIfFits <= pageH - 60);
-        if (!fits) { doc.addPage(); y = margin + 30; }
+        const minimo = opts?.samePageIfFits ?? ESPACO_MINIMO_SECAO;
+        if (y + minimo > pageH - 60) {
+          doc.addPage();
+          y = margin + 30;
+        } else {
+          // Respiro entre o fim da seção anterior e o próximo título.
+          y += 14;
+        }
       }
       secCount += 1;
       const num = String(secCount).padStart(2, "0");
@@ -911,7 +926,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
 
     // ============== 09. CLASSIFICAÇÃO E AVALIAÇÃO DOS RISCOS PSICOSSOCIAIS ==============
-    sectionTitle("Classificação e Avaliação dos Riscos Psicossociais");
+    // Exige mais que o padrão: título (46) + parágrafo de abertura (~50) + a
+    // matriz 5x5, que pede 260 e tem ensure() próprio. Com o mínimo padrão o
+    // título ficava no pé de uma página e a matriz caía na seguinte.
+    sectionTitle("Classificação e Avaliação dos Riscos Psicossociais", { samePageIfFits: 360 });
     paragraph(
       "A classificação utiliza a matriz 5×5 (Probabilidade × Severidade), adotada como critério " +
       "técnico interno para integração dos achados psicossociais ao Inventário de Riscos do PGR " +
