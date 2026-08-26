@@ -1041,9 +1041,23 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // (subitem 1.5.4.4.2) define o nível de risco como combinação de severidade
     // com a PROBABILIDADE de ocorrência, então é a chance que precisa ser
     // nomeada aqui.
-    subTitle("Escala de Probabilidade");
+    // Probabilidade e Severidade lado a lado, em meia largura cada. Empilhadas
+    // custavam ~150pt a mais e empurravam o fim da seção para uma segunda
+    // página que ficava com um único bloco. São duas tabelas de 2 colunas e 5
+    // linhas: cabem folgadas em 250pt. Conteúdo e valores idênticos.
+    // +28 e não +14: o título da direita ocupa duas linhas em meia largura,
+    // e a segunda linha colidiria com o topo da tabela.
+    const escY = y;
+    const escLargura = (pageW - margin * 2 - 20) / 2;
+    const escDireitaX = margin + escLargura + 20;
+
+    rgb(PRIMARY); doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
+    doc.text("Escala de Probabilidade", margin, escY);
+    doc.text("Escala de Severidade (impacto à saúde ocupacional)", escDireitaX, escY, { maxWidth: escLargura } as any);
+    rgb([40, 40, 40]); doc.setFont("helvetica", "normal");
+
     autoTable(doc, {
-      startY: y,
+      startY: escY + 28,
       head: [["Probabilidade", "Chance de ocorrência"]],
       body: [
         ["1", "Rara"],
@@ -1054,16 +1068,14 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       ],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: {
-        0: { halign: "center", fontStyle: "bold", cellWidth: 90 },
-      },
+      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 76 } },
+      tableWidth: escLargura,
       margin: { left: margin, right: margin },
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    const fimEsq = (doc as any).lastAutoTable.finalY;
 
-    subTitle("Escala de Severidade (impacto à saúde ocupacional)");
     autoTable(doc, {
-      startY: y,
+      startY: escY + 28,
       head: [["Severidade", "Impacto"]],
       body: [
         ["1", "desconforto leve"],
@@ -1074,13 +1086,15 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       ],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 90 } },
-      margin: { left: margin, right: margin },
+      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 66 } },
+      tableWidth: escLargura,
+      margin: { left: escDireitaX, right: margin },
     });
-    y = (doc as any).lastAutoTable.finalY + 14;
+    y = Math.max(fimEsq, (doc as any).lastAutoTable.finalY) + 14;
 
-    // Manter o bloco "Métodos de Controle e Ação" sempre na mesma página
-    if (y + 200 > pageH - 60) { doc.addPage(); y = margin + 30; }
+    // 160pt é o que o bloco realmente ocupa (subtítulo + 6 linhas de tabela).
+    // Reservava 200 e quebrava antes do necessário.
+    if (y + 160 > pageH - 60) { doc.addPage(); y = margin + 30; }
     subTitle("Métodos de Controle e Ação");
     autoTable(doc, {
       startY: y,
