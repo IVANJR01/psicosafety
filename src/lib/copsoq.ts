@@ -1,4 +1,9 @@
-// Questionário baseado no COPSOQ III (versão curta) — adaptado para PT-BR.
+// Questionário psicossocial próprio, estruturado sobre os domínios do COPSOQ.
+// NÃO é o COPSOQ III nem o COPSOQBR — os itens são próprios e não reproduzem a
+// versão validada. Afirmar o contrário em relatório ou material público derruba
+// a fundamentação exigida pelo Guia do MTE; ver o commit "Relatório deixa de
+// afirmar que aplica o COPSOQBR".
+//
 // As perguntas vivem no banco (tabelas `questionario_dimensoes`, `questionario_perguntas`,
 // `questionario_opcoes`) e podem ser editadas no admin. Este módulo mantém uma
 // cópia em memória sincronizada via `loadDimensions()` para que telas existentes

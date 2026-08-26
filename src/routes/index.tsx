@@ -429,7 +429,7 @@ function Home() {
           <div className="container mx-auto px-5 sm:px-6 py-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-[11px] uppercase tracking-[0.18em] text-slate-400 font-semibold">
             <span className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-cyan-300" /> NR-01 · Portaria 1.419/2024</span>
             <span className="hidden md:inline h-3 w-px bg-white/10" />
-            <span className="flex items-center gap-2"><Brain className="h-3.5 w-3.5 text-cyan-300" /> COPSOQ III</span>
+            <span className="flex items-center gap-2"><Brain className="h-3.5 w-3.5 text-cyan-300" /> Domínios COPSOQ</span>
             <span className="hidden md:inline h-3 w-px bg-white/10" />
             <span className="flex items-center gap-2"><FileBarChart2 className="h-3.5 w-3.5 text-cyan-300" /> GRO / PGR</span>
             <span className="hidden md:inline h-3 w-px bg-white/10" />
