@@ -510,6 +510,20 @@ export const MTE_MAPA: MteFator[] = [
   { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
   { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
   { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento profissional, percepção de injustiça organizacional, tratamento desigual, baixa valorização, ausência de feedback e recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
+  /*
+   * Os dois itens abaixo existem para que "Interface Trabalho-Indivíduo" e
+   * "Saúde e Bem-estar" parem de reaproveitar o perigo de sobrecarga
+   * (MTE_MAPA[0]).
+   *
+   * O reaproveitamento produzia linha incoerente no Inventário: o Domínio dizia
+   * uma coisa e o Agente/Perigo descreviam outra. Quem lê o PGR vê "Saúde e
+   * bem-estar" inteiramente descrito como sobrecarga, sem explicação.
+   *
+   * Acrescentados no FIM do array de propósito: MTE_POR_DIM referencia por
+   * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
+   */
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental; fadiga; sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Saúde e Bem-estar", agente: "Indicadores de desgaste referidos pelos trabalhadores — estresse, exaustão, problemas de sono e queda de bem-estar percebido", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental; estresse ocupacional; esgotamento profissional" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
@@ -519,8 +533,8 @@ export const MTE_POR_DIM: Record<string, MteFator[]> = {
   demandas:    [MTE_MAPA[0], MTE_MAPA[1]],
   organizacao: [MTE_MAPA[2], MTE_MAPA[6], MTE_MAPA[9], MTE_MAPA[10]],
   relacoes:    [MTE_MAPA[3], MTE_MAPA[11], MTE_MAPA[5]],
-  interface:   [MTE_MAPA[7], MTE_MAPA[8]],
-  saude:       [MTE_MAPA[0]], // sobrecarga é o agente ocupacional associado
+  interface:   [MTE_MAPA[15], MTE_MAPA[8]],
+  saude:       [MTE_MAPA[16]],
   ofensivos:   [MTE_MAPA[4], MTE_MAPA[12]],
   "segurança":    [MTE_MAPA[13]],
   seguranca:      [MTE_MAPA[13]],
@@ -539,8 +553,8 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   if (key.includes("demand")) return MTE_MAPA[0];
   if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[2];
   if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[3];
-  if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[7];
-  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[0];
+  if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[15];
+  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[16];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
   return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
 }
