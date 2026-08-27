@@ -455,7 +455,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     paragraph(
       `Para fins deste relatório adotou-se, como critério metodológico interno, o mínimo de ` +
       `${MIN_RESPONDENTES_CONCLUSAO} respondentes para interpretação específica por domínio ou ` +
-      `por GES. Abaixo desse número o relatório informa o "n" e registra AMOSTRA INSUFICIENTE, ` +
+      `por GES. Abaixo desse número o relatório informa o "n" e registra DADO INSUFICIENTE PARA CLASSIFICAÇÃO, ` +
       "sem imprimir percentual ou classificação: um resultado baixo obtido de poucas respostas " +
       "indica ausência de dado, não ausência de risco, e a distinção é decisiva em domínios como " +
       "assédio. O número também preserva o anonimato de quem respondeu, condição da própria " +
@@ -533,11 +533,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
       // Observação técnica: GES com baixa amostra + diferenciação trabalhadores × respostas
       paragraph(
-        "Observação: a coluna \"Nº Trab.\" refere-se ao total de trabalhadores existentes no GES/Setor conforme cadastro da empresa; " +
-        "\"Resp. válidas\" indica quantos participaram efetivamente da avaliação; e \"% da amostra\" representa a taxa de participação " +
-        "do GES em relação ao total de respondentes. Quando o cadastro de trabalhadores por GES não estiver disponível, os valores " +
-        "podem coincidir e devem ser validados pela empresa. GES com baixa quantidade de respostas devem ser interpretados como " +
-        "recorte preliminar, recomendando validação complementar quando houver maior número de trabalhadores no setor.",
+        "Observação: \"Resp. válidas\" são os trabalhadores que participaram da avaliação no GES. " +
+        "Resultados com baixa participação não são usados para classificação do GES e devem ser " +
+        "complementados por avaliação das condições de trabalho. Sem cadastro de trabalhadores por " +
+        "GES, \"Nº Trab.\" pode coincidir com as respostas e requer validação pela empresa.",
         9,
       );
 
@@ -625,7 +624,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
               f.dim.title,
               String(f.n),
               "—",
-              "AMOSTRA INSUFICIENTE",
+              "DADO INSUFICIENTE\nPARA CLASSIFICAÇÃO",
               `Apenas ${f.n} respondente(s) neste domínio — abaixo do mínimo de ` +
                 `${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno (item ${itemMet("2.1")}). O ` +
                 "resultado não permite afirmar presença nem ausência do fator. Ampliar a coleta " +
@@ -647,9 +646,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         0: { fontStyle: "bold", cellWidth: 92 },
         1: { halign: "center", cellWidth: 22 },
         2: { halign: "center", cellWidth: 28, fontStyle: "bold" },
-        // 70pt, não 56: autoTable não quebra palavra, e "INSUFICIENTE" exige
-        // 62,4pt neste corpo. Em 56pt o texto sairia clipado no PDF.
-        3: { halign: "center", cellWidth: 70, fontStyle: "bold" },
+        // 94pt: "PARA CLASSIFICAÇÃO" mede 75,7pt no corpo 7. Em 84 sobrava
+        // 1,3pt e o autoTable quebrava em três linhas.
+        3: { halign: "center", cellWidth: 94, fontStyle: "bold" },
         4: { cellWidth: "auto" },
       },
       didParseCell: (h) => {
@@ -659,7 +658,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
           const lvl = map[raw];
           if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
-          else if (raw === "AMOSTRA INSUFICIENTE") {
+          else if (raw.startsWith("DADO INSUFICIENTE")) {
             // Cinza neutro: não é um nível de risco, e não pode parecer um.
             h.cell.styles.fillColor = [243, 244, 246];
             h.cell.styles.textColor = [75, 85, 99];
@@ -703,7 +702,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           fp.dim.title,
           String(fp.n),
           suficiente ? `${fp.scorePct}%` : "—",
-          suficiente ? fp.classifPsico.toUpperCase() : "AMOSTRA INSUFICIENTE",
+          suficiente ? fp.classifPsico.toUpperCase() : "DADO INSUFICIENTE\nPARA CLASSIFICAÇÃO",
         ]);
       });
 
@@ -719,7 +718,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           1: { cellWidth: 150 },
           2: { halign: "center", cellWidth: 26 },
           3: { halign: "center", cellWidth: 40, fontStyle: "bold" },
-          4: { halign: "center", cellWidth: 90, fontStyle: "bold", fontSize: 8 },
+          4: { halign: "center", cellWidth: 98, fontStyle: "bold", fontSize: 8 },
         },
         didParseCell: (h) => {
           if (h.section === "body" && h.column.index === 4) {
@@ -727,9 +726,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
             const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
             const lvl = map[raw];
             if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
-            else if (raw === "AMOSTRA INSUFICIENTE") {
+            else if (raw.startsWith("DADO INSUFICIENTE")) {
               h.cell.styles.fillColor = [243, 244, 246];
               h.cell.styles.textColor = [75, 85, 99];
+              h.cell.styles.fontSize = 7;
             }
           }
         },
@@ -743,7 +743,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
           `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
           `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2.1")}) ` +
-          `e ${um ? "aparece" : "aparecem"} como AMOSTRA INSUFICIENTE: o resultado não permite ` +
+          `e ${um ? "aparece" : "aparecem"} como DADO INSUFICIENTE PARA CLASSIFICAÇÃO: o resultado não permite ` +
           `afirmar presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a ` +
           `coleta, não concluir por risco baixo.`
         );
@@ -792,6 +792,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         return (b.fatorPrincipal?.scorePct ?? 0) - (a.fatorPrincipal?.scorePct ?? 0);
       })
       .slice(0, 5);
+
+    // A separação que a auditoria pediu: o percentual do questionário é o que
+    // os trabalhadores relataram; o Nível de Risco PGR é a avaliação
+    // ocupacional. Sem dizer isso aqui, o leitor pergunta por que o domínio de
+    // maior percentual pode não aparecer como risco no Inventário.
+    paragraph(
+      "O percentual de criticidade expressa o que os trabalhadores relataram no questionário. Ele " +
+      "NÃO determina, isoladamente, a inclusão nem a classificação do risco no Inventário: esta " +
+      "depende da identificação do perigo e da avaliação das condições de trabalho no processo de " +
+      "AEP/GRO. Um domínio com percentual elevado pode não gerar linha no Inventário, e um risco " +
+      "pode ser inventariado sem ter o maior percentual."
+    );
 
     subTitle("Priorização dos domínios com maior risco");
     autoTable(doc, {
@@ -1691,8 +1703,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         "NR-17 — Ergonomia.",
         "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho — MTE.",
         "Lei nº 14.457/2022 — CIPA e prevenção do assédio.",
-        "COPSOQ — referência conceitual para organizar os domínios. O questionário aplicado é " +
-          "instrumento próprio e não reproduz a versão validada.",
+        "COPSOQ — utilizado EXCLUSIVAMENTE como referência conceitual para organizar os domínios " +
+          "avaliados. O instrumento aplicado por esta plataforma tem metodologia própria, descrita " +
+          "neste relatório, e não reproduz a versão validada do COPSOQ.",
       ]);
     }
 
