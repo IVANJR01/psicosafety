@@ -389,6 +389,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Mantém na mesma página da Introdução se houver espaço (~200pt necessários)
     sectionTitle("Metodologia Aplicada", { samePageIfFits: 200 });
 
+    // Numeração dos itens derivada de secCount, não fixa em "4". Removido o
+    // sumário, esta seção passou de 04 para 03 e os subtítulos continuavam
+    // dizendo 4.x — quatro pontos do relatório mandavam o leitor a um "item
+    // 4.2" que, pela numeração impressa, cai na seção seguinte. Mesma
+    // armadilha da referência ao Plano de Ação, que já sai de secoesEmitidas.
+    // secMet CONGELA o número: secCount é `let` e segue incrementando a cada
+    // seção. Fechando sobre ele, as referências cruzadas — avaliadas lá nas
+    // seções 05 e 06 — saíam como "item 5.2" e "item 6.2.1".
+    const secMet = secCount;
+    const itemMet = (sub: string) => `${secMet}.${sub}`;
+
     if (opts.contextoReavaliacao) {
       const ctx = opts.contextoReavaliacao;
       subTitle("Tipo de avaliação: Reavaliação Setorial Complementar");
@@ -420,7 +431,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Inventário de Riscos e o Plano de Ação."
     );
 
-    subTitle("4.1 Coleta dos dados");
+    subTitle(`${itemMet("1")} Coleta dos dados`);
     paragraph(
       "Aplicação de questionário psicossocial estruturado sobre os domínios do COPSOQ " +
       "(Copenhagen Psychosocial Questionnaire), adotado como referência conceitual para a " +
@@ -429,7 +440,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "diagnóstica clínica individual."
     );
 
-    subTitle("4.2 Tratamento dos resultados psicossociais");
+    subTitle(`${itemMet("2")} Tratamento dos resultados psicossociais`);
     paragraph(
       "As respostas são consolidadas por domínio avaliado e convertidas em percentual de " +
       "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
@@ -440,7 +451,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "SST, selecionar e declarar os critérios que utiliza, conforme o capítulo 1.5 da NR-1."
     );
 
-    subTitle("4.2.1 Amostra mínima para conclusão por recorte");
+    subTitle(`${itemMet("2.1")} Amostra mínima para conclusão por recorte`);
     paragraph(
       `Para fins deste relatório adotou-se, como critério metodológico interno, o mínimo de ` +
       `${MIN_RESPONDENTES_CONCLUSAO} respondentes para interpretação específica por domínio ou ` +
@@ -452,7 +463,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "respondentes para validação de GES."
     );
 
-    subTitle("4.3 Mapeamento técnico ocupacional");
+    subTitle(`${itemMet("3")} Mapeamento técnico ocupacional`);
     paragraph(
       "Cada domínio avaliado é relacionado a um agente / situação, a um perigo (fator de " +
       "risco) e a uma possível consequência, utilizando nomenclatura alinhada ao Guia de " +
@@ -461,7 +472,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     // 4.4 e 4.5 eram dois blocos dizendo a mesma sequência, e o destaque que
     // vinha depois repetia os dois de novo em outras palavras. Um bloco basta.
-    subTitle("4.4 Integração ao GRO/PGR");
+    subTitle(`${itemMet("4")} Integração ao GRO/PGR`);
     paragraph(
       "Os achados são integrados ao Inventário de Riscos do PGR pela matriz Probabilidade × " +
       "Severidade (5×5), gerando o Nível de Risco PGR — critério técnico interno para a etapa " +
@@ -577,7 +588,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     sectionTitle("Resultado da Avaliação do Questionário Psicossocial");
     paragraph(
       "Consolidação dos domínios avaliados, com percentual de criticidade e Classificação " +
-      "Psicossocial. Faixas do critério metodológico interno (item 4.2): 0–33% = BAIXO · " +
+      `Psicossocial. Faixas do critério metodológico interno (item ${itemMet("2")}): 0–33% = BAIXO · ` +
       "34–66% = MÉDIO · 67–100% = ALTO."
     );
 
@@ -616,7 +627,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
               "—",
               "AMOSTRA INSUFICIENTE",
               `Apenas ${f.n} respondente(s) neste domínio — abaixo do mínimo de ` +
-                `${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno (item 4.2.1). O ` +
+                `${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno (item ${itemMet("2.1")}). O ` +
                 "resultado não permite afirmar presença nem ausência do fator. Ampliar a coleta " +
                 "antes de concluir.",
             ];
@@ -731,7 +742,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         paragraph(
           `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
           `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
-          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item 4.2.1) ` +
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2.1")}) ` +
           `e ${um ? "aparece" : "aparecem"} como AMOSTRA INSUFICIENTE: o resultado não permite ` +
           `afirmar presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a ` +
           `coleta, não concluir por risco baixo.`
@@ -1494,7 +1505,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       callout(
         `RESSALVA DE AMOSTRA: esta avaliação reuniu ${data.totalRespostas} resposta(s) válida(s), abaixo do ` +
         `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno adotado neste relatório ` +
-        `para conclusão por domínio (item 4.2.1). ` +
+        `para conclusão por domínio (item ${itemMet("2.1")}). ` +
         `Os resultados apresentados têm caráter exploratório e não sustentam afirmação de presença nem de ` +
         `ausência de risco psicossocial na organização. Este documento não deve ser utilizado como ` +
         `demonstração de conformidade sem nova coleta com participação ampliada.`,
@@ -1626,7 +1637,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y = (doc as any).lastAutoTable.finalY + 18;
 
       // Lista de referências, não repetição da metodologia: o que cada norma
-      // é já foi dito na seção 03. A ressalva do COPSOQ fica porque afirma o
+      // é já foi dito na Introdução. A ressalva do COPSOQ fica porque afirma o
       // que o instrumento NÃO é — isso não é explicação, é delimitação.
       subTitle("Anexo II — Base normativa");
       bullets([
