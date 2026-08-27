@@ -1103,6 +1103,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // sem acrescentar informação. Vira "—" na célula e uma nota única sob a
     // tabela. Linhas que TÊM controle registrado seguem mostrando o texto real.
     let linhasSemControle = 0;
+    // Linhas cujo GES ficou abaixo do piso de respondentes: a classificação
+    // existe, mas não se sustenta apenas no questionário.
+    let linhasBaseFraca = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
     const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
@@ -1188,8 +1191,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const controleTxt = textoControleParaLinha(s.setor, fp.dim.id);
         const semControle = controleTxt === CONTROLE_PADRAO;
         if (semControle) linhasSemControle += 1;
+        // O perigo permanece no inventário — suprimi-lo seria subnotificar
+        // risco. Mas a origem da classificação precisa ficar visível: abaixo do
+        // piso interno, o P x S desta linha vem de um resultado que a própria
+        // seção de resultados marcou como insuficiente para concluir. Sem esta
+        // marca o documento se contradiz — diz "não é possível afirmar" numa
+        // página e publica "MODERADO" na outra, para o mesmo GES.
+        const baseFraca = !amostraSuficiente(fp.n);
+        if (baseFraca) linhasBaseFraca += 1;
         invBody.push([
-          formatLabelGes(s.label),
+          formatLabelGes(s.label) + (baseFraca ? " *" : ""),
           funcoesTxt,
           protectWords(fp.dim.title),
           protectWords(mte.agente),
@@ -1274,14 +1285,30 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     // A nota substitui a frase que antes se repetia em cada linha da coluna
     // "Controles". Só aparece se alguma linha de fato caiu no padrão.
-    if (linhasSemControle > 0) {
-      const yNota = (doc as any).lastAutoTable.finalY + 10;
+    if (linhasSemControle > 0 || linhasBaseFraca > 0) {
+      let yNota = (doc as any).lastAutoTable.finalY + 10;
+      const larguraNota = doc.internal.pageSize.getWidth() - margin * 2;
       rgb([90, 90, 90]); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
-      doc.text(
-        'Nota: nas linhas marcadas com "—" na coluna Controles, os controles existentes não foram ' +
-        "evidenciados no momento da avaliação e deverão ser validados em campo pela empresa.",
-        margin, yNota, { maxWidth: doc.internal.pageSize.getWidth() - margin * 2 } as any,
-      );
+      if (linhasSemControle > 0) {
+        doc.text(
+          'Nota: nas linhas marcadas com "—" na coluna Controles, a existência e a eficácia dos ' +
+          "controles não foram evidenciadas no momento da avaliação — o que não equivale a afirmar " +
+          "que não existam. Requer validação documental e/ou em campo pela empresa.",
+          margin, yNota, { maxWidth: larguraNota } as any,
+        );
+        yNota += 20;
+      }
+      if (linhasBaseFraca > 0) {
+        doc.text(
+          `Nota: os GES marcados com * tiveram menos de ${MIN_RESPONDENTES_CONCLUSAO} respondentes, ` +
+          "abaixo do piso metodológico interno. O perigo permanece inventariado, mas a Probabilidade " +
+          "e o Nível de Risco destas linhas derivam de resultado que o próprio relatório classificou " +
+          "como insuficiente para conclusão por questionário: exigem confirmação por observação da " +
+          "atividade, análise das condições de trabalho e diálogo com os trabalhadores antes de " +
+          "serem tomados como definitivos.",
+          margin, yNota, { maxWidth: larguraNota } as any,
+        );
+      }
       doc.setFont("helvetica", "normal"); rgb([30, 30, 30]);
     }
 
@@ -1326,10 +1353,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // expertise"; por isso a tabela sai marcada como preliminar, para ser
     // confirmada em campo pelo responsável técnico.
     const carBody: any[] = [];
+    let carBaseFraca = 0;
     if (data.setores.length > 0) {
       data.setores.forEach((s) => {
         const fp = s.fatorPrincipal;
         if (!fp || fp.n === 0) return;
+        if (!amostraSuficiente(fp.n)) carBaseFraca += 1;
         const c = caracterizarExposicao(fp);
         carBody.push([
           formatLabelGes(s.label),
@@ -1366,6 +1395,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           "critérios da organização. Cabe ao responsável técnico confirmá-la em campo (NR-17, " +
           "subitem 17.3.1.1).",
       );
+      if (carBaseFraca > 0) {
+        paragraph(
+          `Em ${carBaseFraca} GES a caracterização deriva de recorte com menos de ` +
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes. Nesses casos a confirmação por observação da ` +
+          "atividade e diálogo com os trabalhadores não é opcional: é o que sustenta a caracterização.",
+        );
+      }
       autoTable(doc, {
         startY: y,
         head: [["GES / Setores", "Domínio", "Duração", "Frequência", "Intensidade", "Grupo exposto"]],
@@ -1399,9 +1435,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano PRELIMINAR derivado do Inventário; prioridade e prazo seguem o Nível de Risco PGR. " +
-        "Responsáveis, forma de acompanhamento, evidências, datas e status deverão ser definidos na " +
-        "devolutiva técnica da empresa, conforme a NR-01 (item 1.5.5)."
+        "Plano PRELIMINAR derivado do Inventário. A prioridade e o prazo indicados são SUGESTÃO, " +
+        "por critério metodológico interno vinculado ao Nível de Risco PGR — não são prazos fixados " +
+        "por norma. Cabe à organização defini-los considerando a prioridade, a complexidade, os " +
+        "recursos necessários e o número de trabalhadores potencialmente atingidos. Responsáveis, " +
+        "forma de acompanhamento, evidências, datas e status deverão ser definidos na devolutiva " +
+        "técnica da empresa, conforme a NR-01 (item 1.5.5)."
       );
 
 
@@ -1538,7 +1577,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         NIVEL_COR[nivelGeral],
       );
       paragraph(
-        "A avaliação deve ser revista em mudanças significativas ou no ciclo anual do PGR, conforme NR-01."
+        "Recomenda-se revisão anual como boa prática de gestão, sem prejuízo das revisões obrigatórias e das hipóteses de antecipação previstas na NR-01 — entre elas, mudanças significativas nas condições de trabalho."
       );
     } else {
       callout(
@@ -1553,8 +1592,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       paragraph(
         "Os achados foram integrados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado. " +
         "Os GES sem respostas neste ciclo devem ser priorizados na próxima aplicação ou ter a ausência " +
-        "de participantes formalmente justificada. A avaliação deve ser revista em mudanças significativas " +
-        "ou no ciclo anual do PGR, conforme NR-01."
+        "de participantes formalmente justificada. Recomenda-se revisão anual como boa prática de " +
+        "gestão, sem prejuízo das revisões obrigatórias e das hipóteses de antecipação previstas na NR-01."
       );
     }
 
@@ -1605,12 +1644,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // duas páginas, a maior parte sobre domínios que não aparecem em lugar
       // nenhum do documento. O anexo existe para dar rastreabilidade ao que
       // foi afirmado, não para catalogar o que não foi.
-      const dominiosUsados = new Set<string>();
+      // Casa pela ENTRADA usada (domínio + perigo), não só pelo domínio:
+      // "Demandas no Trabalho" tem duas entradas no MTE_MAPA — sobrecarga e
+      // subutilização —, e filtrar por domínio trazia a que não foi usada.
+      const entradasUsadas = new Set<string>();
       (data.setores.length > 0
         ? data.setores.map((s) => s.fatorPrincipal).filter((f) => f && f.n > 0)
         : fatoresValidos
-      ).forEach((f) => { if (f) dominiosUsados.add(mteParaDim(f.dim.id, f.risco.nivel).dominio); });
-      const mapaAplicado = MTE_MAPA.filter((m) => dominiosUsados.has(m.dominio));
+      ).forEach((f) => {
+        if (!f) return;
+        const m = mteParaDim(f.dim.id, f.risco.nivel);
+        entradasUsadas.add(`${m.dominio}|${m.perigo}`);
+      });
+      const mapaAplicado = MTE_MAPA.filter((m) => entradasUsadas.has(`${m.dominio}|${m.perigo}`));
       const linhasAnexo = mapaAplicado.length > 0 ? mapaAplicado : MTE_MAPA;
 
       subTitle("Anexo I — Mapeamento técnico aplicado (Guia MTE)");
