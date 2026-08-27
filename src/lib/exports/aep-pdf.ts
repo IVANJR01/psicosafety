@@ -22,7 +22,6 @@ import {
   NIVEL5_FILL,
   NIVEL5_FAIXA,
   mteParaDim,
-  MTE_MAPA,
   caracterizarExposicao,
   assertAgrupamentoGesAplicado,
   amostraSuficiente,
@@ -159,7 +158,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Espaço útil mínimo para uma seção continuar na página corrente: o título
     // ocupa 46pt, então isto garante o título mais um primeiro bloco de
     // conteúdo e evita título órfão no pé da folha.
-    const ESPACO_MINIMO_SECAO = 200;
+    const ESPACO_MINIMO_SECAO = 100;
 
     const sectionTitle = (titulo: string, opts?: { samePageIfFits?: number }) => {
       step(`seção: ${titulo}`);
@@ -260,19 +259,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     sectionTitle("Dados da Empresa");
     const e = data.empresa;
-    const setoresLista = data.setores.length > 0
-      ? data.setores.map((s) => s.label).join(", ")
-      : "—";
     const dataAval = data.periodo.inicio || data.periodo.fim
       ? `${data.periodo.inicio ?? "-"} a ${data.periodo.fim ?? "-"}`
       : data.emitidoEm.slice(0, 10);
 
-    const gesCadStr = data.gesCadastrados.length
-      ? data.gesCadastrados.map((g) => `• ${g.label}`).join("\n")
-      : "—";
-    const gesAvaStr = data.gesAvaliados.length
-      ? data.gesAvaliados.map((g) => `• ${g.label}`).join("\n")
-      : "—";
+    // Nenhuma lista nominal de GES sai aqui. Antes saíam três — cadastrados,
+    // avaliados e "consolidado" — com os mesmos nomes repetidos, e a seção de
+    // caracterização dos GES, logo adiante, os listava pela quarta vez, aí sim
+    // com funções e respondentes. Aqui ficam os totais; os nomes ficam onde há
+    // o que dizer sobre eles. A exceção é a lista dos GES sem avaliação, que
+    // não aparece em nenhuma outra seção quando o inventário é só de avaliados.
     const gesSemStr = data.gesSemAvaliacao.length
       ? data.gesSemAvaliacao.map((g) => `• ${g.label}`).join("\n")
       : "Nenhum — todos os GES cadastrados foram avaliados";
@@ -308,13 +304,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     linhasEmpresa.push(["Trabalhadores participantes / respondentes válidos", String(data.totalRespostas)]);
     if (!somenteAvaliados) {
       linhasEmpresa.push(["Trabalhadores abrangidos pelos GES avaliados", String(trabAbr)]);
-      linhasEmpresa.push([`GES cadastrados no sistema (${totCad})`, gesCadStr]);
+      linhasEmpresa.push(["GES cadastrados no sistema", String(totCad)]);
     }
-    linhasEmpresa.push([`GES avaliados neste relatório (${totAva})`, gesAvaStr]);
-    if (!somenteAvaliados) {
+    linhasEmpresa.push(["GES avaliados neste relatório", String(totAva)]);
+    if (!somenteAvaliados && totSem > 0) {
       linhasEmpresa.push([`GES sem avaliação neste ciclo (${totSem})`, gesSemStr]);
     }
-    linhasEmpresa.push(["GES Avaliados (consolidado)", setoresLista]);
     linhasEmpresa.push(["Data da Avaliação", dataAval]);
     linhasEmpresa.push(["Responsável Técnico", respNome]);
     linhasEmpresa.push(["Formação", respForm]);
@@ -338,13 +333,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
      * `secoesEmitidas` não é mais impresso como sumário — num relatório com as
      * seções numeradas e tituladas no corpo, a página de sumário só gastava
      * espaço. A lista continua existindo porque é dela que sai a referência
-     * cruzada à seção do Plano de Ação, que precisa acompanhar as três seções
-     * condicionais (Caracterização da Exposição, Plano de Ação e Anexos).
+     * cruzada à seção do Plano de Ação, que precisa acompanhar as seções
+     * condicionais (Plano de Ação e Anexo).
+     *
+     * Esta lista precisa espelhar EXATAMENTE as seções emitidas, na ordem: é
+     * dela que sai o número citado no corpo do texto. Divergir aqui manda o
+     * leitor para uma seção que não existe.
      */
-    const temCaracterizacaoExposicao =
-      data.setores.length > 0
-        ? data.setores.some((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0)
-        : data.fatoresGerais.some((f) => f.n > 0);
     const secoesEmitidas: string[] = [
       "Dados da Empresa",
       "Introdução",
@@ -352,13 +347,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "Caracterização dos GES / Setores / Funções Avaliadas",
       "Resultado da Avaliação do Questionário Psicossocial",
       "Distribuição dos Resultados por Domínio / GES",
-      "Conclusões e Recomendações Preliminares",
       "Classificação e Avaliação dos Riscos Psicossociais",
-      "Inventário de Riscos Ocupacionais para o PGR",
-      ...(temCaracterizacaoExposicao ? ["Caracterização da Exposição"] : []),
+      "Inventário Preliminar de Riscos Psicossociais",
       ...(incluirPlanoAcao ? ["Plano de Ação Recomendado"] : []),
       "Conclusão Técnica",
-      ...(incluirAnexos ? ["Anexos"] : []),
     ];
     // ============== 02. INTRODUÇÃO ==============
     sectionTitle("Introdução");
@@ -423,60 +415,40 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       );
     }
 
+    // Antes eram cinco subtítulos (4.1 a 4.5) que descreviam a mesma sequência
+    // três vezes: um parágrafo de abertura anunciando as duas camadas, depois
+    // um item por camada, depois um item de "integração" repetindo a primeira
+    // frase. Ficam dois itens — o que a coleta é, e como o resultado vira risco
+    // de PGR — e o critério de amostra, que precisa ficar destacado porque é o
+    // que sustenta as células em branco do Inventário.
+    subTitle(`${itemMet("1")} Coleta e tratamento dos resultados`);
     paragraph(
-      "A metodologia está organizada em duas camadas complementares, para evitar sobreposição " +
-      "de conceitos: (1) avaliação psicossocial por questionário estruturado, que gera a " +
-      "Classificação Psicossocial em percentual de criticidade; e (2) integração ocupacional ao " +
-      "GRO/PGR, que aplica a matriz Probabilidade × Severidade e gera o Nível de Risco PGR, o " +
-      "Inventário de Riscos e o Plano de Ação."
+      "Aplicação de questionário psicossocial estruturado. Domínios do COPSOQ utilizados como " +
+      "referência conceitual; instrumento próprio. As respostas são anônimas e recebem tratamento " +
+      "coletivo — a finalidade é ocupacional e preventiva, e o relatório não possui finalidade " +
+      "diagnóstica clínica individual. As respostas são consolidadas por domínio e convertidas em " +
+      "percentual de criticidade, interpretado pelas faixas 0–33% = BAIXO · 34–66% = MÉDIO · " +
+      "67–100% = ALTO. Estas faixas são critério metodológico interno: o MTE não define metodologia " +
+      "específica para questionários, cabendo à organização declarar os critérios que utiliza " +
+      "(NR-01, capítulo 1.5)."
     );
 
-    subTitle(`${itemMet("1")} Coleta dos dados`);
+    subTitle(`${itemMet("2")} Amostra mínima para conclusão por recorte`);
     paragraph(
-      "Aplicação de questionário psicossocial estruturado sobre os domínios do COPSOQ " +
-      "(Copenhagen Psychosocial Questionnaire), adotado como referência conceitual para a " +
-      "organização dos fatores avaliados. As respostas são anônimas e recebem tratamento " +
-      "coletivo. A finalidade é ocupacional e preventiva — o relatório não possui finalidade " +
-      "diagnóstica clínica individual."
+      `Critério metodológico interno: mínimo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes para ` +
+      "concluir por domínio ou por GES. Abaixo disso o relatório informa o \"n\" e registra DADO " +
+      "INSUFICIENTE PARA CLASSIFICAÇÃO, sem percentual, sem P, sem S e sem nível de risco — um " +
+      "resultado baixo obtido de poucas respostas indica ausência de dado, não ausência de risco. " +
+      "O número também preserva o anonimato de quem respondeu. Não é exigência normativa."
     );
 
-    subTitle(`${itemMet("2")} Tratamento dos resultados psicossociais`);
+    subTitle(`${itemMet("3")} Integração ao GRO/PGR`);
     paragraph(
-      "As respostas são consolidadas por domínio avaliado e convertidas em percentual de " +
-      "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
-      "Psicossocial é critério metodológico interno adotado para interpretação dos resultados " +
-      "do instrumento aplicado, e segue as faixas: 0–33% = BAIXO · 34–66% = MÉDIO · " +
-      "67–100% = ALTO. O MTE não define nem sugere metodologia específica para ferramentas de " +
-      "avaliação, questionários ou pesquisas — cabe à organização, com seus profissionais de " +
-      "SST, selecionar e declarar os critérios que utiliza, conforme o capítulo 1.5 da NR-1."
-    );
-
-    subTitle(`${itemMet("2.1")} Amostra mínima para conclusão por recorte`);
-    paragraph(
-      `Para fins deste relatório adotou-se, como critério metodológico interno, o mínimo de ` +
-      `${MIN_RESPONDENTES_CONCLUSAO} respondentes para interpretação específica por domínio ou ` +
-      `por GES. Abaixo desse número o relatório informa o "n" e registra DADO INSUFICIENTE PARA CLASSIFICAÇÃO, ` +
-      "sem imprimir percentual ou classificação: um resultado baixo obtido de poucas respostas " +
-      "indica ausência de dado, não ausência de risco, e a distinção é decisiva em domínios como " +
-      "assédio. O número também preserva o anonimato de quem respondeu, condição da própria " +
-      "coleta. Não se trata de exigência normativa: o MTE não estabelece número mínimo de " +
-      "respondentes para validação de GES."
-    );
-
-    subTitle(`${itemMet("3")} Mapeamento técnico ocupacional`);
-    paragraph(
-      "Cada domínio avaliado é relacionado a um agente / situação, a um perigo (fator de " +
-      "risco) e a uma possível consequência, utilizando nomenclatura alinhada ao Guia de " +
-      "Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
-    );
-
-    // 4.4 e 4.5 eram dois blocos dizendo a mesma sequência, e o destaque que
-    // vinha depois repetia os dois de novo em outras palavras. Um bloco basta.
-    subTitle(`${itemMet("4")} Integração ao GRO/PGR`);
-    paragraph(
-      "Os achados são integrados ao Inventário de Riscos do PGR pela matriz Probabilidade × " +
-      "Severidade (5×5), gerando o Nível de Risco PGR — critério técnico interno para a etapa " +
-      "de integração ocupacional, que não é o resultado direto do questionário. O Plano de Ação " +
+      "Cada domínio avaliado é relacionado a um agente / situação, a um perigo e a possíveis " +
+      "agravos à saúde, com nomenclatura alinhada ao Guia de Fatores de Riscos Psicossociais " +
+      "do MTE. Os achados são integrados ao Inventário de Riscos do PGR pela matriz Probabilidade " +
+      "× Severidade (5×5), gerando o Nível de Risco PGR — critério técnico interno da etapa de " +
+      "integração ocupacional, que não é o resultado direto do questionário. O Plano de Ação " +
       "deriva do Inventário, com prazos e prioridades definidos pelo Nível de Risco PGR."
     );
 
@@ -484,8 +456,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // ============== 05. GES / SETORES / FUNÇÕES ==============
     sectionTitle("Caracterização dos GES / Setores / Funções Avaliadas");
     paragraph(
-      "Identificação dos Grupos de Exposição Similar (GES) avaliados, suas funções, número de " +
-      "trabalhadores e a representatividade na amostra."
+      "Identificação dos Grupos de Exposição Similar (GES) avaliados, suas funções, respondentes " +
+      "válidos e a representatividade na amostra."
     );
 
     if (data.setores.length === 0) {
@@ -509,34 +481,34 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           formatLabelGes(s.label),
           funcoesDedup.map((f) => `${f.funcao} (${f.n})`).join("\n") || "—",
           String(s.n),
-          String(s.n),
           `${part}%`,
         ];
       });
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Funções avaliadas", "Nº\nTrab.", "Resp.\nválidas", "% da\namostra"]],
+        // "Nº Trab." saiu: a coluna imprimia o MESMO valor de "Resp. válidas"
+        // (a plataforma não cadastra efetivo por GES), e um leitor que compara
+        // as duas conclui participação de 100% onde só existe o número de quem
+        // respondeu. Sobra o dado que o sistema de fato possui.
+        head: [["GES / Setores", "Funções avaliadas", "Respondentes\nválidos", "% da\namostra"]],
         body: gheBody,
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle", cellPadding: 4 },
         styles: { fontSize: 8, cellPadding: 3.5, valign: "middle", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
           0: { fontStyle: "bold", cellWidth: 150, halign: "left" },
-          1: { cellWidth: 230 },
-          2: { halign: "center", cellWidth: 40 },
-          3: { halign: "center", cellWidth: 45 },
-          4: { halign: "center", cellWidth: 55 },
+          1: { cellWidth: "auto" },
+          2: { halign: "center", cellWidth: 76 },
+          3: { halign: "center", cellWidth: 55 },
         },
         margin: { left: margin, right: margin },
       });
-      y = (doc as any).lastAutoTable.finalY + 18;
+      y = (doc as any).lastAutoTable.finalY + 14;
 
-      // Observação técnica: GES com baixa amostra + diferenciação trabalhadores × respostas
       paragraph(
-        "Observação: \"Resp. válidas\" são os trabalhadores que participaram da avaliação no GES. " +
-        "Resultados com baixa participação não são usados para classificação do GES e devem ser " +
-        "complementados por avaliação das condições de trabalho. Sem cadastro de trabalhadores por " +
-        "GES, \"Nº Trab.\" pode coincidir com as respostas e requer validação pela empresa.",
+        "Observação: \"Respondentes válidos\" são os trabalhadores que participaram da avaliação no " +
+        "GES, não o efetivo do grupo. O percentual da amostra refere-se ao total de participantes " +
+        "da avaliação.",
         9,
       );
 
@@ -587,23 +559,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     sectionTitle("Resultado da Avaliação do Questionário Psicossocial");
     paragraph(
       "Consolidação dos domínios avaliados, com percentual de criticidade e Classificação " +
-      `Psicossocial. Faixas do critério metodológico interno (item ${itemMet("2")}): 0–33% = BAIXO · ` +
-      "34–66% = MÉDIO · 67–100% = ALTO."
+      `Psicossocial pelas faixas do item ${itemMet("1")}.`
+    );
+
+    // A separação que a auditoria pediu, realocada para cá: a seção de ranking
+    // que hospedava este parágrafo saiu do relatório, mas o esclarecimento
+    // continua necessário — e o lugar dele é junto da tabela de percentuais,
+    // antes que o leitor conclua que o maior percentual é o maior risco do PGR.
+    paragraph(
+      "O percentual de criticidade expressa o que os trabalhadores relataram no questionário. Ele " +
+      "NÃO determina, isoladamente, a inclusão nem a classificação do risco no Inventário: esta " +
+      "depende da identificação do perigo e da avaliação das condições de trabalho no processo de " +
+      "AEP/GRO."
     );
 
     const fatoresValidos = data.fatoresGerais.filter((f) => f.n > 0);
 
-    const leituraPreventivaPorDim: Record<string, string> = {
-      demandas: "Indica atenção para sobrecarga, pressão, múltiplas tarefas e ritmo intenso de trabalho.",
-      organizacao: "Indica atenção para autonomia, controle da tarefa, clareza de papéis e organização do trabalho.",
-      relacoes: "Indica atenção para relações interpessoais, comunicação, apoio da liderança e clima da equipe.",
-      interface: "Indica atenção para o equilíbrio entre trabalho e vida pessoal e a interferência do trabalho no tempo pessoal.",
-      saude: "Indica atenção para sinais de estresse, esgotamento, sono e bem-estar geral relacionados ao trabalho.",
-      ofensivos: "Indica atenção para situações de assédio moral, sexual, humilhação, intimidação ou discriminação.",
-      seguranca: "Indica atenção para percepção de insegurança ocupacional, falhas de comunicação preventiva e confiança nas condições de trabalho.",
-      reconhecimento: "Indica atenção para reconhecimento profissional, justiça organizacional, valorização e feedback.",
-    };
-
+    // A coluna "Leitura técnica preventiva" repetia, em texto fixo por domínio,
+    // o que o próprio nome do domínio já diz ("Fatores ofensivos → atenção para
+    // assédio"). Ocupava metade da largura da página sem acrescentar achado.
+    let resultInsuficientes = 0;
     const resultadoBody = fatoresValidos.length
       ? fatoresValidos.map((f) => {
           let classif = f.classifPsico.toUpperCase();
@@ -612,44 +587,32 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
             // eslint-disable-next-line no-console
             console.warn(`[AEP] Inconsistência de classificação em "${f.dim.title}" (${f.scorePct}%): percentual médio não pode ser classificado como baixo. Corrigido para MÉDIO.`);
           }
-          const leitura =
-            leituraPreventivaPorDim[f.dim.id] ??
-            "Consolidação da percepção coletiva dos trabalhadores para este domínio psicossocial.";
           // Amostra pequena: não imprime percentual nem classificação. Um "0%"
           // com três respondentes é lido como ausência de risco quando na
           // verdade é ausência de dado — e num domínio como assédio essa
           // diferença decide se o documento protege ou incrimina a empresa.
           if (!amostraSuficiente(f.n)) {
-            return [
-              f.dim.title,
-              String(f.n),
-              "—",
-              "DADO INSUFICIENTE\nPARA CLASSIFICAÇÃO",
-              `Apenas ${f.n} respondente(s) neste domínio — abaixo do mínimo de ` +
-                `${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno (item ${itemMet("2.1")}). O ` +
-                "resultado não permite afirmar presença nem ausência do fator. Ampliar a coleta " +
-                "antes de concluir.",
-            ];
+            resultInsuficientes += 1;
+            return [f.dim.title, String(f.n), "—", "DADO INSUFICIENTE\nPARA CLASSIFICAÇÃO"];
           }
-          return [f.dim.title, String(f.n), `${f.scorePct}%`, classif, leitura];
+          return [f.dim.title, String(f.n), `${f.scorePct}%`, classif];
         })
-      : [["—", "—", "—", "—", "—"]];
+      : [["—", "—", "—", "—"]];
 
     autoTable(doc, {
       startY: y,
-      head: [["Domínio avaliado", "n", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
+      head: [["Domínio avaliado", "n", "%", "Classif.\nPsicoss."]],
       body: resultadoBody,
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle" },
-      styles: { fontSize: 8, cellPadding: 3.5, valign: "top" },
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center", valign: "middle" },
+      styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 92 },
-        1: { halign: "center", cellWidth: 22 },
-        2: { halign: "center", cellWidth: 28, fontStyle: "bold" },
-        // 94pt: "PARA CLASSIFICAÇÃO" mede 75,7pt no corpo 7. Em 84 sobrava
+        0: { fontStyle: "bold", cellWidth: "auto" },
+        1: { halign: "center", cellWidth: 34 },
+        2: { halign: "center", cellWidth: 46, fontStyle: "bold" },
+        // 98pt: "PARA CLASSIFICAÇÃO" mede 75,7pt no corpo 7. Em 84 sobrava
         // 1,3pt e o autoTable quebrava em três linhas.
-        3: { halign: "center", cellWidth: 94, fontStyle: "bold" },
-        4: { cellWidth: "auto" },
+        3: { halign: "center", cellWidth: 98, fontStyle: "bold", fontSize: 8 },
       },
       didParseCell: (h) => {
         // Índice 3: a coluna "n" empurrou a classificação uma posição à direita.
@@ -669,8 +632,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       margin: { left: margin, right: margin },
     });
 
+    y = (doc as any).lastAutoTable.finalY + 14;
 
-    y = (doc as any).lastAutoTable.finalY + 18;
+    // A explicação que morava na coluna removida, agora uma vez só sob a tabela
+    // em vez de repetida linha a linha.
+    if (resultInsuficientes > 0) {
+      const um = resultInsuficientes === 1;
+      paragraph(
+        `${resultInsuficientes} ${um ? "domínio ficou" : "domínios ficaram"} abaixo do mínimo de ` +
+        `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2")}). ` +
+        `O resultado não permite afirmar presença nem ausência do fator: a leitura correta é ampliar ` +
+        `a coleta, não concluir por risco baixo.`
+      );
+    }
 
     // ============== 07. DISTRIBUIÇÃO POR GES ==============
     sectionTitle("Distribuição dos Resultados por Domínio / GES");
@@ -720,6 +694,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           3: { halign: "center", cellWidth: 40, fontStyle: "bold" },
           4: { halign: "center", cellWidth: 98, fontStyle: "bold", fontSize: 8 },
         },
+        // Sem isto o rótulo do GES quebrava no meio: "GES 09" no pé de uma
+        // página e "COMERCIAL" no topo da seguinte, como se fossem dois GES.
+        rowPageBreak: "avoid",
         didParseCell: (h) => {
           if (h.section === "body" && h.column.index === 4) {
             const raw = String(h.cell.raw ?? "").toUpperCase();
@@ -742,7 +719,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         paragraph(
           `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
           `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
-          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2.1")}) ` +
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2")}) ` +
           `e ${um ? "aparece" : "aparecem"} como DADO INSUFICIENTE PARA CLASSIFICAÇÃO: o resultado não permite ` +
           `afirmar presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a ` +
           `coleta, não concluir por risco baixo.`
@@ -750,181 +727,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       }
     }
 
-    // ============== 08. CONCLUSÕES E RECOMENDAÇÕES PRELIMINARES ==============
-    sectionTitle("Conclusões e Recomendações Preliminares");
-
-    // A priorização é a parte do relatório que a empresa usa para decidir onde
-    // investir, e ordenar exige comparar. Um domínio medido em três pessoas não
-    // sustenta uma posição no ranking — mas também não pode simplesmente sumir:
-    // sai da lista ordenada e é nomeado logo abaixo dela, com o pedido de
-    // ampliar a coleta.
-    //
-    // O corte por amostra vem ANTES do corte por "BAIXO", e essa ordem importa:
-    // num domínio de amostra pequena a própria classificação é que não se
-    // sustenta. Filtrar "BAIXO" primeiro descartaria em silêncio exatamente o
-    // caso mais perigoso — o 0% em assédio com três respondentes, que não é
-    // ausência de assédio, é ausência de dado.
-    const classifRankTop: Record<string, number> = { CRÍTICO: 4, ALTO: 3, MÉDIO: 2, BAIXO: 1 };
-    const dominiosSemAmostra = fatoresValidos.filter((f) => !amostraSuficiente(f.n));
-    const topDominios = fatoresValidos
-      .filter((f) => amostraSuficiente(f.n))
-      .filter((f) => (f.classifPsico ?? "").toUpperCase() !== "BAIXO")
-      .sort((a, b) => {
-        const ca = classifRankTop[(a.classifPsico ?? "").toUpperCase()] ?? 0;
-        const cb = classifRankTop[(b.classifPsico ?? "").toUpperCase()] ?? 0;
-        if (cb !== ca) return cb - ca;
-        return b.scorePct - a.scorePct;
-      })
-      .slice(0, 5);
-    const classifRank: Record<string, number> = { CRÍTICO: 4, ALTO: 3, MÉDIO: 2, BAIXO: 1 };
-    const setoresComDado = data.setores.filter((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0);
-    const setoresSemAmostra = setoresComDado.filter((s) => !amostraSuficiente(s.fatorPrincipal!.n));
-    const setoresCriticos = setoresComDado
-      .filter((s) => amostraSuficiente(s.fatorPrincipal!.n))
-      .filter((s) => {
-        const c = (s.fatorPrincipal?.classifPsico ?? "").toUpperCase();
-        return c && c !== "BAIXO";
-      })
-      .sort((a, b) => {
-        const ca = classifRank[(a.fatorPrincipal?.classifPsico ?? "").toUpperCase()] ?? 0;
-        const cb = classifRank[(b.fatorPrincipal?.classifPsico ?? "").toUpperCase()] ?? 0;
-        if (cb !== ca) return cb - ca;
-        return (b.fatorPrincipal?.scorePct ?? 0) - (a.fatorPrincipal?.scorePct ?? 0);
-      })
-      .slice(0, 5);
-
-    // A separação que a auditoria pediu: o percentual do questionário é o que
-    // os trabalhadores relataram; o Nível de Risco PGR é a avaliação
-    // ocupacional. Sem dizer isso aqui, o leitor pergunta por que o domínio de
-    // maior percentual pode não aparecer como risco no Inventário.
-    paragraph(
-      "O percentual de criticidade expressa o que os trabalhadores relataram no questionário. Ele " +
-      "NÃO determina, isoladamente, a inclusão nem a classificação do risco no Inventário: esta " +
-      "depende da identificação do perigo e da avaliação das condições de trabalho no processo de " +
-      "AEP/GRO. Um domínio com percentual elevado pode não gerar linha no Inventário, e um risco " +
-      "pode ser inventariado sem ter o maior percentual."
-    );
-
-    subTitle("Priorização dos domínios com maior risco");
-    autoTable(doc, {
-      startY: y,
-      head: [["#", "Domínio avaliado", "n", "%", "Classif.\nPsicoss."]],
-      body: topDominios.length
-        ? topDominios.map((f, i) => [String(i + 1), f.dim.title, String(f.n), `${f.scorePct}%`, f.classifPsico.toUpperCase()])
-        : [["—", "Sem domínio com amostra suficiente e risco acima de baixo no recorte", "—", "—", "—"]],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
-      styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: {
-        0: { halign: "center", cellWidth: 30, fontStyle: "bold" },
-        1: { fontStyle: "bold" },
-        2: { halign: "center", cellWidth: 30 },
-        3: { halign: "center", cellWidth: 50 },
-        4: { halign: "center", fontStyle: "bold", cellWidth: 100 },
-      },
-      didParseCell: colorirNivel(4),
-      margin: { left: margin, right: margin },
-    });
-    y = (doc as any).lastAutoTable.finalY + 14;
-
-    if (dominiosSemAmostra.length > 0) {
-      const listaDom = dominiosSemAmostra
-        .map((f) => `${f.dim.title} (n=${f.n})`)
-        .join("; ");
-      paragraph(
-        `Fora da priorização por amostra insuficiente — abaixo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes: ` +
-        `${listaDom}. Estes domínios não foram classificados nem ordenados acima porque o número de ` +
-        `respostas não sustenta conclusão em nenhum sentido: não indicam risco baixo, indicam ausência de ` +
-        `dado suficiente. Devem ser cobertos na próxima aplicação antes de qualquer leitura de resultado.`
-      );
-    }
-
-
-    subTitle("Priorização dos GES mais críticos");
-    autoTable(doc, {
-      startY: y,
-      head: [["#", "GES / Setores", "Domínio crítico", "n", "%", "Classif.\nPsicoss."]],
-      body: setoresCriticos.length
-        ? setoresCriticos.map((s, i) => [
-            String(i + 1),
-            formatLabelGes(s.label),
-            s.fatorPrincipal?.dim.title ?? "—",
-            String(s.fatorPrincipal?.n ?? 0),
-            s.fatorPrincipal ? `${Math.round(s.fatorPrincipal.scorePct)}%` : "—",
-            (s.fatorPrincipal?.classifPsico ?? "—").toUpperCase(),
-          ])
-        : [["—", "Sem GES com amostra suficiente e risco acima de baixo no recorte", "—", "—", "—", "—"]],
-
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
-      styles: { fontSize: 9, cellPadding: 4, overflow: "linebreak" },
-      columnStyles: {
-        0: { halign: "center", cellWidth: 30, fontStyle: "bold" },
-        1: { fontStyle: "bold", cellWidth: 140 },
-        2: { cellWidth: 130 },
-        3: { halign: "center", cellWidth: 26 },
-        4: { halign: "center", cellWidth: 40, fontStyle: "bold" },
-        5: { halign: "center", fontStyle: "bold", cellWidth: 85, fontSize: 8 },
-      },
-      didParseCell: (h) => {
-        if (h.section === "body" && h.column.index === 5) {
-          const raw = String(h.cell.raw ?? "").toUpperCase();
-          const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
-          const lvl = map[raw];
-          if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
-        }
-      },
-      margin: { left: margin, right: margin },
-    });
-    y = (doc as any).lastAutoTable.finalY + 14;
-
-    if (setoresSemAmostra.length > 0) {
-      const listaGes = setoresSemAmostra
-        .map((s) => `${formatLabelGes(s.label)} (n=${s.fatorPrincipal!.n})`)
-        .join("; ");
-      paragraph(
-        `Fora da priorização por amostra insuficiente — abaixo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes: ` +
-        `${listaGes}. A ausência destes GES na lista acima não significa que estejam em risco baixo: ` +
-        `significa que a participação foi pequena demais para classificar o grupo. Ampliar a adesão ` +
-        `nesses GES é ação prioritária do próximo ciclo.`
-      );
-    }
-
-
-    // Número derivado de `secoesEmitidas`, não fixo: com a Caracterização da
-    // Exposição emitida o Plano de Ação é a seção 12, sem ela é a 11. Estava
-    // escrito "seção 11" à mão e apontava para a seção errada no caso comum —
-    // mesma armadilha que o sumário numerado à mão tinha.
-    if (incluirPlanoAcao) {
-      const numPlano = String(
-        secoesEmitidas.indexOf("Plano de Ação Recomendado") + 1,
-      ).padStart(2, "0");
-      paragraph(
-        `As recomendações preventivas detalhadas e o plano de ação estão apresentados na seção ${numPlano} — ` +
-        "Plano de Ação Recomendado, elaborado a partir do Inventário de Riscos Ocupacionais para o PGR."
-      );
-    }
-
-
-
-
     // ============== 09. CLASSIFICAÇÃO E AVALIAÇÃO DOS RISCOS PSICOSSOCIAIS ==============
     // Exige mais que o padrão: título (46) + parágrafo de abertura (~50) + a
     // matriz 5x5, que pede 260 e tem ensure() próprio. Com o mínimo padrão o
     // título ficava no pé de uma página e a matriz caía na seguinte.
-    sectionTitle("Classificação e Avaliação dos Riscos Psicossociais", { samePageIfFits: 360 });
+    sectionTitle("Critérios de Classificação do Risco", { samePageIfFits: 300 });
     paragraph(
       "A classificação utiliza a matriz 5×5 (Probabilidade × Severidade), adotada como critério " +
       "técnico interno para integração dos achados psicossociais ao Inventário de Riscos do PGR " +
-      "(NR-01 / GRO), resultando nas categorias TRIVIAL, TOLERÁVEL, MODERADO, SUBSTANCIAL e " +
-      "INTOLERÁVEL."
+      "(NR-01 / GRO)."
     );
 
     // ---- Matriz 5x5 ----
-    ensure(260);
-    const matProbAxisW = 56;       // célula própria do eixo "PROBABILIDADE"
-    const matRowLabelW = 70;       // coluna dos rótulos das linhas (MUITO PROVÁVEL, etc.)
-    const matLegendW = 90;
+    // Célula de 22pt (era 32): a matriz é um quadro de referência, não o achado
+    // do relatório — e em 32 o bloco de critérios tomava uma página inteira.
+    ensure(200);
+    const matProbAxisW = 46;       // célula própria do eixo "PROBABILIDADE"
+    const matRowLabelW = 66;       // coluna dos rótulos das linhas (MUITO PROVÁVEL, etc.)
+    const matLegendW = 0;
     const matCellW = (pageW - margin * 2 - matProbAxisW - matRowLabelW - matLegendW) / 5;
-    const matCellH = 32;
+    const matCellH = 22;
     const matX = margin + matProbAxisW + matRowLabelW;
     const matY = y + matCellH;
 
@@ -932,9 +754,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     fillRgb(PRIMARY);
     doc.rect(margin, y, matProbAxisW + matRowLabelW, matCellH, "F");
     doc.rect(matX, y, matCellW * 5, matCellH, "F");
-    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-    doc.text("MATRIZ 5×5", margin + (matProbAxisW + matRowLabelW) / 2, y + matCellH / 2 + 3, { align: "center" });
-    doc.text("SEVERIDADE", matX + (matCellW * 5) / 2, y + matCellH / 2 + 3, { align: "center" });
+    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(7.5);
+    doc.text("MATRIZ 5×5", margin + (matProbAxisW + matRowLabelW) / 2, y + matCellH / 2 + 2.5, { align: "center" });
+    doc.text("SEVERIDADE", matX + (matCellW * 5) / 2, y + matCellH / 2 + 2.5, { align: "center" });
 
     // Linha de rótulos da severidade
     const sevLabels = ["LEVE\n1", "BAIXO\n2", "MODERADO\n3", "ALTO\n4", "EXTREMO\n5"];
@@ -943,12 +765,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     fillRgb([239, 246, 255]);
     doc.rect(matX, matY, matCellW * 5, matCellH, "F");
-    rgb(PRIMARY); doc.setFontSize(7); doc.setFont("helvetica", "bold");
+    rgb(PRIMARY); doc.setFontSize(6.4); doc.setFont("helvetica", "bold");
     sevLabels.forEach((lbl, i) => {
       const parts = lbl.split("\n");
-      doc.text(parts[0], matX + matCellW * i + matCellW / 2, matY + 13, { align: "center" });
+      doc.text(parts[0], matX + matCellW * i + matCellW / 2, matY + 9.5, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.text(parts[1], matX + matCellW * i + matCellW / 2, matY + 24, { align: "center" });
+      doc.text(parts[1], matX + matCellW * i + matCellW / 2, matY + 17.5, { align: "center" });
       doc.setFont("helvetica", "bold");
     });
 
@@ -970,11 +792,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // Rótulo da linha
       fillRgb([248, 250, 252]);
       doc.rect(margin + matProbAxisW, ry, matRowLabelW, matCellH, "F");
-      rgb(PRIMARY); doc.setFontSize(6.8); doc.setFont("helvetica", "bold");
+      rgb(PRIMARY); doc.setFontSize(5.8); doc.setFont("helvetica", "bold");
       const ls = probLabels[rowIdx].split("\n");
-      doc.text(ls[0], margin + matProbAxisW + matRowLabelW / 2, ry + 13, { align: "center" });
+      doc.text(ls[0], margin + matProbAxisW + matRowLabelW / 2, ry + 9.5, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.text(ls[1], margin + matProbAxisW + matRowLabelW / 2, ry + 24, { align: "center" });
+      doc.text(ls[1], margin + matProbAxisW + matRowLabelW / 2, ry + 17.5, { align: "center" });
       doc.setFont("helvetica", "bold");
 
       [1, 2, 3, 4, 5].forEach((s, colIdx) => {
@@ -982,39 +804,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const cls = classificarRisco(p, s);
         fillRgb(cls.cor);
         doc.rect(cx, ry, matCellW, matCellH, "F");
-        rgb([255, 255, 255]); doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        doc.text(String(p * s), cx + matCellW / 2, ry + matCellH / 2 + 4, { align: "center" });
+        rgb([255, 255, 255]); doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+        doc.text(String(p * s), cx + matCellW / 2, ry + matCellH / 2 + 3, { align: "center" });
       });
     });
 
-    // Legenda
-    const legX = matX + matCellW * 5;
-    fillRgb(PRIMARY); doc.rect(legX, y, matLegendW, matCellH, "F");
-    rgb([255, 255, 255]); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-    doc.text("LEGENDA", legX + matLegendW / 2, y + 13, { align: "center" });
-    doc.setFontSize(6.8); doc.setFont("helvetica", "normal");
-    doc.text("NÍVEL DE RISCO", legX + matLegendW / 2, y + 24, { align: "center" });
-    const legendaItens: Array<[Nivel5, string]> = [
-      ["INTOLERÁVEL", NIVEL5_FAIXA.INTOLERÁVEL],
-      ["SUBSTANCIAL", NIVEL5_FAIXA.SUBSTANCIAL],
-      ["MODERADO",    NIVEL5_FAIXA.MODERADO],
-      ["TOLERÁVEL",   NIVEL5_FAIXA.TOLERÁVEL],
-      ["TRIVIAL",     NIVEL5_FAIXA.TRIVIAL],
-    ];
-    legendaItens.forEach((it, i) => {
-      // Alinhar com as linhas da matriz (que começam em matY + matCellH, após linha de labels de severidade)
-      const ly = matY + matCellH + i * matCellH;
-      fillRgb(NIVEL5_FILL[it[0]]);
-      doc.rect(legX, ly, matLegendW, matCellH, "F");
-      rgb(NIVEL5_COR[it[0]]); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-      doc.text(it[0], legX + matLegendW / 2, ly + matCellH / 2 - 2, { align: "center", baseline: "middle" } as any);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(6.8);
-      doc.text(it[1], legX + matLegendW / 2, ly + matCellH / 2 + 9, { align: "center", baseline: "middle" } as any);
-    });
+    // A coluna de legenda saiu da matriz: nível, faixa e ação de controle agora
+    // vivem numa única tabela abaixo, ao lado das escalas. Antes o mesmo dado
+    // aparecia três vezes na mesma página — na legenda da matriz, na tabela de
+    // escalas e no bloco "Métodos de Controle e Ação", que sozinho consumia
+    // uma folha inteira.
+    y = matY + matCellH * 6 + 20;
 
-    y = matY + matCellH * 6 + 24;
-
-    // ---- Tabelas Probabilidade / Severidade / Controle ----
+    // ---- Escalas e níveis, lado a lado ----
     // Os rótulos são os mesmos do eixo da matriz acima (probLabels). Antes esta
     // tabela descrevia CONDIÇÃO ("Ambiente saudável", "Problema frequente")
     // enquanto o eixo da matriz descrevia CHANCE ("Rara", "Muito provável") —
@@ -1022,87 +824,56 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // (subitem 1.5.4.4.2) define o nível de risco como combinação de severidade
     // com a PROBABILIDADE de ocorrência, então é a chance que precisa ser
     // nomeada aqui.
-    // Probabilidade e Severidade lado a lado, em meia largura cada. Empilhadas
-    // custavam ~150pt a mais e empurravam o fim da seção para uma segunda
-    // página que ficava com um único bloco. São duas tabelas de 2 colunas e 5
-    // linhas: cabem folgadas em 250pt. Conteúdo e valores idênticos.
-    // +28 e não +14: o título da direita ocupa duas linhas em meia largura,
-    // e a segunda linha colidiria com o topo da tabela.
     const escY = y;
-    const escLargura = (pageW - margin * 2 - 20) / 2;
-    const escDireitaX = margin + escLargura + 20;
-
-    rgb(PRIMARY); doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-    doc.text("Escala de Probabilidade", margin, escY);
-    doc.text("Escala de Severidade (impacto à saúde ocupacional)", escDireitaX, escY, { maxWidth: escLargura } as any);
-    rgb([40, 40, 40]); doc.setFont("helvetica", "normal");
+    const escLargura = (pageW - margin * 2 - 16) / 2;
+    const escDireitaX = margin + escLargura + 16;
 
     autoTable(doc, {
-      startY: escY + 28,
-      head: [["Probabilidade", "Chance de ocorrência"]],
+      startY: escY,
+      head: [["#", "Probabilidade\n(chance)", "Severidade\n(impacto potencial)"]],
       body: [
-        ["1", "Rara"],
-        ["2", "Pouco provável"],
-        ["3", "Possível"],
-        ["4", "Provável"],
-        ["5", "Muito provável"],
+        ["1", "Rara", "desconforto leve"],
+        ["2", "Pouco provável", "fadiga mental leve"],
+        ["3", "Possível", "estresse ocupacional"],
+        ["4", "Provável", "transtornos psicológicos"],
+        ["5", "Muito provável", "adoecimento grave"],
       ],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
-      styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 76 } },
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 2.5 },
+      styles: { fontSize: 7.5, cellPadding: 2.5 },
+      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 16 } },
       tableWidth: escLargura,
       margin: { left: margin, right: margin },
     });
     const fimEsq = (doc as any).lastAutoTable.finalY;
 
+    const niveis5: Nivel5[] = ["TRIVIAL", "TOLERÁVEL", "MODERADO", "SUBSTANCIAL", "INTOLERÁVEL"];
     autoTable(doc, {
-      startY: escY + 28,
-      head: [["Severidade", "Impacto"]],
+      startY: escY,
+      head: [["Nível de risco\n(P × S)", "Faixa", "Ação de controle"]],
       body: [
-        ["1", "desconforto leve"],
-        ["2", "fadiga mental leve"],
-        ["3", "estresse ocupacional"],
-        ["4", "transtornos psicológicos"],
-        ["5", "adoecimento grave"],
+        ["TRIVIAL", NIVEL5_FAIXA.TRIVIAL, "nenhuma ação"],
+        ["TOLERÁVEL", NIVEL5_FAIXA.TOLERÁVEL, "monitoramento"],
+        ["MODERADO", NIVEL5_FAIXA.MODERADO, "controle adicional"],
+        ["SUBSTANCIAL", NIVEL5_FAIXA.SUBSTANCIAL, "controle necessário"],
+        ["INTOLERÁVEL", NIVEL5_FAIXA.INTOLERÁVEL, "ações imediatas"],
       ],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
-      styles: { fontSize: 9, cellPadding: 4 },
-      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 66 } },
-      tableWidth: escLargura,
-      margin: { left: escDireitaX, right: margin },
-    });
-    y = Math.max(fimEsq, (doc as any).lastAutoTable.finalY) + 14;
-
-    // 160pt é o que o bloco realmente ocupa (subtítulo + 6 linhas de tabela).
-    // Reservava 200 e quebrava antes do necessário.
-    if (y + 160 > pageH - 60) { doc.addPage(); y = margin + 30; }
-    subTitle("Métodos de Controle e Ação");
-    autoTable(doc, {
-      startY: y,
-      head: [["Nível de Risco", "Controle"]],
-      body: [
-        ["INTOLERÁVEL", "ações imediatas"],
-        ["SUBSTANCIAL", "controle necessário"],
-        ["MODERADO",    "controle adicional"],
-        ["TOLERÁVEL",   "monitoramento"],
-        ["TRIVIAL",     "nenhuma ação"],
-      ],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9 },
-      styles: { fontSize: 9, cellPadding: 5 },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
-      rowPageBreak: "avoid",
-      pageBreak: "avoid",
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 2.5 },
+      styles: { fontSize: 7.5, cellPadding: 2.5 },
+      columnStyles: {
+        0: { fontStyle: "bold", halign: "center", cellWidth: 74 },
+        1: { halign: "center", cellWidth: 38 },
+      },
       didParseCell: (h) => {
         if (h.section === "body" && h.column.index === 0) {
-          const niveis: Nivel5[] = ["INTOLERÁVEL", "SUBSTANCIAL", "MODERADO", "TOLERÁVEL", "TRIVIAL"];
-          const lvl = niveis[h.row.index];
+          const lvl = niveis5[h.row.index];
           h.cell.styles.fillColor = NIVEL5_FILL[lvl];
           h.cell.styles.textColor = NIVEL5_COR[lvl];
         }
       },
-      margin: { left: margin, right: margin },
+      tableWidth: escLargura,
+      margin: { left: escDireitaX, right: margin },
     });
-    y = (doc as any).lastAutoTable.finalY + 18;
+    y = Math.max(fimEsq, (doc as any).lastAutoTable.finalY) + 16;
 
     // ============== 10. INVENTÁRIO DE RISCOS OCUPACIONAIS PARA O PGR ==============
     // Renderizado em página própria em PAISAGEM — título, intro e tabela
@@ -1120,18 +891,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     let linhasBaseFraca = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
-    const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
-    const dedupFuncoesInv = (fs: typeof data.setores[number]["funcoes"]) => {
-      const seen = new Set<string>();
-      const out: string[] = [];
-      fs.forEach((f) => {
-        const k = cleanFuncNomeInv(f.funcao);
-        if (!k || seen.has(k)) return;
-        seen.add(k);
-        out.push(k);
-      });
-      return out;
-    };
+    // A coluna "Função" saiu do Inventário: as funções de cada GES já saem na
+    // seção de caracterização, com o número de respondentes por função, e aqui
+    // custavam duas linhas em TODA linha da tabela — era o que empurrava o
+    // inventário para uma segunda página paisagem. O risco é inventariado por
+    // GES, que é a unidade de exposição similar.
 
     // Índice setor.nome (normalizado) → setor.id, para casar com controles cadastrados.
     const setorNomeParaId = new Map<string, string>();
@@ -1198,8 +962,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const fp = s.fatorPrincipal;
         if (!fp || fp.n === 0) return;
         const mte = mteParaDim(fp.dim.id, fp.risco.nivel);
-        // Uma função por linha → autoTable nunca precisa quebrar dentro da palavra.
-        const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "—";
         const controleTxt = textoControleParaLinha(s.setor, fp.dim.id);
         const semControle = controleTxt === CONTROLE_PADRAO;
         if (semControle) linhasSemControle += 1;
@@ -1211,17 +973,25 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // página e publica "MODERADO" na outra, para o mesmo GES.
         const baseFraca = !amostraSuficiente(fp.n);
         if (baseFraca) linhasBaseFraca += 1;
+        // Abaixo do piso amostral, P, S e nível saem em branco. A versão
+        // anterior publicava a classificação com um asterisco de ressalva, e a
+        // ressalva não segurava: o número, uma vez impresso, é o que vai para o
+        // PGR. O perigo continua inventariado — some a conclusão, não a linha —
+        // e o Plano de Ação recebe a ação de avaliação complementar.
+        const car = caracterizarExposicao(fp);
         invBody.push([
           formatLabelGes(s.label) + (baseFraca ? " *" : ""),
-          funcoesTxt,
           protectWords(fp.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           semControle ? "—" : protectWords(controleTxt),
-          String(fp.prob),
-          String(fp.sev),
-          fp.risco.nivel5,
+          baseFraca ? "—" : car.duracao,
+          baseFraca ? "—" : car.frequencia,
+          baseFraca ? "—" : car.intensidade,
+          baseFraca ? "—" : String(fp.prob),
+          baseFraca ? "—" : String(fp.sev),
+          baseFraca ? "A avaliar" : fp.risco.nivel5,
         ]);
       });
     }
@@ -1231,17 +1001,22 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       fatoresValidos.forEach((f) => {
         const mte = mteParaDim(f.dim.id, f.risco.nivel);
         linhasSemControle += 1;
+        const baseFraca = !amostraSuficiente(f.n);
+        if (baseFraca) linhasBaseFraca += 1;
+        const car = caracterizarExposicao(f);
         invBody.push([
-          protectWords(data.empresaNome),
-          "—",
+          protectWords(data.empresaNome) + (baseFraca ? " *" : ""),
           protectWords(f.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           "—",
-          String(f.prob),
-          String(f.sev),
-          f.risco.nivel5,
+          baseFraca ? "—" : car.duracao,
+          baseFraca ? "—" : car.frequencia,
+          baseFraca ? "—" : car.intensidade,
+          baseFraca ? "—" : String(f.prob),
+          baseFraca ? "—" : String(f.sev),
+          baseFraca ? "A avaliar" : f.risco.nivel5,
         ]);
       });
     }
@@ -1256,8 +1031,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     fillRgb(ACCENT); doc.roundedRect(margin, 36, 38, 28, 4, 4, "F");
     rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
     doc.text(invNum, margin + 19, 55, { align: "center" });
-    rgb(PRIMARY); doc.setFontSize(13); doc.setFont("helvetica", "bold");
-    doc.text("INVENTÁRIO DE RISCOS OCUPACIONAIS PARA O PGR", margin + 48, 55);
+    rgb(PRIMARY); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+    doc.text("INVENTÁRIO PRELIMINAR DE RISCOS PSICOSSOCIAIS PARA VALIDAÇÃO E INTEGRAÇÃO AO PGR", margin + 48, 55);
     doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]); doc.setLineWidth(0.6);
     doc.line(margin, 68, lwPageW - margin, 68);
     doc.setLineWidth(0.2);
@@ -1265,7 +1040,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     const introLines = doc.splitTextToSize(
-      "Resultado técnico final da AEP para integração direta ao Inventário de Riscos do PGR. Cada linha representa um risco psicossocial reconhecido no recorte avaliado, com a nomenclatura do Guia MTE.",
+      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Duração, frequência e intensidade são a caracterização preliminar da exposição, a confirmar em campo pelo responsável técnico (NR-17, subitem 17.3.1.1).",
       lwPageW - margin * 2,
     );
     doc.text(introLines, margin, 84);
@@ -1273,25 +1048,40 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     autoTable(doc, {
       startY: invStartY,
-      head: [["GES / Setores", "Função", "Domínio", "Agente / Situação", "Perigo", "Possível Consequência", "Controles", "P", "S", "Nível de\nrisco PGR"]],
-      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 3 },
-      styles: { fontSize: 7.5, cellPadding: 3, valign: "top", overflow: "linebreak" },
+      // "Possível Consequência" virou "Possíveis agravos à saúde relacionados
+      // ao trabalho": é a expressão do Guia MTE e não deixa margem para ler a
+      // coluna como previsão de dano num trabalhador específico.
+      // Duração/Frequência/Intensidade migraram da seção "Caracterização da
+      // Exposição", que era uma página retrato inteira repetindo GES e domínio
+      // para dizer três palavras derivadas do mesmo P e S já impressos aqui.
+      head: [["GES / Setores", "Domínio", "Agente / Situação", "Perigo", "Possíveis agravos à saúde relacionados ao trabalho", "Controles", "Duração", "Frequência", "Intensidade", "P", "S", "Nível de\nrisco PGR"]],
+      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 6.8, halign: "center", valign: "middle", cellPadding: 2 },
+      styles: { fontSize: 6.8, cellPadding: 2, valign: "top", overflow: "linebreak" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
-      // Soma ≈ 760pt — cabe na A4 paisagem (842 - 80 de margens = 762).
+      // Soma = 762pt — exatamente a A4 paisagem (842 - 80 de margens).
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 108 },
-        1: { cellWidth: 93 },
-        2: { cellWidth: 83 },
-        3: { cellWidth: 98 },
-        4: { cellWidth: 88, fontStyle: "bold" },
-        5: { cellWidth: 98 },
-        6: { cellWidth: 93, halign: "left" },
-        7: { halign: "center", cellWidth: 14 },
-        8: { halign: "center", cellWidth: 14 },
-        9: { halign: "center", cellWidth: 70, fontStyle: "bold" },
+        0: { fontStyle: "bold", cellWidth: 104 },
+        1: { cellWidth: 76 },
+        2: { cellWidth: 96 },
+        3: { cellWidth: 86, fontStyle: "bold" },
+        4: { cellWidth: 100 },
+        5: { cellWidth: 72, halign: "left" },
+        6: { halign: "center", cellWidth: 50 },
+        7: { halign: "center", cellWidth: 52 },
+        8: { halign: "center", cellWidth: 46 },
+        9: { halign: "center", cellWidth: 14 },
+        10: { halign: "center", cellWidth: 14 },
+        11: { halign: "center", cellWidth: 52, fontStyle: "bold" },
       },
-      didParseCell: (h: any) => { colorirNivel(9)(h); },
+      didParseCell: (h: any) => {
+        colorirNivel(11)(h);
+        // "A avaliar" não é um nível de risco e não pode receber cor de nível.
+        if (h.section === "body" && h.column.index === 11 && String(h.cell.raw ?? "") === "A avaliar") {
+          h.cell.styles.fillColor = [243, 244, 246];
+          h.cell.styles.textColor = [75, 85, 99];
+        }
+      },
       margin: { left: margin, right: margin },
     });
 
@@ -1313,11 +1103,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       if (linhasBaseFraca > 0) {
         doc.text(
           `Nota: os GES marcados com * tiveram menos de ${MIN_RESPONDENTES_CONCLUSAO} respondentes, ` +
-          "abaixo do piso metodológico interno. O perigo permanece inventariado, mas a Probabilidade " +
-          "e o Nível de Risco destas linhas derivam de resultado que o próprio relatório classificou " +
-          "como insuficiente para conclusão por questionário: exigem confirmação por observação da " +
-          "atividade, análise das condições de trabalho e diálogo com os trabalhadores antes de " +
-          "serem tomados como definitivos.",
+          "abaixo do piso metodológico interno. O perigo permanece inventariado, mas a caracterização " +
+          "da exposição, a Probabilidade, a Severidade e o Nível de Risco ficam em aberto: classificar " +
+          "a partir de amostra insuficiente produziria um número que o próprio relatório não sustenta. " +
+          "A avaliação complementar destes GES consta do Plano de Ação.",
           margin, yNota, { maxWidth: larguraNota } as any,
         );
       }
@@ -1351,88 +1140,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
     }
 
-    // ============== CARACTERIZAÇÃO DA EXPOSIÇÃO ==============
-    // Exigida pelo Guia de Fatores de Riscos Psicossociais (MTE), no capítulo
-    // sobre implementação: "Na caracterização da exposição deve-se fazer uma
-    // descrição relatando como a atividade é realizada. Devem ser incluídos
-    // aspectos importantes como a duração do trabalho, a frequência e a
-    // intensidade da exposição".
-    //
-    // Os três eixos são derivados de P e S — a mesma escala que classifica o
-    // risco —, o que os torna coerentes com o Inventário, mas os mantém como
-    // LEITURA DO INSTRUMENTO. O Guia atribui a caracterização ao profissional,
-    // que avalia "a partir das condições encontradas e do seu conhecimento e
-    // expertise"; por isso a tabela sai marcada como preliminar, para ser
-    // confirmada em campo pelo responsável técnico.
-    const carBody: any[] = [];
-    let carBaseFraca = 0;
-    if (data.setores.length > 0) {
-      data.setores.forEach((s) => {
-        const fp = s.fatorPrincipal;
-        if (!fp || fp.n === 0) return;
-        if (!amostraSuficiente(fp.n)) carBaseFraca += 1;
-        const c = caracterizarExposicao(fp);
-        carBody.push([
-          formatLabelGes(s.label),
-          protectWords(fp.dim.title),
-          c.duracao,
-          c.frequencia,
-          c.intensidade,
-          c.grupo,
-        ]);
-      });
-    } else {
-      fatoresValidos.forEach((f) => {
-        const c = caracterizarExposicao(f);
-        carBody.push([
-          protectWords(data.empresaNome),
-          protectWords(f.dim.title),
-          c.duracao,
-          c.frequencia,
-          c.intensidade,
-          c.grupo,
-        ]);
-      });
-    }
-
-    // Mesma condição usada para montar o sumário — as duas precisam concordar,
-    // senão a numeração impressa volta a divergir da listada.
-    if (temCaracterizacaoExposicao && carBody.length > 0) {
-      doc.addPage("a4", "portrait");
-      y = 60;
-      sectionTitle("Caracterização da Exposição");
-      paragraph(
-        "Caracterização PRELIMINAR da duração, frequência e intensidade da exposição aos fatores " +
-          "identificados, considerando as condições observadas, as informações coletadas e os " +
-          "critérios da organização. Cabe ao responsável técnico confirmá-la em campo (NR-17, " +
-          "subitem 17.3.1.1).",
-      );
-      if (carBaseFraca > 0) {
-        paragraph(
-          `Em ${carBaseFraca} GES a caracterização deriva de recorte com menos de ` +
-          `${MIN_RESPONDENTES_CONCLUSAO} respondentes. Nesses casos a confirmação por observação da ` +
-          "atividade e diálogo com os trabalhadores não é opcional: é o que sustenta a caracterização.",
-        );
-      }
-      autoTable(doc, {
-        startY: y,
-        head: [["GES / Setores", "Domínio", "Duração", "Frequência", "Intensidade", "Grupo exposto"]],
-        body: carBody,
-        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle", cellPadding: 3 },
-        styles: { fontSize: 7.5, cellPadding: 3, valign: "top", overflow: "linebreak" },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { fontStyle: "bold", cellWidth: 95 },
-          1: { cellWidth: 85 },
-          2: { cellWidth: 68, halign: "center" },
-          3: { cellWidth: 78, halign: "center" },
-          4: { cellWidth: 60, halign: "center" },
-          5: { halign: "center" },
-        },
-        margin: { left: margin, right: margin },
-      });
-      y = (doc as any).lastAutoTable.finalY + 18;
-    }
+    // A seção "Caracterização da Exposição" foi absorvida pelo Inventário.
+    // Ocupava uma página retrato inteira para repetir GES e domínio e imprimir
+    // três palavras (duração, frequência, intensidade) derivadas do mesmo P e S
+    // que já saem no Inventário — a exigência do Guia MTE é que a caracterização
+    // exista, não que ocupe seção própria, e junto da linha do risco ela é lida
+    // no contexto certo.
 
     // Próxima seção só ganha página nova SE existir (evita página em branco).
     if (incluirPlanoAcao) {
@@ -1447,65 +1160,103 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano PRELIMINAR derivado do Inventário. A prioridade e o prazo indicados são SUGESTÃO, " +
-        "por critério metodológico interno vinculado ao Nível de Risco PGR — não são prazos fixados " +
-        "por norma. Cabe à organização defini-los considerando a prioridade, a complexidade, os " +
-        "recursos necessários e o número de trabalhadores potencialmente atingidos. Responsáveis, " +
-        "forma de acompanhamento, evidências, datas e status deverão ser definidos na devolutiva " +
-        "técnica da empresa, conforme a NR-01 (item 1.5.5)."
+        "Plano PRELIMINAR derivado do Inventário. Prioridade e prazo são SUGESTÃO por critério " +
+        "metodológico interno vinculado ao Nível de Risco PGR, não prazos fixados por norma. " +
+        "Responsáveis, evidências, datas e status deverão ser definidos pela organização na " +
+        "devolutiva técnica (NR-01, item 1.5.5).",
+        9,
       );
 
 
       const ordem: NivelRisco[] = ["Crítico", "Alto", "Médio", "Baixo"];
       const planoBody: any[] = [];
-      let item = 0;
       const respDefault = "A definir pela empresa na devolutiva técnica";
+
+      // Ação única para todo GES abaixo do piso amostral. Antes cada um desses
+      // GES gerava sua própria linha, com ações derivadas de um percentual que
+      // o Inventário já deixa em branco — o plano mandava agir sobre um risco
+      // que o relatório não classificou. A única ação cabível é ir a campo.
+      const ACAO_SEM_DADO =
+        "Realizar avaliação complementar das condições de trabalho, com observação da atividade e " +
+        "diálogo com trabalhadores, antes da classificação do risco e definição de medidas.";
+      const gesSemDado = data.setores
+        .filter((s) => s.fatorPrincipal && s.fatorPrincipal.n > 0 && !amostraSuficiente(s.fatorPrincipal.n))
+        .map((s) => formatLabelGes(s.label));
+
+      // Deduplicação: a recomendação vem do domínio e da faixa de percentual,
+      // então GES diferentes com o mesmo domínio produziam linhas idênticas —
+      // o plano de doze GES virava doze vezes a mesma ação. Agora a ação sai
+      // uma vez e a coluna GES lista todos os grupos que ela cobre.
+      type LinhaPlano = { acao: string; perigo: string; nivel: NivelRisco; ges: string[] };
+      const agrupadas = new Map<string, LinhaPlano>();
+      const acumular = (acao: string, perigo: string, nivel: NivelRisco, ges: string) => {
+        const chave = `${nivel}|${perigo}|${acao}`;
+        const atual = agrupadas.get(chave);
+        if (atual) {
+          if (!atual.ges.includes(ges)) atual.ges.push(ges);
+          return;
+        }
+        agrupadas.set(chave, { acao, perigo, nivel, ges: [ges] });
+      };
+
       ordem.forEach((nivel) => {
         // Prioridade e prazo seguem o Nível de Risco PGR do Inventário
         data.setores.forEach((s) => {
           const fp = s.fatorPrincipal;
           if (!fp || fp.n === 0) return;
+          // GES sem base amostral não entram aqui: têm a linha única acima.
+          if (!amostraSuficiente(fp.n)) return;
           const nivelPgr: NivelRisco = fp.risco.nivel;
           if (nivelPgr !== nivel) return;
           const mte = mteParaDim(fp.dim.id, nivelPgr);
           const acoes = getRecomendacoes(fp.dim.id, fp.scorePct);
           const acaoBase = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-          item += 1;
-          planoBody.push([
-            String(item).padStart(2, "0"),
-            acaoBase,
-
-            mte.perigo,
-            formatLabelGes(s.label),
-            respDefault,
-            NIVEL_PRAZO[nivelPgr],
-            NIVEL_PRIORIDADE[nivelPgr],
-            "A iniciar",
-            "—",
-          ]);
+          acumular(acaoBase, mte.perigo, nivelPgr, formatLabelGes(s.label));
         });
         if (data.setores.length === 0) {
           fatoresValidos
-            .filter((f) => f.risco.nivel === nivel)
+            .filter((f) => amostraSuficiente(f.n) && f.risco.nivel === nivel)
             .forEach((f) => {
               const mte = mteParaDim(f.dim.id, f.risco.nivel);
               const acoes = getRecomendacoes(f.dim.id, f.scorePct);
               const acaoTxt = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-              item += 1;
-              planoBody.push([
-                String(item).padStart(2, "0"),
-                acaoTxt,
-                mte.perigo,
-                data.empresaNome,
-                respDefault,
-                NIVEL_PRAZO[nivel],
-                NIVEL_PRIORIDADE[nivel],
-                "A iniciar",
-                "—",
-              ]);
+              acumular(acaoTxt, mte.perigo, nivel, data.empresaNome);
             });
         }
       });
+
+      let item = 0;
+      agrupadas.forEach((l) => {
+        item += 1;
+        planoBody.push([
+          String(item).padStart(2, "0"),
+          l.acao,
+          l.perigo,
+          l.ges.join("\n"),
+          respDefault,
+          NIVEL_PRAZO[l.nivel],
+          NIVEL_PRIORIDADE[l.nivel],
+          "A iniciar",
+          "—",
+        ]);
+      });
+
+      // A linha dos GES sem dado fecha o plano: é pré-requisito das demais
+      // medidas naqueles grupos, não uma ação de mesma natureza.
+      if (gesSemDado.length > 0) {
+        item += 1;
+        planoBody.push([
+          String(item).padStart(2, "0"),
+          ACAO_SEM_DADO,
+          "Risco psicossocial não classificado",
+          gesSemDado.join("\n"),
+          respDefault,
+          "A definir",
+          "Preliminar",
+          "A iniciar",
+          "—",
+        ]);
+      }
 
       autoTable(doc, {
         startY: y,
@@ -1542,11 +1293,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       data.contagemNiveis.Alto > 0 ? "Alto" :
       data.contagemNiveis.Médio > 0 ? "Médio" : "Baixo";
 
-    paragraph(
-      "A AEP identificou e classificou os perigos psicossociais relacionados ao trabalho, " +
-      "integrando os resultados ao GRO/PGR (NR-01) e à NR-17 conforme os critérios adotados " +
-      "neste relatório."
-    );
+    // O parágrafo de abertura ("A AEP identificou e classificou os perigos...")
+    // saiu: dizia o que a Introdução, a Metodologia e o Inventário já dizem, e
+    // o callout logo abaixo abre a conclusão com o dado, não com a repetição.
 
     // Ressalva de amostra no nível do documento inteiro. Sem ela, uma AEP de
     // três respondentes é lida como uma AEP qualquer — e é justamente a que
@@ -1556,7 +1305,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       callout(
         `RESSALVA DE AMOSTRA: esta avaliação reuniu ${data.totalRespostas} resposta(s) válida(s), abaixo do ` +
         `mínimo de ${MIN_RESPONDENTES_CONCLUSAO} do critério metodológico interno adotado neste relatório ` +
-        `para conclusão por domínio (item ${itemMet("2.1")}). ` +
+        `para conclusão por domínio (item ${itemMet("2")}). ` +
         `Os resultados apresentados têm caráter exploratório e não sustentam afirmação de presença nem de ` +
         `ausência de risco psicossocial na organização. Este documento não deve ser utilizado como ` +
         `demonstração de conformidade sem nova coleta com participação ampliada.`,
@@ -1589,7 +1338,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         NIVEL_COR[nivelGeral],
       );
       paragraph(
-        "Recomenda-se revisão anual como boa prática de gestão, sem prejuízo das revisões obrigatórias e das hipóteses de antecipação previstas na NR-01 — entre elas, mudanças significativas nas condições de trabalho."
+        "Recomenda-se revisão anual, sem prejuízo das revisões e antecipações obrigatórias da NR-01 — entre elas, mudanças significativas nas condições de trabalho.",
+        9,
       );
     } else {
       callout(
@@ -1602,22 +1352,36 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         NIVEL_COR[nivelGeral],
       );
       paragraph(
-        "Os achados foram integrados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado. " +
-        "Os GES sem respostas neste ciclo devem ser priorizados na próxima aplicação ou ter a ausência " +
-        "de participantes formalmente justificada. Recomenda-se revisão anual como boa prática de " +
-        "gestão, sem prejuízo das revisões obrigatórias e das hipóteses de antecipação previstas na NR-01."
+        "Os GES sem respostas devem ser priorizados na próxima aplicação ou ter a ausência de " +
+        "participantes formalmente justificada. Recomenda-se revisão anual, sem prejuízo das " +
+        "revisões e antecipações obrigatórias da NR-01.",
+        9,
       );
     }
 
     // Duas notas viraram uma: participação da CIPA e caráter preliminar são a
     // mesma pendência — o que falta acontecer na devolutiva técnica.
     paragraph(
-      "A participação da CIPA ou dos representantes dos trabalhadores na análise dos resultados, " +
-      "na priorização e no acompanhamento das medidas deve ser registrada formalmente na " +
-      "devolutiva técnica, junto com os controles, responsáveis e evidências pendentes de " +
-      "validação em campo. Até lá o relatório tem caráter técnico-preliminar."
+      "Relatório de caráter técnico-preliminar: a participação da CIPA ou dos representantes dos " +
+      "trabalhadores, os controles, responsáveis e evidências devem ser registrados na devolutiva " +
+      "técnica.",
+      9,
     );
 
+
+
+
+
+    // O Anexo I (mapeamento técnico do Guia MTE) saiu: era um dicionário de
+    // domínio → agente → perigo → consequência que apenas repetia, em outra
+    // disposição, o que o Inventário já traz linha a linha para os GES reais.
+    // O Anexo II virou esta linha, dentro da própria Conclusão: uma seção
+    // numerada, com título e badge, para exibir três siglas custava mais
+    // espaço do que o texto que carregava — e o que cada norma é já foi dito
+    // na Introdução e na Metodologia.
+    if (incluirAnexos) {
+      paragraph("Base normativa: NR-01, NR-17 e Guia MTE de Fatores de Riscos Psicossociais.", 9);
+    }
 
     // ----- Bloco de assinatura do Responsável Técnico -----
     {
@@ -1630,83 +1394,21 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         .replace(/Segurnça/gi, "Segurança")
         .replace(/Seguranca/g, "Segurança");
       const dataE = (rt?.dataEmissao || data.emitidoEm.slice(0, 10));
-      ensure(150);
-      y += 24;
+      // 82pt é o que o bloco realmente ocupa (linha + 4 linhas de 12pt).
+      // Reservando 150 + 24 de folga ele caía sozinho na última página.
+      ensure(82);
+      y += 8;
       doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.5);
-      const lineY = y + 30;
+      const lineY = y + 16;
       doc.line(margin + 60, lineY, pageW - margin - 60, lineY);
       doc.setFont("helvetica", "bold"); doc.setFontSize(10); rgb(PRIMARY);
-      doc.text(nome || "Responsável Técnico", pageW / 2, lineY + 14, { align: "center" });
+      doc.text(nome || "Responsável Técnico", pageW / 2, lineY + 13, { align: "center" });
       doc.setFont("helvetica", "normal"); doc.setFontSize(9); rgb([60, 60, 60]);
       const linha2 = [form, reg].filter(Boolean).join(" — ") || "Formação / Registro Profissional";
-      doc.text(linha2, pageW / 2, lineY + 28, { align: "center" });
-      if (cargo) doc.text(cargo, pageW / 2, lineY + 42, { align: "center" });
-      doc.text(`Data de emissão: ${dataE}`, pageW / 2, lineY + 56, { align: "center" });
-      y = lineY + 70;
-    }
-
-
-
-    // ============== 13. ANEXOS ==============
-    if (incluirAnexos) {
-      sectionTitle("Anexos");
-
-      // Só os domínios que este relatório efetivamente usou. Antes saía o
-      // MTE_MAPA inteiro — um dicionário de todos os fatores possíveis, quase
-      // duas páginas, a maior parte sobre domínios que não aparecem em lugar
-      // nenhum do documento. O anexo existe para dar rastreabilidade ao que
-      // foi afirmado, não para catalogar o que não foi.
-      // Casa pela ENTRADA usada (domínio + perigo), não só pelo domínio:
-      // "Demandas no Trabalho" tem duas entradas no MTE_MAPA — sobrecarga e
-      // subutilização —, e filtrar por domínio trazia a que não foi usada.
-      const entradasUsadas = new Set<string>();
-      (data.setores.length > 0
-        ? data.setores.map((s) => s.fatorPrincipal).filter((f) => f && f.n > 0)
-        : fatoresValidos
-      ).forEach((f) => {
-        if (!f) return;
-        const m = mteParaDim(f.dim.id, f.risco.nivel);
-        entradasUsadas.add(`${m.dominio}|${m.perigo}`);
-      });
-      const mapaAplicado = MTE_MAPA.filter((m) => entradasUsadas.has(`${m.dominio}|${m.perigo}`));
-      const linhasAnexo = mapaAplicado.length > 0 ? mapaAplicado : MTE_MAPA;
-
-      subTitle("Anexo I — Mapeamento técnico aplicado (Guia MTE)");
-      paragraph(
-        "Domínios efetivamente utilizados neste relatório e sua conversão em agente, perigo e " +
-        "possível consequência. O campo 'Possível consequência' segue exclusivamente o Guia de " +
-        "Fatores de Riscos Psicossociais do MTE."
-      );
-      autoTable(doc, {
-        startY: y,
-        head: [["Domínio avaliado", "Agente / Situação", "Perigo (fator de risco)", "Possível consequência (Guia MTE)"]],
-        body: linhasAnexo.map((m) => [m.dominio, m.agente, m.perigo, m.consequencia]),
-        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center" },
-        styles: { fontSize: 8, cellPadding: 4, valign: "top" },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: {
-          0: { fontStyle: "bold", cellWidth: 110 },
-          1: { cellWidth: 140 },
-          2: { fontStyle: "bold", cellWidth: 130 },
-          3: { cellWidth: 95 },
-        },
-        margin: { left: margin, right: margin },
-      });
-      y = (doc as any).lastAutoTable.finalY + 18;
-
-      // Lista de referências, não repetição da metodologia: o que cada norma
-      // é já foi dito na Introdução. A ressalva do COPSOQ fica porque afirma o
-      // que o instrumento NÃO é — isso não é explicação, é delimitação.
-      subTitle("Anexo II — Base normativa");
-      bullets([
-        "NR-01 — Gerenciamento de Riscos Ocupacionais (GRO/PGR).",
-        "NR-17 — Ergonomia.",
-        "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho — MTE.",
-        "Lei nº 14.457/2022 — CIPA e prevenção do assédio.",
-        "COPSOQ — utilizado EXCLUSIVAMENTE como referência conceitual para organizar os domínios " +
-          "avaliados. O instrumento aplicado por esta plataforma tem metodologia própria, descrita " +
-          "neste relatório, e não reproduz a versão validada do COPSOQ.",
-      ]);
+      doc.text(linha2, pageW / 2, lineY + 25, { align: "center" });
+      if (cargo) doc.text(cargo, pageW / 2, lineY + 37, { align: "center" });
+      doc.text(`Data de emissão: ${dataE}`, pageW / 2, lineY + 49, { align: "center" });
+      y = lineY + 60;
     }
 
     // ============== Remoção de páginas vazias ==============

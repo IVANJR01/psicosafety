@@ -28,9 +28,15 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
         { titulo: "Revisar dimensionamento da equipe", detalhe: "Mapear processos do GES / Setores e avaliar se o quadro é compatível com a demanda.", prazo: "Médio prazo (até 90 dias)" },
         { titulo: "Estabelecer pausas regulares", detalhe: "Programar micropausas e respeitar intervalos previstos em norma.", prazo: "Curto prazo (até 30 dias)" },
       ],
+      // A ordem aqui é a ordem de impressão no Plano de Ação, que publica as
+      // duas primeiras. Medidas na fonte vêm antes de medidas sobre a pessoa:
+      // treinar o trabalhador para suportar a sobrecarga não elimina a
+      // sobrecarga, e como ação principal transfere a ele um risco que é da
+      // organização do trabalho (NR-01, hierarquia de medidas de controle).
       alto: [
         { titulo: "Redistribuir tarefas", detalhe: "Reorganizar fluxo, prioridades e prazos junto à liderança imediata.", prazo: "Curto prazo (até 30 dias)" },
-        { titulo: "Capacitação em gestão de demandas emocionais", detalhe: "Treinar trabalhadores expostos a desgaste emocional (atendimento ao público, cuidados, etc.).", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Revisar metas e prazos do GES", detalhe: "Ajustar metas, ritmo e prazos ao efetivo disponível; eliminar acúmulo recorrente de tarefas.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Capacitação em gestão de demandas emocionais", detalhe: "Complementar às medidas organizacionais: treinar trabalhadores expostos a desgaste emocional (atendimento ao público, cuidados, etc.).", prazo: "Médio prazo (até 90 dias)" },
       ],
       critico: [
         { titulo: "Intervenção imediata na carga", detalhe: "Suspender metas/prazos incompatíveis e contratar/realocar mão de obra de forma emergencial.", prazo: "Imediato" },
@@ -95,13 +101,22 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
     dimId: "saude",
     acoes: {
       baixo: [{ titulo: "Promoção da saúde", detalhe: "Campanhas de sono, atividade física e alimentação.", prazo: "Longo prazo (até 180 dias)" }],
+      // Mesma regra da faixa "alto": a primeira ação precisa mirar a condição
+      // de trabalho. Rodas de conversa e triagem sozinhas na frente do plano
+      // deixam o documento recomendando que o trabalhador lide melhor com um
+      // desgaste cuja origem o relatório não tocou.
       moderado: [
+        { titulo: "Revisar ritmo, pausas e jornada do GES", detalhe: "Verificar se ritmo, pausas, jornada e acúmulo de tarefas explicam os sinais de desgaste relatados.", prazo: "Curto prazo (até 30 dias)" },
         { titulo: "Roda de conversa sobre estresse", detalhe: "Sessões mensais com profissional de saúde mental.", prazo: "Curto prazo (até 30 dias)" },
         { titulo: "Triagem de saúde mental", detalhe: "Incluir avaliação psicossocial nos exames ocupacionais.", prazo: "Médio prazo (até 90 dias)" },
       ],
+      // O PAE saiu da primeira posição: é medida de apoio ao trabalhador já
+      // exposto, não medida sobre a condição que produz a exposição. Como ação
+      // principal de um GES com risco alto, respondia ao efeito e deixava a
+      // causa intacta.
       alto: [
-        { titulo: "Programa de apoio ao empregado (PAE)", detalhe: "Canal confidencial de apoio psicológico, jurídico e financeiro.", prazo: "Médio prazo (até 90 dias)" },
-        { titulo: "Reavaliar fatores ambientais", detalhe: "Ruído, iluminação, temperatura e ergonomia podem agravar estresse.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Reavaliar as condições de trabalho do GES", detalhe: "Rever jornada, ritmo, pausas e fatores ambientais (ruído, iluminação, temperatura, ergonomia) que agravam o desgaste.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Programa de apoio ao empregado (PAE)", detalhe: "Medida complementar: canal confidencial de apoio psicológico, jurídico e financeiro.", prazo: "Médio prazo (até 90 dias)" },
       ],
       critico: [
         { titulo: "Acionar SESMT/Medicina do Trabalho", detalhe: "Avaliação clínica imediata e CAT quando aplicável; afastamento se necessário.", prazo: "Imediato" },
