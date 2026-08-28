@@ -289,14 +289,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const trabCad = tt.cadastrados ?? (e as any)?.num_trabalhadores ?? "—";
     const trabAbr = tt.abrangidos ?? data.totalRespostas;
 
-    const linhasEmpresa: any[] = [
-      ["Razão Social", (e as any)?.razao_social ?? e?.nome ?? data.empresaNome],
-      ["Nome Fantasia", e?.nome ?? "—"],
-      ["CNPJ", e?.cnpj ?? "—"],
-      ["CNAE", (e as any)?.cnae ?? "—"],
-      ["Endereço", (e as any)?.endereco ?? "—"],
-      ["Grau de Risco", (e as any)?.grau_risco ?? "—"],
-    ];
+    // Linha só entra se houver valor. Antes CNAE, Endereço e Grau de Risco
+    // saíam sempre — em branco quando a empresa não os cadastrou —, e o
+    // documento gastava três linhas para não dizer nada. Nome Fantasia só
+    // aparece quando difere da Razão Social: repetir o mesmo nome duas vezes
+    // seguidas é ruído, não identificação.
+    const norm = (v: unknown) => String(v ?? "").trim();
+    const razaoSocial = norm((e as any)?.razao_social) || norm(e?.nome) || norm(data.empresaNome);
+    const nomeFantasia = norm(e?.nome);
+    const linhasEmpresa: any[] = [["Razão Social", razaoSocial || "—"]];
+    const addSeTiver = (rotulo: string, valor: unknown) => {
+      const v = norm(valor);
+      if (v) linhasEmpresa.push([rotulo, v]);
+    };
+    if (nomeFantasia && nomeFantasia.toLowerCase() !== razaoSocial.toLowerCase()) {
+      linhasEmpresa.push(["Nome Fantasia", nomeFantasia]);
+    }
+    addSeTiver("CNPJ", e?.cnpj);
+    addSeTiver("CNAE", (e as any)?.cnae);
+    addSeTiver("Endereço", (e as any)?.endereco);
+    addSeTiver("Grau de Risco", (e as any)?.grau_risco);
     // Trabalhadores cadastrados: só mostra se houver valor real
     if (trabCad !== "—" && trabCad != null && String(trabCad).trim() !== "") {
       linhasEmpresa.push(["Trabalhadores cadastrados na empresa", String(trabCad)]);
@@ -311,10 +323,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       linhasEmpresa.push([`GES sem avaliação neste ciclo (${totSem})`, gesSemStr]);
     }
     linhasEmpresa.push(["Data da Avaliação", dataAval]);
+    // Responsável Técnico sempre sai, mesmo em branco: é campo obrigatório do
+    // documento e a lacuna precisa ficar visível. Formação, registro e cargo
+    // seguem a regra geral — só aparecem quando preenchidos.
     linhasEmpresa.push(["Responsável Técnico", respNome]);
-    linhasEmpresa.push(["Formação", respForm]);
-    linhasEmpresa.push(["Registro Profissional", respReg]);
-    linhasEmpresa.push(["Cargo", respCargo]);
+    [["Formação", respForm], ["Registro Profissional", respReg], ["Cargo", respCargo]]
+      .forEach(([rotulo, valor]) => addSeTiver(rotulo, valor === "—" ? "" : valor));
 
     autoTable(doc, {
       startY: y,
@@ -639,10 +653,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (resultInsuficientes > 0) {
       const um = resultInsuficientes === 1;
       paragraph(
-        `${resultInsuficientes} ${um ? "domínio ficou" : "domínios ficaram"} abaixo do mínimo de ` +
-        `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2")}). ` +
-        `O resultado não permite afirmar presença nem ausência do fator: a leitura correta é ampliar ` +
-        `a coleta, não concluir por risco baixo.`
+        `${resultInsuficientes} ${um ? "domínio ficou" : "domínios ficaram"} abaixo do piso de ` +
+        `${MIN_RESPONDENTES_CONCLUSAO} respondentes (item ${itemMet("2")}).`,
+        9,
       );
     }
 
@@ -651,7 +664,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Dois parágrafos viraram um: o segundo explicava, em quatro linhas, que um
     // GES pode superar a média da empresa — o que a própria tabela mostra.
     paragraph(
-      "Domínio crítico de cada GES, com percentual de criticidade e classificação psicossocial. " +
+      "Domínio com maior resultado no questionário em cada GES, com percentual de criticidade e " +
+      "classificação psicossocial. " +
       "Um GES pode superar o resultado geral da empresa: o geral consolida todos, a distribuição " +
       "mostra cada um."
     );
@@ -682,7 +696,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Domínio crítico", "n", "%", "Classif.\nPsicoss."]],
+        // "Domínio crítico" soava como classificação de risco. O que a coluna
+        // traz é o domínio de maior percentual no questionário daquele GES —
+        // um resultado de instrumento, não um nível de risco de PGR.
+        head: [["GES / Setores", "Domínio com maior\nresultado no questionário", "n", "%", "Classif.\nPsicoss."]],
         body: distBody.length ? distBody : [["—", "—", "—", "—", "—"]],
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
         styles: { fontSize: 9, cellPadding: 4, valign: "middle", overflow: "linebreak" },
@@ -717,12 +734,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       if (distInsuficientes > 0) {
         const um = distInsuficientes === 1;
         paragraph(
-          `A coluna "n" indica quantos trabalhadores responderam ao domínio crítico de cada GES. ` +
-          `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do mínimo de ` +
-          `${MIN_RESPONDENTES_CONCLUSAO} respondentes do critério metodológico interno (item ${itemMet("2")}) ` +
-          `e ${um ? "aparece" : "aparecem"} como DADO INSUFICIENTE PARA CLASSIFICAÇÃO: o resultado não permite ` +
-          `afirmar presença nem ausência do fator naquele grupo, e a leitura correta é ampliar a ` +
-          `coleta, não concluir por risco baixo.`
+          `${distInsuficientes} ${um ? "GES ficou" : "GES ficaram"} abaixo do piso de ` +
+          `${MIN_RESPONDENTES_CONCLUSAO} respondentes (item ${itemMet("2")}) e ` +
+          `${um ? "aparece" : "aparecem"} como DADO INSUFICIENTE PARA CLASSIFICAÇÃO.`,
+          9,
         );
       }
     }
@@ -835,8 +850,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         ["1", "Rara", "desconforto leve"],
         ["2", "Pouco provável", "fadiga mental leve"],
         ["3", "Possível", "estresse ocupacional"],
-        ["4", "Provável", "transtornos psicológicos"],
-        ["5", "Muito provável", "adoecimento grave"],
+        // "transtornos psicológicos" e "adoecimento grave" nomeavam quadros
+        // clínicos numa escala que gradua severidade potencial, não diagnóstico.
+        ["4", "Provável", "agravo relevante à saúde"],
+        ["5", "Muito provável", "agravo grave à saúde"],
       ],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 2.5 },
       styles: { fontSize: 7.5, cellPadding: 2.5 },
@@ -851,7 +868,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       startY: escY,
       head: [["Nível de risco\n(P × S)", "Faixa", "Ação de controle"]],
       body: [
-        ["TRIVIAL", NIVEL5_FAIXA.TRIVIAL, "nenhuma ação"],
+        // "nenhuma ação" dispensava o acompanhamento que a NR-01 exige mesmo
+        // no risco mais baixo, e num relatório preliminar seria lido como
+        // dispensa definitiva.
+        ["TRIVIAL", NIVEL5_FAIXA.TRIVIAL, "manter controles e acompanhar"],
         ["TOLERÁVEL", NIVEL5_FAIXA.TOLERÁVEL, "monitoramento"],
         ["MODERADO", NIVEL5_FAIXA.MODERADO, "controle adicional"],
         ["SUBSTANCIAL", NIVEL5_FAIXA.SUBSTANCIAL, "controle necessário"],
@@ -881,16 +901,22 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // anterior para evitar página quase-vazia (apenas título).
 
     const invBody: any[] = [];
-    // Quantas linhas cairiam no texto padrão de "controle não evidenciado".
-    // A frase é a mesma para todas: repeti-la linha a linha inchava a coluna
-    // sem acrescentar informação. Vira "—" na célula e uma nota única sob a
+    // Quantas linhas caíram no estado "sem evidência de controle". A frase
+    // longa é a mesma para todas e inchava a coluna; vira o rótulo curto
+    // CONTROLE_A_VALIDAR na célula, com a explicação numa nota única sob a
     // tabela. Linhas que TÊM controle registrado seguem mostrando o texto real.
+    //
+    // O rótulo não pode ser "—": num inventário de PGR o traço é lido como
+    // campo vazio ou como ausência de controle, e nenhuma das duas é o caso.
+    // O que existe é ausência de EVIDÊNCIA no momento da avaliação, e o que a
+    // linha exige é validação em campo — que é o que a célula passa a dizer.
     let linhasSemControle = 0;
     // Linhas cujo GES ficou abaixo do piso de respondentes: a classificação
     // existe, mas não se sustenta apenas no questionário.
     let linhasBaseFraca = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
+    const CONTROLE_A_VALIDAR = "A validar\nem campo";
     // A coluna "Função" saiu do Inventário: as funções de cada GES já saem na
     // seção de caracterização, com o número de respondentes por função, e aqui
     // custavam duas linhas em TODA linha da tabela — era o que empurrava o
@@ -985,7 +1011,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
-          semControle ? "—" : protectWords(controleTxt),
+          semControle ? CONTROLE_A_VALIDAR : protectWords(controleTxt),
           baseFraca ? "—" : car.duracao,
           baseFraca ? "—" : car.frequencia,
           baseFraca ? "—" : car.intensidade,
@@ -1010,7 +1036,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
-          "—",
+          CONTROLE_A_VALIDAR,
           baseFraca ? "—" : car.duracao,
           baseFraca ? "—" : car.frequencia,
           baseFraca ? "—" : car.intensidade,
@@ -1040,7 +1066,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     const introLines = doc.splitTextToSize(
-      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Duração, frequência e intensidade são a caracterização preliminar da exposição, a confirmar em campo pelo responsável técnico (NR-17, subitem 17.3.1.1).",
+      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado: a confirmação depende da avaliação das condições de trabalho. Duração, frequência e intensidade são caracterização preliminar da exposição, a confirmar em campo pelo responsável técnico (NR-17, subitem 17.3.1.1).",
       lwPageW - margin * 2,
     );
     doc.text(introLines, margin, 84);
@@ -1093,20 +1119,21 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       rgb([90, 90, 90]); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
       if (linhasSemControle > 0) {
         doc.text(
-          'Nota: nas linhas marcadas com "—" na coluna Controles, a existência e a eficácia dos ' +
-          "controles não foram evidenciadas no momento da avaliação — o que não equivale a afirmar " +
-          "que não existam. Requer validação documental e/ou em campo pela empresa.",
+          'Nota: "A validar em campo" significa que a existência e a eficácia dos controles não ' +
+          "foram evidenciadas no momento da avaliação — o que não equivale a afirmar que não " +
+          "existam. Requer validação documental e/ou em campo pela empresa. Confirmada a ausência " +
+          'na validação, a linha passa a "Não identificado na validação".',
           margin, yNota, { maxWidth: larguraNota } as any,
         );
         yNota += 20;
       }
       if (linhasBaseFraca > 0) {
+        // Sem repetir o porquê do piso, que está declarado no item da
+        // metodologia: aqui basta dizer o que a marca significa nesta tabela.
         doc.text(
-          `Nota: os GES marcados com * tiveram menos de ${MIN_RESPONDENTES_CONCLUSAO} respondentes, ` +
-          "abaixo do piso metodológico interno. O perigo permanece inventariado, mas a caracterização " +
-          "da exposição, a Probabilidade, a Severidade e o Nível de Risco ficam em aberto: classificar " +
-          "a partir de amostra insuficiente produziria um número que o próprio relatório não sustenta. " +
-          "A avaliação complementar destes GES consta do Plano de Ação.",
+          `Nota: GES marcados com * ficaram abaixo do piso de ${MIN_RESPONDENTES_CONCLUSAO} respondentes ` +
+          `(item ${itemMet("2")}). O perigo permanece inventariado; caracterização da exposição, P, S e ` +
+          "nível de risco ficam em aberto até a avaliação complementar prevista no Plano de Ação.",
           margin, yNota, { maxWidth: larguraNota } as any,
         );
       }
@@ -1160,10 +1187,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano PRELIMINAR derivado do Inventário. Prioridade e prazo são SUGESTÃO por critério " +
-        "metodológico interno vinculado ao Nível de Risco PGR, não prazos fixados por norma. " +
-        "Responsáveis, evidências, datas e status deverão ser definidos pela organização na " +
-        "devolutiva técnica (NR-01, item 1.5.5).",
+        "Plano PRELIMINAR derivado do Inventário, e assim permanece enquanto responsável, prazo, " +
+        "evidência e status não forem validados pela empresa. Prioridade e prazo são SUGESTÃO por " +
+        "critério metodológico interno vinculado ao Nível de Risco PGR, não prazos fixados por norma; " +
+        "cabe à organização defini-los na devolutiva técnica (NR-01, item 1.5.5).",
         9,
       );
 
@@ -1237,7 +1264,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           NIVEL_PRAZO[l.nivel],
           NIVEL_PRIORIDADE[l.nivel],
           "A iniciar",
-          "—",
+          "A registrar",
         ]);
       });
 
@@ -1254,27 +1281,27 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           "A definir",
           "Preliminar",
           "A iniciar",
-          "—",
+          "A registrar",
         ]);
       }
 
       autoTable(doc, {
         startY: y,
-        head: [["Item", "Ação", "Perigo relacionado", "GES / Setores", "Responsável", "Prazo", "Prioridade", "Status", "Evid."]],
+        head: [["Item", "Ação", "Perigo relacionado", "GES / Setores", "Responsável", "Prazo", "Prioridade", "Status", "Evidência"]],
         body: planoBody.length ? planoBody : [["—", "Sem ações no recorte", "—", "—", "—", "—", "—", "—", "—"]],
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center" },
         styles: { fontSize: 7.5, cellPadding: 3.5, valign: "top", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
           0: { halign: "center", cellWidth: 22, fontStyle: "bold" },
-          1: { cellWidth: 100 },
+          1: { cellWidth: 94 },
           2: { cellWidth: 66, fontStyle: "bold" },
-          3: { cellWidth: 90 },
-          4: { cellWidth: 70 },
+          3: { cellWidth: 84 },
+          4: { cellWidth: 69 },
           5: { cellWidth: 52, halign: "center" },
           6: { cellWidth: 48, halign: "center", fontStyle: "bold" },
           7: { cellWidth: 38, halign: "center" },
-          8: { cellWidth: 24, halign: "center" },
+          8: { cellWidth: 42, halign: "center" },
         },
         rowPageBreak: "avoid",
         didParseCell: colorirNivel(6, true),
@@ -1317,40 +1344,68 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const totalAva = data.gesAvaliados.length;
     const totalSem = data.gesSemAvaliacao.length;
 
-    if (opts.contextoReavaliacao) {
-      const setores = opts.contextoReavaliacao.setoresEscopo;
-      const setoresTxt = setores.length > 1
-        ? `${setores.slice(0, -1).join(", ")} e ${setores[setores.length - 1]}`
-        : (setores[0] ?? "GES selecionados");
-      callout(
-        `A empresa ${data.empresaNome} teve ${data.totalRespostas} respostas válidas nesta Reavaliação Setorial Complementar, ` +
-        `distribuídas nos GES selecionados: ${setoresTxt}. A presente AEP representa exclusivamente o recorte da ` +
-        `reavaliação setorial, não substituindo a avaliação geral anterior da empresa.`,
-        NIVEL_COR[nivelGeral],
+    // A conclusão segue quatro afirmações, nesta ordem: o que o documento é,
+    // o que foi avaliado, o que ficou pendente e o que a empresa precisa
+    // registrar antes de fechar o PGR. Cada uma delimita a anterior — sem a
+    // terceira, a segunda seria lida como cobertura total; sem a quarta, o
+    // documento passaria por inventário fechado.
+    const gesComBase = data.setores.filter(
+      (g) => g.fatorPrincipal && g.fatorPrincipal.n > 0 && amostraSuficiente(g.fatorPrincipal.n),
+    ).length;
+    const gesSemBase = data.setores.filter(
+      (g) => g.fatorPrincipal && g.fatorPrincipal.n > 0 && !amostraSuficiente(g.fatorPrincipal.n),
+    ).length;
+
+    const escopoTxt = opts.contextoReavaliacao
+      ? (() => {
+          const setores = opts.contextoReavaliacao!.setoresEscopo;
+          const lista = setores.length > 1
+            ? `${setores.slice(0, -1).join(", ")} e ${setores[setores.length - 1]}`
+            : (setores[0] ?? "GES selecionados");
+          return `Reavaliação Setorial Complementar restrita aos GES ${lista}, que não substitui a ` +
+                 "avaliação geral anterior da empresa.";
+        })()
+      : somenteAvaliados
+        ? "Recorte dos GES participantes da avaliação."
+        : `A empresa possui ${totalCad} GES cadastrados` +
+          (totalSem > 0
+            ? `; os ${totalSem} sem respostas constam como cadastrados e não compõem o cálculo de ` +
+              "risco deste ciclo."
+            : "; todos foram avaliados neste ciclo.");
+
+    callout(
+      `Esta AEP é uma AVALIAÇÃO PRELIMINAR. Reuniu ${data.totalRespostas} respostas válidas em ` +
+      `${totalAva} GES. ${escopoTxt}`,
+      NIVEL_COR[nivelGeral],
+    );
+
+    const partes: string[] = [];
+    if (gesComBase > 0) {
+      partes.push(
+        `${gesComBase} ${gesComBase === 1 ? "GES atingiu" : "GES atingiram"} o piso de respondentes e ` +
+        `${gesComBase === 1 ? "consta" : "constam"} do Inventário como hipótese técnica a validar, não ` +
+        "como risco confirmado",
       );
-      paragraph(
-        "Os achados devem ser interpretados apenas para os setores/GES reavaliados, considerando o período, a amostra e o escopo complementar da nova coleta."
+    }
+    if (gesSemBase > 0) {
+      partes.push(
+        `${gesSemBase} ${gesSemBase === 1 ? "teve" : "tiveram"} baixa participação e ` +
+        `${gesSemBase === 1 ? "depende" : "dependem"} de validação em campo — observação da atividade e ` +
+        "diálogo com os trabalhadores — antes de qualquer classificação de risco, conforme ação " +
+        "prevista no Plano de Ação",
       );
-    } else if (somenteAvaliados) {
-      callout(
-        `A empresa ${data.empresaNome} teve ${data.totalRespostas} respostas válidas distribuídas em ${totalAva} GES avaliados neste ciclo. ` +
-        `A presente AEP representa o recorte dos GES participantes da avaliação, com integração dos resultados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado.`,
-        NIVEL_COR[nivelGeral],
-      );
-      paragraph(
-        "Recomenda-se revisão anual, sem prejuízo das revisões e antecipações obrigatórias da NR-01 — entre elas, mudanças significativas nas condições de trabalho.",
-        9,
-      );
-    } else {
-      callout(
-        `A empresa ${data.empresaNome} possui ${totalCad} GES cadastrados. ` +
-        `Nesta avaliação foram obtidas ${data.totalRespostas} respostas válidas em ${totalAva} GES avaliados. ` +
-        (totalSem > 0
-          ? `Os ${totalSem} GES sem respostas foram mantidos no relatório como cadastrados, ` +
-            `porém não compõem o cálculo de risco psicossocial deste ciclo.`
-          : `Todos os GES cadastrados foram avaliados neste ciclo.`),
-        NIVEL_COR[nivelGeral],
-      );
+    }
+    if (partes.length > 0) paragraph(`${partes.join("; ")}.`, 9);
+
+    paragraph(
+      "Antes do fechamento do PGR, a organização deve registrar na devolutiva técnica: os controles " +
+      "existentes e sua validação em campo, os responsáveis, os prazos, as evidências de implementação " +
+      "e a participação dos trabalhadores e da CIPA na análise dos resultados e na priorização das " +
+      "medidas. Até esse registro, o documento não constitui inventário de riscos concluído.",
+      9,
+    );
+
+    if (totalSem > 0) {
       paragraph(
         "Os GES sem respostas devem ser priorizados na próxima aplicação ou ter a ausência de " +
         "participantes formalmente justificada. Recomenda-se revisão anual, sem prejuízo das " +
@@ -1358,15 +1413,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         9,
       );
     }
-
-    // Duas notas viraram uma: participação da CIPA e caráter preliminar são a
-    // mesma pendência — o que falta acontecer na devolutiva técnica.
-    paragraph(
-      "Relatório de caráter técnico-preliminar: a participação da CIPA ou dos representantes dos " +
-      "trabalhadores, os controles, responsáveis e evidências devem ser registrados na devolutiva " +
-      "técnica.",
-      9,
-    );
 
 
 

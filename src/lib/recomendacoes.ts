@@ -70,9 +70,12 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
         { titulo: "Capacitação de lideranças", detalhe: "Treinar chefias em comunicação não violenta, feedback e gestão de pessoas.", prazo: "Médio prazo (até 90 dias)" },
         { titulo: "Clarificar papéis e responsabilidades", detalhe: "Atualizar descrição de cargos e matriz de responsabilidades (RACI).", prazo: "Curto prazo (até 30 dias)" },
       ],
+      // A avaliação da liderança vem primeiro: nesta dimensão o perigo é a
+      // relação de trabalho e a conduta da chefia. Mentoria entre colegas é
+      // rede de apoio para quem já está exposto, não medida sobre a origem.
       alto: [
-        { titulo: "Programa de mentoria/apoio entre colegas", detalhe: "Implantar duplas/grupos de apoio e canais formais de ajuda.", prazo: "Médio prazo (até 90 dias)" },
-        { titulo: "Avaliação 360° das lideranças", detalhe: "Aplicar e usar resultados como base de plano de desenvolvimento individual.", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Avaliação 360° das lideranças", detalhe: "Aplicar e usar resultados como base de plano de desenvolvimento individual das chefias do GES.", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Programa de mentoria/apoio entre colegas", detalhe: "Medida complementar: implantar duplas/grupos de apoio e canais formais de ajuda.", prazo: "Médio prazo (até 90 dias)" },
       ],
       critico: [
         { titulo: "Substituir/realocar liderança quando necessário", detalhe: "Após apuração, considerar mudança da chefia imediata do GES / Setores.", prazo: "Curto prazo (até 30 dias)" },
