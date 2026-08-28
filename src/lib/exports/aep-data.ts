@@ -446,7 +446,7 @@ export const FATORES_ESPECIFICOS: Record<string, FatorEspecifico[]> = {
     { nome: "Conflito trabalho-família / desequilíbrio trabalho-vida", dano: "Insônia, esgotamento, conflito familiar" },
     { nome: "Insegurança no emprego / organizacional",                  dano: "Ansiedade, estresse crônico" },
     { nome: "Desequilíbrio esforço-recompensa",                         dano: "Desmotivação, adoecimento" },
-    { nome: "Excesso de demandas no trabalho (sobrecarga)",             dano: "Transtorno mental; DORT" },
+    { nome: "Excesso de demandas no trabalho (sobrecarga)",             dano: "Transtorno mental" },
   ],
   saude: [
     { nome: "Sofrimento psíquico relacionado ao trabalho", dano: "Transtornos mentais (CID-F)" },
@@ -476,7 +476,7 @@ export const DESCRICAO_DOMINIO: Record<string, string> = {
 // NUNCA livre: a IA apenas seleciona desta lista; não inventa diagnósticos.
 export const AGRAVOS_FIXOS: Record<string, string> = {
   // demandas
-  "Excesso de demandas no trabalho": "Transtornos mentais; DORT",
+  "Excesso de demandas no trabalho": "Transtornos mentais",
   "Sobrecarga de trabalho":           "Transtornos mentais; fadiga ocupacional",
   "Pressão temporal":                  "Ansiedade; transtornos mentais",
   "Metas excessivas":                  "Sofrimento psíquico; transtornos mentais",
@@ -496,7 +496,7 @@ export const AGRAVOS_FIXOS: Record<string, string> = {
   "Conflito trabalho-família / desequilíbrio trabalho-vida": "Insônia; transtornos mentais",
   "Insegurança no emprego / organizacional":                  "Ansiedade; transtornos mentais",
   "Desequilíbrio esforço-recompensa":                         "Sofrimento psíquico; transtornos mentais",
-  "Excesso de demandas no trabalho (sobrecarga)":              "Transtorno mental; DORT",
+  "Excesso de demandas no trabalho (sobrecarga)":              "Transtorno mental",
   // saude
   "Sofrimento psíquico relacionado ao trabalho": "Transtornos mentais (CID-F)",
   "Estresse ocupacional":                         "Transtornos mentais; doenças psicossomáticas",
@@ -526,17 +526,17 @@ export type MteFator = {
 };
 
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Demandas no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Demandas no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental" },
   { dominio: "Demandas no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
-  { dominio: "Controle sobre o Trabalho", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Controle sobre o Trabalho", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental" },
   { dominio: "Relações Sociais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
   { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
   { dominio: "Reconhecimento e Recompensa", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
   { dominio: "Organização do Trabalho", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental" },
   { dominio: "Justiça Organizacional", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
   { dominio: "Clareza de Papel / Função", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
-  { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental" },
   { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
   { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
   { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
