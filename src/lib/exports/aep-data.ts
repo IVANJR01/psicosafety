@@ -347,7 +347,7 @@ export function caracterizarExposicao(f: LinhaFator): {
   // Um auditor que pergunte "de onde veio 'Diária'?" não tem resposta. A
   // plataforma não coleta esses dados, então o campo fica declarado como
   // pendente até que o responsável técnico o preencha em campo.
-  const PENDENTE = "Pendente de validação em campo";
+  const PENDENTE = "Não informado";
   const grupo = f.n > 0 ? `${f.n} respondente(s)` : "Não informado";
   return { duracao: PENDENTE, frequencia: PENDENTE, intensidade: PENDENTE, grupo };
 }
@@ -526,10 +526,16 @@ export type MteFator = {
 // tabela do Inventário viravam cinco linhas por célula. Viram rótulos curtos —
 // a mesma informação, legível.
 //
-// As consequências seguem a nomenclatura do Guia MTE, "Transtorno mental" e
-// "DORT" incluídos: a coluna registra o POSSÍVEL agravo associado ao fator,
-// que é o que o Guia lista. O que a AEP não pode fazer é afirmar o quadro num
-// trabalhador — isso seria diagnóstico, e não aparece em lugar nenhum.
+// Os pares perigo -> possível consequência reproduzem a tabela do Guia MTE
+// ("Perigo (fator de risco)" x "Possível consequência (lesão ou agravo)").
+// DORT aparece exatamente nos três perigos em que o Guia o lista: sobrecarga,
+// baixo controle/falta de autonomia e má gestão de mudanças organizacionais.
+// Onde o perigo não consta naquela tabela, aplica-se "Transtorno mental", que
+// é o agravo que o Guia atribui a todos os demais fatores psicossociais.
+//
+// A coluna registra o POSSÍVEL agravo associado ao fator. O que a AEP não pode
+// fazer é afirmar o quadro num trabalhador — isso seria diagnóstico, e não
+// aparece em lugar nenhum do documento.
 export const MTE_MAPA: MteFator[] = [
   { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
   { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
@@ -544,8 +550,8 @@ export const MTE_MAPA: MteFator[] = [
   { dominio: "Gestão Organizacional", agente: "Mudanças organizacionais sem planejamento", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
   { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de apoio da liderança e dos colegas", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
   { dominio: "Eventos Críticos", agente: "Agressões, ameaças e eventos críticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
-  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
-  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental" },
   /*
    * Os dois itens abaixo existem para que "Interface Trabalho-Indivíduo" e
    * "Saúde e Bem-estar" parem de reaproveitar o perigo de sobrecarga
@@ -558,8 +564,8 @@ export const MTE_MAPA: MteFator[] = [
    * Acrescentados no FIM do array de propósito: MTE_POR_DIM referencia por
    * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
    */
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental; fadiga; sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental; estresse ocupacional; esgotamento profissional" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental" },
+  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
