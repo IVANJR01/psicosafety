@@ -1,5 +1,12 @@
 // Banco de recomendações de medidas de controle por dimensão COPSOQ.
 // Aplicáveis ao plano de ação da NR-01 (gerenciamento de riscos psicossociais).
+//
+// REGRA DESTE ARQUIVO: a AEP não cria programa, treinamento, comissão, política
+// ou pesquisa por padrão. Uma medida só entra quando age sobre a condição de
+// trabalho identificada, ou quando existe exigência legal — e, nesse caso, o
+// detalhe cita a base. O plano imprime as DUAS primeiras ações de cada faixa,
+// então a ordem aqui é a ordem de prioridade, e as duas primeiras precisam
+// resistir à pergunta "por que essa medida foi recomendada?".
 
 export type Acao = {
   titulo: string;
@@ -50,7 +57,7 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
       baixo: [{ titulo: "Manter práticas de autonomia", detalhe: "Reforçar boas práticas já existentes em reuniões periódicas.", prazo: "Longo prazo (até 180 dias)" }],
       moderado: [
         { titulo: "Comunicação antecipada", detalhe: "Padronizar entrega de informações e ordens de serviço com antecedência mínima.", prazo: "Curto prazo (até 30 dias)" },
-        { titulo: "Reuniões de planejamento", detalhe: "Implementar rituais semanais de alinhamento de metas e prioridades.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Definir prazo mínimo para ordens de serviço", detalhe: "Estabelecer antecedência mínima entre a definição da tarefa e sua execução no GES.", prazo: "Curto prazo (até 30 dias)" },
       ],
       alto: [
         { titulo: "Aumentar autonomia decisória", detalhe: "Definir alçadas e dar voz ao trabalhador sobre o ritmo e o método de trabalho.", prazo: "Médio prazo (até 90 dias)" },
@@ -58,7 +65,7 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
       ],
       critico: [
         { titulo: "Reestruturar organização do trabalho", detalhe: "Diagnóstico ergonômico/organizacional e replanejamento dos processos do GES / Setores.", prazo: "Médio prazo (até 90 dias)" },
-        { titulo: "Conectar trabalho a propósito", detalhe: "Comunicar resultados e impacto do trabalho da equipe; reconhecimento estruturado.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Definir responsabilidades e prioridades", detalhe: "Formalizar o que cabe a cada função e a ordem de prioridade das tarefas do GES.", prazo: "Curto prazo (até 30 dias)" },
       ],
     },
   },
@@ -74,8 +81,8 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
       // relação de trabalho e a conduta da chefia. Mentoria entre colegas é
       // rede de apoio para quem já está exposto, não medida sobre a origem.
       alto: [
-        { titulo: "Avaliação 360° das lideranças", detalhe: "Aplicar e usar resultados como base de plano de desenvolvimento individual das chefias do GES.", prazo: "Médio prazo (até 90 dias)" },
-        { titulo: "Programa de mentoria/apoio entre colegas", detalhe: "Medida complementar: implantar duplas/grupos de apoio e canais formais de ajuda.", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Apurar as situações relatadas junto à liderança", detalhe: "Verificar com a chefia imediata do GES as condições de comunicação, apoio e distribuição de tarefas apontadas.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Revisar a distribuição de responsabilidades", detalhe: "Rever o que é decidido pela chefia e o que cabe à equipe, e a cobertura em ausências.", prazo: "Médio prazo (até 90 dias)" },
       ],
       critico: [
         { titulo: "Substituir/realocar liderança quando necessário", detalhe: "Após apuração, considerar mudança da chefia imediata do GES / Setores.", prazo: "Curto prazo (até 30 dias)" },
@@ -110,7 +117,7 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
       // desgaste cuja origem o relatório não tocou.
       moderado: [
         { titulo: "Revisar ritmo, pausas e jornada do GES", detalhe: "Verificar se ritmo, pausas, jornada e acúmulo de tarefas explicam os sinais de desgaste relatados.", prazo: "Curto prazo (até 30 dias)" },
-        { titulo: "Roda de conversa sobre estresse", detalhe: "Sessões mensais com profissional de saúde mental.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Verificar cobertura de ausências e acúmulo", detalhe: "Checar se afastamentos, férias e vagas abertas estão sendo absorvidos pela equipe do GES.", prazo: "Curto prazo (até 30 dias)" },
         { titulo: "Triagem de saúde mental", detalhe: "Incluir avaliação psicossocial nos exames ocupacionais.", prazo: "Médio prazo (até 90 dias)" },
       ],
       alto: [
@@ -126,13 +133,13 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
   {
     dimId: "ofensivos",
     acoes: {
-      baixo: [{ titulo: "Reforçar política antiassédio", detalhe: "Divulgação periódica do código de conduta e canais de denúncia.", prazo: "Longo prazo (até 180 dias)" }],
+      baixo: [{ titulo: "Reforçar política antiassédio", detalhe: "Divulgação do código de conduta e do canal de denúncias (Lei 14.457/2022, art. 23).", prazo: "Longo prazo (até 180 dias)" }],
       moderado: [
-        { titulo: "Treinamento obrigatório", detalhe: "Capacitação anual sobre assédio moral, sexual e discriminação para todos.", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Capacitação sobre assédio e violência", detalhe: "Exigência legal: Lei 14.457/2022, art. 23, IV — capacitação com periodicidade máxima de 12 meses.", prazo: "Médio prazo (até 90 dias)" },
       ],
       alto: [
         { titulo: "Comitê de ética ativo", detalhe: "Garantir comitê com membros independentes e prazos de apuração.", prazo: "Curto prazo (até 30 dias)" },
-        { titulo: "Canal de denúncia externo", detalhe: "Disponibilizar canal independente, com sigilo e proteção ao denunciante.", prazo: "Curto prazo (até 30 dias)" },
+        { titulo: "Canal de denúncias com sigilo e anonimato", detalhe: "Exigência legal: Lei 14.457/2022, art. 23, II — canal com garantia de anonimato.", prazo: "Curto prazo (até 30 dias)" },
       ],
       critico: [
         { titulo: "Investigação imediata", detalhe: "Apuração formal dos casos relatados e medidas disciplinares cabíveis.", prazo: "Imediato" },
