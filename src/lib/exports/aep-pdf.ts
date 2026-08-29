@@ -20,6 +20,7 @@ import {
   NIVEL5_FILL,
   NIVEL5_FAIXA,
   mteParaDim,
+  INDICADOR_COMPLEMENTAR,
   caracterizarExposicao,
   assertAgrupamentoGesAplicado,
   amostraSuficiente,
@@ -425,10 +426,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     );
 
     paragraph(
-      "Cada domínio é relacionado a uma fonte/circunstância, a um fator de risco e a possíveis " +
-      "consequências, com nomenclatura do Guia de Fatores de Riscos Psicossociais do MTE. A " +
-      "classificação usa a matriz Probabilidade × Severidade, adotada como critério técnico interno " +
-      "para integração ao GRO/PGR — o MTE não determina matriz específica."
+      "Os resultados do questionário são analisados como subsídio à identificação dos fatores de " +
+      "risco psicossociais relacionados ao trabalho. Havendo correspondência técnica com os fatores " +
+      "exemplificados no Guia do MTE, adota-se a respectiva denominação de perigo e a indicação de " +
+      "possíveis lesões ou agravos; a caracterização definitiva depende da verificação das condições " +
+      "reais de trabalho. A classificação usa a matriz Probabilidade × Severidade, critério técnico " +
+      "interno para integração ao GRO/PGR — o MTE não determina matriz específica nem instrumento " +
+      "específico de coleta."
     );
     paragraph(
       "Origem de P e S nesta avaliação preliminar: a Probabilidade parte do resultado do domínio no " +
@@ -700,10 +704,70 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       }
     }
 
+    // ============== INTEGRAÇÃO COPSOQ -> GUIA MTE ==============
+    // Esta é a seção que responde "de onde vocês tiraram esse perigo?". Sem
+    // ela o documento parecia fazer COPSOQ -> perigo direto, como se houvesse
+    // uma tabela oficial de equivalência entre o instrumento e a NR-01. Não há.
+    // O que existe é: o questionário SINALIZA o fator, a análise das condições
+    // de trabalho o confirma, e só então ele é enquadrado na terminologia do
+    // Guia — cuja lista é exemplificativa, não exaustiva.
+    sectionTitle("Integração dos Resultados ao Guia MTE / NR-01", { samePageIfFits: 340 });
+    paragraph(
+      "Para fins de integração ao GRO/PGR, a denominação dos perigos e das possíveis lesões ou " +
+      "agravos segue prioritariamente a terminologia do Guia de Fatores de Riscos Psicossociais " +
+      "Relacionados ao Trabalho do MTE, sem prejuízo da análise das condições reais de trabalho. " +
+      "A lista do Guia é exemplificativa: quando não houver correspondência técnica, o fator é " +
+      "descrito a partir das condições verificadas."
+    );
+    paragraph(
+      "Percurso: domínio avaliado » resultado do questionário » fator relacionado ao trabalho » " +
+      "verificação das condições reais (AEP) » perigo do Guia MTE » possível lesão ou agravo » " +
+      "caracterização da exposição » Probabilidade × Severidade » nível de risco » plano de ação.",
+      9,
+    );
+
+    const integracaoBody = fatoresValidos.map((f) => {
+      const m = mteParaDim(f.dim.id, f.risco.nivel);
+      const semEnq = m.perigo === INDICADOR_COMPLEMENTAR;
+      return [
+        f.dim.title,
+        amostraSuficiente(f.n) ? `${f.scorePct}%` : "—",
+        protectWords(m.agente),
+        protectWords(m.perigo),
+        semEnq ? "—" : protectWords(m.consequencia),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Domínio avaliado", "Result.", "Fator relacionado ao trabalho", "Perigo — Guia MTE", "Possível lesão ou agravo — Guia MTE"]],
+      body: integracaoBody.length ? integracaoBody : [["—", "—", "—", "—", "—"]],
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle" },
+      styles: { fontSize: 7.5, cellPadding: 3, valign: "top", overflow: "linebreak" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      // Soma = 515pt, a área útil da A4 retrato.
+      columnStyles: {
+        0: { fontStyle: "bold", cellWidth: 104 },
+        1: { halign: "center", cellWidth: 38 },
+        2: { cellWidth: 122 },
+        3: { cellWidth: 128, fontStyle: "bold" },
+        4: { cellWidth: 123 },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = (doc as any).lastAutoTable.finalY + 14;
+
+    if (integracaoBody.some((l) => l[3] === INDICADOR_COMPLEMENTAR)) {
+      paragraph(
+        "O domínio Saúde e Bem-estar não é enquadrado automaticamente como perigo: ele reúne " +
+        "indicadores de desgaste referidos pelos trabalhadores. O Guia orienta identificar quais " +
+        "fatores da atividade são estressores, e não partir do sintoma — o perigo correspondente " +
+        "será nomeado após a análise das condições de trabalho que o produzem.",
+        9,
+      );
+    }
+
     // ============== 09. CLASSIFICAÇÃO E AVALIAÇÃO DOS RISCOS PSICOSSOCIAIS ==============
-    // Exige mais que o padrão: título (46) + parágrafo de abertura (~50) + a
-    // matriz 5x5, que pede 260 e tem ensure() próprio. Com o mínimo padrão o
-    // título ficava no pé de uma página e a matriz caía na seguinte.
     sectionTitle("Critérios de Classificação do Risco", { samePageIfFits: 168 });
     paragraph(
       "O nível de risco do Inventário resulta do produto Probabilidade × Severidade, pelas escalas " +
@@ -800,6 +864,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Linhas cujo GES ficou abaixo do piso de respondentes: a classificação
     // existe, mas não se sustenta apenas no questionário.
     let linhasBaseFraca = 0;
+    // Linhas cujo domínio o Guia não enquadra como perigo.
+    let linhasSemEnquadramento = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
     const CONTROLE_A_VALIDAR = "Não evidenciado\nno momento da\navaliação";
@@ -902,20 +968,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // e o Plano de Ação recebe a ação de avaliação complementar.
         const car = caracterizarExposicao(fp);
         const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "Não informado";
+        // Domínio que o Guia não enquadra como perigo (Saúde e Bem-estar) não
+        // recebe agravo nem classificação: sem perigo nomeado, não há o que
+        // classificar. A linha fica para não esconder o achado.
+        const semEnquadramento = mte.perigo === INDICADOR_COMPLEMENTAR;
+        if (semEnquadramento) linhasSemEnquadramento += 1;
+        const emAberto = baseFraca || semEnquadramento;
         invBody.push([
-          formatLabelGes(s.label) + (baseFraca ? " *" : ""),
+          formatLabelGes(s.label) + (baseFraca ? " *" : "") + (semEnquadramento ? " †" : ""),
           funcoesTxt,
           protectWords(fp.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
-          protectWords(mte.consequencia),
+          semEnquadramento ? "—" : protectWords(mte.consequencia),
           semControle ? CONTROLE_A_VALIDAR : protectWords(controleTxt),
           car.duracao,
           car.frequencia,
           car.intensidade,
-          baseFraca ? "—" : String(fp.prob),
-          baseFraca ? "—" : String(fp.sev),
-          baseFraca ? "A avaliar" : fp.risco.nivel5,
+          emAberto ? "—" : String(fp.prob),
+          emAberto ? "—" : String(fp.sev),
+          emAberto ? "A avaliar" : fp.risco.nivel5,
         ]);
       });
     }
@@ -928,20 +1000,23 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const baseFraca = !amostraSuficiente(f.n);
         if (baseFraca) linhasBaseFraca += 1;
         const car = caracterizarExposicao(f);
+        const semEnquadramento = mte.perigo === INDICADOR_COMPLEMENTAR;
+        if (semEnquadramento) linhasSemEnquadramento += 1;
+        const emAberto = baseFraca || semEnquadramento;
         invBody.push([
-          protectWords(data.empresaNome) + (baseFraca ? " *" : ""),
+          protectWords(data.empresaNome) + (baseFraca ? " *" : "") + (semEnquadramento ? " †" : ""),
           "Não informado",
           protectWords(f.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
-          protectWords(mte.consequencia),
+          semEnquadramento ? "—" : protectWords(mte.consequencia),
           CONTROLE_A_VALIDAR,
           car.duracao,
           car.frequencia,
           car.intensidade,
-          baseFraca ? "—" : String(f.prob),
-          baseFraca ? "—" : String(f.sev),
-          baseFraca ? "A avaliar" : f.risco.nivel5,
+          emAberto ? "—" : String(f.prob),
+          emAberto ? "—" : String(f.sev),
+          emAberto ? "A avaliar" : f.risco.nivel5,
         ]);
       });
     }
@@ -1019,7 +1094,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     // A nota substitui a frase que antes se repetia em cada linha da coluna
     // "Controles". Só aparece se alguma linha de fato caiu no padrão.
-    if (linhasSemControle > 0 || linhasBaseFraca > 0) {
+    if (linhasSemControle > 0 || linhasBaseFraca > 0 || linhasSemEnquadramento > 0) {
       let yNota = (doc as any).lastAutoTable.finalY + 10;
       const larguraNota = doc.internal.pageSize.getWidth() - margin * 2;
       rgb([90, 90, 90]); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
@@ -1038,6 +1113,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           "Nota: nos GES marcados com * a participação foi insuficiente para classificação quantitativa. " +
           "O perigo permanece inventariado; caracterização da exposição, P, S e nível de risco ficam em " +
           "aberto até a avaliação complementar prevista no Plano de Ação.",
+          margin, yNota, { maxWidth: larguraNota } as any,
+        );
+        yNota += 20;
+      }
+      if (linhasSemEnquadramento > 0) {
+        doc.text(
+          "Nota: as linhas marcadas com † correspondem a domínio que sinaliza desgaste referido pelos " +
+          "trabalhadores, não a um perigo do Guia MTE. O Guia orienta identificar quais fatores da " +
+          "atividade são estressores, e não partir do sintoma: o perigo só será nomeado após a análise " +
+          "das condições de trabalho que o produzem. Serve como indicador complementar de priorização.",
           margin, yNota, { maxWidth: larguraNota } as any,
         );
       }
@@ -1140,6 +1225,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           const nivelPgr: NivelRisco = fp.risco.nivel;
           if (nivelPgr !== nivel) return;
           const mte = mteParaDim(fp.dim.id, nivelPgr);
+          if (mte.perigo === INDICADOR_COMPLEMENTAR) {
+            acumular(
+              "Analisar as condições de trabalho do GES para identificar quais fatores produzem o " +
+              "desgaste referido, antes de nomear o perigo e definir medidas.",
+              "Indicador complementar — perigo a identificar",
+              nivelPgr,
+              formatLabelGes(s.label),
+            );
+            return;
+          }
           const acoes = getRecomendacoes(fp.dim.id, fp.scorePct);
           const acaoBase = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
           acumular(acaoBase, mte.perigo, nivelPgr, formatLabelGes(s.label));
