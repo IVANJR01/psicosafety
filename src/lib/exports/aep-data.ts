@@ -536,6 +536,11 @@ export type MteFator = {
 // A coluna registra o POSSÍVEL agravo associado ao fator. O que a AEP não pode
 // fazer é afirmar o quadro num trabalhador — isso seria diagnóstico, e não
 // aparece em lugar nenhum do documento.
+// Marca as linhas que o Guia NÃO enquadra como perigo. O domínio continua
+// visível no relatório — some a conclusão, não a evidência —, mas sem perigo
+// nomeado, sem agravo e sem classificação de risco.
+export const INDICADOR_COMPLEMENTAR = "Indicador complementar — não enquadrado como perigo";
+
 export const MTE_MAPA: MteFator[] = [
   { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
   { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
@@ -565,7 +570,13 @@ export const MTE_MAPA: MteFator[] = [
    * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
    */
   { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental" },
-  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental" },
+  // "Desgaste da saúde mental relacionado ao trabalho" NÃO é um perigo do Guia:
+  // foi inventado aqui para dar um enquadramento ao domínio Saúde e Bem-estar.
+  // Mas o Guia manda identificar quais fatores da ATIVIDADE são estressores, não
+  // partir do sintoma referido. Saúde e bem-estar é indicador complementar: ele
+  // sinaliza que há algo a investigar, e o perigo só se nomeia depois de a
+  // análise das condições de trabalho dizer qual fator o produz.
+  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: INDICADOR_COMPLEMENTAR, consequencia: "—" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
