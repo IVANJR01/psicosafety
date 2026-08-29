@@ -203,28 +203,54 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y += h + 10;
     };
 
-    // ============== 01. IDENTIFICAÇÃO ==============
-    // A capa de página inteira saiu. Era uma peça comercial: slogans ("Do
-    // diagnóstico à ação preventiva", "Cuidar das pessoas é fortalecer o
-    // futuro da empresa"), quatro blocos de benefícios do sistema e um QR
-    // code sob "Documento auditável — Valide a autenticidade deste
-    // relatório". O QR era estático, o MESMO em todos os relatórios: anunciava
-    // uma validação por documento que não existe, e num relatório técnico isso
-    // é uma declaração que não se sustenta perante quem for conferir.
-    //
-    // No lugar, um cabeçalho de identificação com o que a AEP precisa nomear —
-    // o que é o documento e sob quais normas — e o corpo começa na mesma
-    // página. O documento perde uma folha inteira e nenhuma informação.
-    y = margin + 24;
-    fillRgb(PRIMARY); doc.roundedRect(margin, y, pageW - margin * 2, 74, 8, 8, "F");
-    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-    doc.text("RELATÓRIO TÉCNICO", margin + 16, y + 24);
-    doc.setFontSize(14);
-    doc.text("AVALIAÇÃO ERGONÔMICA PRELIMINAR — RISCOS PSICOSSOCIAIS", margin + 16, y + 44);
-    doc.setFontSize(10); doc.setFont("helvetica", "normal"); rgb([191, 219, 254]);
-    doc.text("NR-01  |  NR-17", margin + 16, y + 62);
-    y += 90;
+    // ============== CAPA ==============
+    // Página de rosto técnica. A capa anterior era uma peça comercial em PNG:
+    // slogans, quatro blocos de benefícios do sistema e um QR estático — o
+    // mesmo em todos os relatórios — sob "Documento auditável". Aqui só o que
+    // identifica o documento: o que é, sob quais normas, de quem e quando.
+    {
+      const e0 = data.empresa;
+      const razao = String((e0 as any)?.razao_social ?? e0?.nome ?? data.empresaNome ?? "").trim();
+      const cnpj = String(e0?.cnpj ?? "").trim();
+      const rt0 = data.responsavelTec;
+      const respCapa = (rt0?.nome || data.responsavelTecnico || "").trim();
 
+      // Faixa superior: identifica o documento.
+      fillRgb(PRIMARY); doc.rect(0, 0, pageW, 200, "F");
+      rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+      doc.text("RELATÓRIO TÉCNICO", margin, 92);
+      doc.setFontSize(20);
+      doc.text("AVALIAÇÃO ERGONÔMICA", margin, 122);
+      doc.text("PRELIMINAR — AEP", margin, 148);
+      doc.setFontSize(11); doc.setFont("helvetica", "normal"); rgb([191, 219, 254]);
+      doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", margin, 172);
+
+      // Corpo: quem, quando, por quem.
+      let yc = 268;
+      const linhaCapa = (rotulo: string, valor: string) => {
+        if (!valor) return;
+        rgb([120, 120, 120]); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+        doc.text(rotulo.toUpperCase(), margin, yc);
+        rgb(PRIMARY); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+        doc.text(valor, margin, yc + 17, { maxWidth: pageW - margin * 2 } as any);
+        yc += 46;
+      };
+      linhaCapa("Empresa", razao);
+      linhaCapa("CNPJ", cnpj);
+      linhaCapa("Data de emissão", data.emitidoEm.slice(0, 10));
+      linhaCapa("Responsável técnico", respCapa);
+
+      doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]); doc.setLineWidth(2);
+      doc.line(margin, pageH - 92, margin + 60, pageH - 92);
+      rgb([110, 110, 110]); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+      doc.text("NR-01  |  NR-17  |  Guia de Fatores de Riscos Psicossociais — MTE", margin, pageH - 68);
+      doc.text("Documento técnico preliminar. Uso restrito à empresa.", margin, pageH - 54);
+
+      doc.addPage();
+    }
+
+    // ============== 01. IDENTIFICAÇÃO ==============
+    y = margin + 24;
     sectionTitle("Identificação");
     const e = data.empresa;
     const dataAval = data.periodo.inicio || data.periodo.fim
@@ -409,8 +435,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "questionário e a Severidade, de escala de referência por domínio adotada pela ferramenta. " +
       "São valores PRELIMINARES, não avaliação técnica caso a caso: cabe ao responsável técnico " +
       "confirmá-los ou ajustá-los à luz das condições reais de trabalho antes da integração ao PGR. " +
-      "Duração, frequência e intensidade da exposição não foram medidas em campo e constam como " +
-      "pendentes de validação."
+      "Duração, frequência e intensidade da exposição não foram levantadas em campo e constam no " +
+      "Inventário como \"Não informado\", para preenchimento pelo responsável técnico."
     );
 
 
@@ -885,6 +911,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.consequencia),
           semControle ? CONTROLE_A_VALIDAR : protectWords(controleTxt),
           car.duracao,
+          car.frequencia,
+          car.intensidade,
           baseFraca ? "—" : String(fp.prob),
           baseFraca ? "—" : String(fp.sev),
           baseFraca ? "A avaliar" : fp.risco.nivel5,
@@ -909,6 +937,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.consequencia),
           CONTROLE_A_VALIDAR,
           car.duracao,
+          car.frequencia,
+          car.intensidade,
           baseFraca ? "—" : String(f.prob),
           baseFraca ? "—" : String(f.sev),
           baseFraca ? "A avaliar" : f.risco.nivel5,
@@ -935,7 +965,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     const introLines = doc.splitTextToSize(
-      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado. P e S são preliminares e a exposição (duração, frequência e intensidade) não foi medida em campo: cabe ao responsável técnico confirmá-las a partir das condições reais de trabalho (NR-17, subitem 17.3.1.1).",
+      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado. Duração, frequência e intensidade não foram levantadas em campo e constam como \"Não informado\"; P e S são preliminares. Cabe ao responsável técnico preenchê-las e confirmá-las a partir das condições reais de trabalho (NR-17, subitem 17.3.1.1).",
       lwPageW - margin * 2,
     );
     doc.text(introLines, margin, 84);
@@ -949,32 +979,37 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // Duração/Frequência/Intensidade migraram da seção "Caracterização da
       // Exposição", que era uma página retrato inteira repetindo GES e domínio
       // para dizer três palavras derivadas do mesmo P e S já impressos aqui.
-      // "Agente / Situação" virou "Fonte / Circunstância": é a expressão do
-      // Guia MTE, que pede a descrição dos perigos com identificação das
-      // fontes e/ou circunstâncias. O conteúdo já era esse.
-      head: [["GES / Setores", "Função", "Domínio", "Fonte / Circunstância", "Fator de risco", "Possível consequência", "Controles existentes", "Exposição", "P", "S", "Nível de\nrisco"]],
-      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 6.8, halign: "center", valign: "middle", cellPadding: 2 },
-      styles: { fontSize: 6.8, cellPadding: 2, valign: "top", overflow: "linebreak" },
+      // Cabeçalhos na nomenclatura do Guia MTE, na cadeia
+      // domínio -> agente/situação -> perigo -> possível consequência.
+      // Duração, frequência e intensidade são colunas próprias: o Guia pede a
+      // caracterização da exposição no inventário, e sumir com elas esconderia
+      // a lacuna em vez de mostrá-la. Saem "Não informado" enquanto o
+      // responsável técnico não as levantar em campo.
+      head: [["GES / Setores", "Função", "Domínio", "Agente / Situação", "Perigo\n(fator de risco)", "Possível consequência\n(lesão ou agravo)", "Controles existentes", "Duração", "Frequência", "Intensidade", "P", "S", "Nível de\nrisco"]],
+      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
+      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 6.5, halign: "center", valign: "middle", cellPadding: 2 },
+      styles: { fontSize: 6.5, cellPadding: 2, valign: "top", overflow: "linebreak" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       // Soma = 762pt — exatamente a A4 paisagem (842 - 80 de margens).
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 92 },
-        1: { cellWidth: 62 },
-        2: { cellWidth: 70 },
-        3: { cellWidth: 92 },
-        4: { cellWidth: 84, fontStyle: "bold" },
-        5: { cellWidth: 100 },
-        6: { cellWidth: 68, halign: "left" },
-        7: { cellWidth: 66, halign: "center" },
-        8: { halign: "center", cellWidth: 14 },
-        9: { halign: "center", cellWidth: 14 },
-        10: { halign: "center", cellWidth: 100, fontStyle: "bold" },
+        0: { fontStyle: "bold", cellWidth: 84 },
+        1: { cellWidth: 56 },
+        2: { cellWidth: 62 },
+        3: { cellWidth: 78 },
+        4: { cellWidth: 76, fontStyle: "bold" },
+        5: { cellWidth: 86 },
+        6: { cellWidth: 58, halign: "left" },
+        7: { cellWidth: 52, halign: "center" },
+        8: { cellWidth: 52, halign: "center" },
+        9: { cellWidth: 52, halign: "center" },
+        10: { halign: "center", cellWidth: 14 },
+        11: { halign: "center", cellWidth: 14 },
+        12: { halign: "center", cellWidth: 78, fontStyle: "bold" },
       },
       didParseCell: (h: any) => {
-        colorirNivel(10)(h);
+        colorirNivel(12)(h);
         // "A avaliar" não é um nível de risco e não pode receber cor de nível.
-        if (h.section === "body" && h.column.index === 10 && String(h.cell.raw ?? "") === "A avaliar") {
+        if (h.section === "body" && h.column.index === 12 && String(h.cell.raw ?? "") === "A avaliar") {
           h.cell.styles.fillColor = [243, 244, 246];
           h.cell.styles.textColor = [75, 85, 99];
         }
@@ -1286,7 +1321,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // ============== Cabeçalho/rodapé ==============
     const pages = doc.getNumberOfPages();
 
-    for (let p = 1; p <= pages; p++) {
+    // Começa em 2: a página de rosto não leva cabeçalho, rodapé nem número.
+    for (let p = 2; p <= pages; p++) {
       doc.setPage(p);
       fillRgb(PRIMARY);
       doc.rect(0, 0, pageW, 18, "F");
@@ -1298,7 +1334,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       doc.line(margin, pageH - 30, pageW - margin, pageH - 30);
       rgb([110, 110, 110]); doc.setFontSize(8);
       doc.text("PSICOSAFETY  •  NR-01 / NR-17 / Guia MTE", margin, pageH - 16);
-      doc.text(`Página ${p} de ${pages}`, pageW - margin, pageH - 16, { align: "right" });
+      doc.text(`Página ${p - 1} de ${pages - 1}`, pageW - margin, pageH - 16, { align: "right" });
 
       // Marca d'água "RASCUNHO" quando emitido em modo prévia
       if (data.rascunho) {
