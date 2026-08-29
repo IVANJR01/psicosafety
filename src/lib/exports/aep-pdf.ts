@@ -9,7 +9,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
-import { getRecomendacoes } from "@/lib/recomendacoes";
 import {
   type AepDataset,
   type LinhaFator,
@@ -55,25 +54,11 @@ const NIVEL_FILL: Record<NivelRisco, [number, number, number]> = {
   Crítico: [254, 226, 226],
 };
 
-const NIVEL_PRIORIDADE: Record<NivelRisco, string> = {
-  Crítico: "1ª — Imediata",
-  Alto:    "2ª — Alta",
-  Médio:   "3ª — Média",
-  Baixo:   "4ª — Monitorar",
-};
-
 const NIVEL_CONTROLE: Record<NivelRisco, string> = {
   Crítico: "Intolerável — ações imediatas",
   Alto:    "Substancial — controle necessário",
   Médio:   "Moderado — controle adicional",
   Baixo:   "Tolerável — monitoramento",
-};
-
-const NIVEL_PRAZO: Record<NivelRisco, string> = {
-  Crítico: "Imediato (até 30 dias)",
-  Alto:    "Curto prazo (até 90 dias)",
-  Médio:   "Médio prazo (até 180 dias)",
-  Baixo:   "Monitoramento (até 12 meses)",
 };
 
 
@@ -350,13 +335,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
      * leitor para uma seção que não existe.
      */
     const secoesEmitidas: string[] = [
-      "Dados da Empresa",
+      "Identificação",
       "Objetivo",
       "Metodologia Aplicada",
       "Caracterização dos GES / Setores / Funções Avaliadas",
       "Resultado da Avaliação do Questionário Psicossocial",
-      "Distribuição dos Resultados por Domínio / GES",
-      "Classificação e Avaliação dos Riscos Psicossociais",
+      "Integração dos Resultados ao Guia MTE / NR-01",
       "Inventário Preliminar de Riscos Psicossociais",
       ...(incluirPlanoAcao ? ["Plano de Ação Recomendado"] : []),
       "Conclusão Técnica",
@@ -435,12 +419,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "específico de coleta."
     );
     paragraph(
-      "Origem de P e S nesta avaliação preliminar: a Probabilidade parte do resultado do domínio no " +
-      "questionário e a Severidade, de escala de referência por domínio adotada pela ferramenta. " +
-      "São valores PRELIMINARES, não avaliação técnica caso a caso: cabe ao responsável técnico " +
-      "confirmá-los ou ajustá-los à luz das condições reais de trabalho antes da integração ao PGR. " +
-      "Duração, frequência e intensidade da exposição não foram levantadas em campo e constam no " +
-      "Inventário como \"Não informado\", para preenchimento pelo responsável técnico."
+      "Esta AEP não classifica o risco: a Probabilidade, a Severidade e o nível constam como \"A " +
+      "avaliar\" no Inventário, e serão definidos na avaliação das condições reais de trabalho.",
+      9,
     );
 
 
@@ -628,10 +609,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       );
     }
 
-    // ============== 07. DISTRIBUIÇÃO POR GES ==============
-    sectionTitle("Distribuição dos Resultados por Domínio / GES");
-    // Dois parágrafos viraram um: o segundo explicava, em quatro linhas, que um
-    // GES pode superar a média da empresa — o que a própria tabela mostra.
+    // ---- Distribuição por GES (dentro de Resultados) ----
+    subTitle("Distribuição por GES");
     paragraph("Domínio com maior resultado no questionário em cada GES.");
 
     if (data.setores.length === 0) {
@@ -711,7 +690,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // O que existe é: o questionário SINALIZA o fator, a análise das condições
     // de trabalho o confirma, e só então ele é enquadrado na terminologia do
     // Guia — cuja lista é exemplificativa, não exaustiva.
-    sectionTitle("Integração dos Resultados ao Guia MTE / NR-01", { samePageIfFits: 340 });
+    sectionTitle("Integração dos Resultados ao Guia MTE / NR-01", { samePageIfFits: 390 });
     paragraph(
       "Para fins de integração ao GRO/PGR, a denominação dos perigos e das possíveis lesões ou " +
       "agravos segue prioritariamente a terminologia do Guia de Fatores de Riscos Psicossociais " +
@@ -767,83 +746,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       );
     }
 
-    // ============== 09. CLASSIFICAÇÃO E AVALIAÇÃO DOS RISCOS PSICOSSOCIAIS ==============
-    sectionTitle("Critérios de Classificação do Risco", { samePageIfFits: 168 });
+    // A seção "Critérios de Classificação do Risco" saiu. As escalas de P e S e
+    // as faixas de P x S são critério INTERNO da ferramenta — a NR-01 exige o
+    // gerenciamento e a avaliação dos riscos, não esta matriz. Publicá-las numa
+    // AEP que não classifica nada só cria texto para defender: o lugar delas é
+    // o procedimento de gerenciamento de riscos da organização.
     paragraph(
-      "O nível de risco do Inventário resulta do produto Probabilidade × Severidade, pelas escalas " +
-      "e faixas abaixo."
+      "A classificação do risco será realizada conforme a metodologia de avaliação de riscos " +
+      "adotada pela organização, a partir da verificação das condições reais de trabalho, e " +
+      "validada no gerenciamento de riscos ocupacionais."
     );
-
-    // O DESENHO da matriz 5x5 saiu. O que a NR-01 (subitem 1.5.4.4.2) pede é
-    // que a organização declare o critério de classificação, e o critério está
-    // inteiro nas duas tabelas abaixo: as escalas de P e S e as faixas de P x S
-    // com a ação correspondente. Com elas, qualquer leitor refaz a conta e
-    // chega ao mesmo nível. O grid colorido ilustrava o mesmo critério numa
-    // segunda forma, e custava metade de uma página.
-
-    // ---- Escalas e níveis, lado a lado ----
-    // Os rótulos são os mesmos do eixo da matriz acima (probLabels). Antes esta
-    // tabela descrevia CONDIÇÃO ("Ambiente saudável", "Problema frequente")
-    // enquanto o eixo da matriz descrevia CHANCE ("Rara", "Muito provável") —
-    // duas escalas diferentes para o mesmo número, na mesma página. A NR-1
-    // (subitem 1.5.4.4.2) define o nível de risco como combinação de severidade
-    // com a PROBABILIDADE de ocorrência, então é a chance que precisa ser
-    // nomeada aqui.
-    const escY = y;
-    const escLargura = (pageW - margin * 2 - 16) / 2;
-    const escDireitaX = margin + escLargura + 16;
-
-    autoTable(doc, {
-      startY: escY,
-      head: [["#", "Probabilidade\n(chance)", "Severidade\n(impacto potencial)"]],
-      body: [
-        ["1", "Rara", "desconforto leve"],
-        ["2", "Pouco provável", "fadiga mental leve"],
-        ["3", "Possível", "estresse ocupacional"],
-        // "transtornos psicológicos" e "adoecimento grave" nomeavam quadros
-        // clínicos numa escala que gradua severidade potencial, não diagnóstico.
-        ["4", "Provável", "agravo relevante à saúde"],
-        ["5", "Muito provável", "agravo grave à saúde"],
-      ],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 2.5 },
-      styles: { fontSize: 7.5, cellPadding: 2.5 },
-      columnStyles: { 0: { halign: "center", fontStyle: "bold", cellWidth: 16 } },
-      tableWidth: escLargura,
-      margin: { left: margin, right: margin },
-    });
-    const fimEsq = (doc as any).lastAutoTable.finalY;
-
-    const niveis5: Nivel5[] = ["TRIVIAL", "TOLERÁVEL", "MODERADO", "SUBSTANCIAL", "INTOLERÁVEL"];
-    autoTable(doc, {
-      startY: escY,
-      head: [["Nível de risco\n(P × S)", "Faixa", "Ação de controle"]],
-      body: [
-        // "nenhuma ação" dispensava o acompanhamento que a NR-01 exige mesmo
-        // no risco mais baixo, e num relatório preliminar seria lido como
-        // dispensa definitiva.
-        ["TRIVIAL", NIVEL5_FAIXA.TRIVIAL, "manter controles e acompanhar"],
-        ["TOLERÁVEL", NIVEL5_FAIXA.TOLERÁVEL, "monitoramento"],
-        ["MODERADO", NIVEL5_FAIXA.MODERADO, "controle adicional"],
-        ["SUBSTANCIAL", NIVEL5_FAIXA.SUBSTANCIAL, "controle necessário"],
-        ["INTOLERÁVEL", NIVEL5_FAIXA.INTOLERÁVEL, "ações imediatas"],
-      ],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 2.5 },
-      styles: { fontSize: 7.5, cellPadding: 2.5 },
-      columnStyles: {
-        0: { fontStyle: "bold", halign: "center", cellWidth: 74 },
-        1: { halign: "center", cellWidth: 38 },
-      },
-      didParseCell: (h) => {
-        if (h.section === "body" && h.column.index === 0) {
-          const lvl = niveis5[h.row.index];
-          h.cell.styles.fillColor = NIVEL5_FILL[lvl];
-          h.cell.styles.textColor = NIVEL5_COR[lvl];
-        }
-      },
-      tableWidth: escLargura,
-      margin: { left: escDireitaX, right: margin },
-    });
-    y = Math.max(fimEsq, (doc as any).lastAutoTable.finalY) + 16;
 
     // ============== 10. INVENTÁRIO DE RISCOS OCUPACIONAIS PARA O PGR ==============
     // Renderizado em página própria em PAISAGEM — título, intro e tabela
@@ -869,6 +781,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
     const CONTROLE_A_VALIDAR = "Não evidenciado\nno momento da\navaliação";
+    // P, S e nível saem em aberto em TODAS as linhas. P deriva do percentual do
+    // questionário, S de escala fixa por domínio, e duração, frequência e
+    // intensidade não foram levantadas em campo. Publicar "MODERADO" nessas
+    // condições é responder "de onde veio P4?" com "do percentual" — que é o
+    // que a AEP não pode fazer. A classificação passa a depender da avaliação
+    // das condições reais, que é o que este documento pede que aconteça.
+    const A_AVALIAR = "A avaliar";
     // A coluna "Função" volta ao inventário. Cabe agora porque duração,
     // frequência e intensidade deixaram de ser três colunas: viraram uma só,
     // "Exposição", já que não são medidas em campo.
@@ -973,7 +892,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // classificar. A linha fica para não esconder o achado.
         const semEnquadramento = mte.perigo === INDICADOR_COMPLEMENTAR;
         if (semEnquadramento) linhasSemEnquadramento += 1;
-        const emAberto = baseFraca || semEnquadramento;
         invBody.push([
           formatLabelGes(s.label) + (baseFraca ? " *" : "") + (semEnquadramento ? " †" : ""),
           funcoesTxt,
@@ -985,9 +903,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           car.duracao,
           car.frequencia,
           car.intensidade,
-          emAberto ? "—" : String(fp.prob),
-          emAberto ? "—" : String(fp.sev),
-          emAberto ? "A avaliar" : fp.risco.nivel5,
+          A_AVALIAR,
+          A_AVALIAR,
+          A_AVALIAR,
         ]);
       });
     }
@@ -1002,7 +920,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const car = caracterizarExposicao(f);
         const semEnquadramento = mte.perigo === INDICADOR_COMPLEMENTAR;
         if (semEnquadramento) linhasSemEnquadramento += 1;
-        const emAberto = baseFraca || semEnquadramento;
         invBody.push([
           protectWords(data.empresaNome) + (baseFraca ? " *" : "") + (semEnquadramento ? " †" : ""),
           "Não informado",
@@ -1014,9 +931,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           car.duracao,
           car.frequencia,
           car.intensidade,
-          emAberto ? "—" : String(f.prob),
-          emAberto ? "—" : String(f.sev),
-          emAberto ? "A avaliar" : f.risco.nivel5,
+          A_AVALIAR,
+          A_AVALIAR,
+          A_AVALIAR,
         ]);
       });
     }
@@ -1040,7 +957,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     const introLines = doc.splitTextToSize(
-      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado. Duração, frequência e intensidade não foram levantadas em campo e constam como \"Não informado\"; P e S são preliminares. Cabe ao responsável técnico preenchê-las e confirmá-las a partir das condições reais de trabalho (NR-17, subitem 17.3.1.1).",
+      "Os resultados do questionário são subsídios à identificação de perigos. A caracterização do perigo e a avaliação do risco dependem da verificação das condições reais de trabalho, que preencherá a exposição, a Probabilidade e a Severidade desta tabela.",
       lwPageW - margin * 2,
     );
     doc.text(introLines, margin, 84);
@@ -1070,15 +987,15 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         0: { fontStyle: "bold", cellWidth: 84 },
         1: { cellWidth: 56 },
         2: { cellWidth: 62 },
-        3: { cellWidth: 78 },
-        4: { cellWidth: 76, fontStyle: "bold" },
-        5: { cellWidth: 86 },
-        6: { cellWidth: 58, halign: "left" },
+        3: { cellWidth: 64 },
+        4: { cellWidth: 66, fontStyle: "bold" },
+        5: { cellWidth: 70 },
+        6: { cellWidth: 50, halign: "left" },
         7: { cellWidth: 52, halign: "center" },
         8: { cellWidth: 52, halign: "center" },
         9: { cellWidth: 52, halign: "center" },
-        10: { halign: "center", cellWidth: 14 },
-        11: { halign: "center", cellWidth: 14 },
+        10: { halign: "center", cellWidth: 38 },
+        11: { halign: "center", cellWidth: 38 },
         12: { halign: "center", cellWidth: 78, fontStyle: "bold" },
       },
       didParseCell: (h: any) => {
@@ -1176,13 +1093,47 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano PRELIMINAR derivado do Inventário, e assim permanece enquanto responsável, prazo e " +
-        "evidência não forem validados pela empresa. Os prazos indicados são sugestão vinculada ao " +
-        "nível de risco, não prazos fixados por norma; cabe à organização defini-los na devolutiva " +
-        "técnica (NR-01, item 1.5.5).",
+        "As medidas abaixo são de VERIFICAÇÃO das condições de trabalho relacionadas a cada fator " +
+        "identificado. As medidas de controle, o responsável, o prazo e a prioridade serão definidos " +
+        "pela organização após a validação técnica (NR-01, item 1.5.5).",
         9,
       );
 
+
+      // "Redistribuir tarefas" presume que a causa é a distribuição. O
+      // questionário apontou uma percepção; o que a AEP precisa agora é
+      // verificar o que a produz. A ação passa a ser de VERIFICAÇÃO, dirigida
+      // ao fator identificado — a medida de controle vem depois, quando a
+      // condição real for conhecida.
+      const VERIFICACAO_POR_DIM: Record<string, string> = {
+        demandas:
+          "Avaliar a organização do trabalho, distribuição de tarefas, metas, ritmo e prazos, " +
+          "conforme condições reais verificadas.",
+        organizacao:
+          "Avaliar autonomia sobre a tarefa, clareza de papéis, previsibilidade de escalas e fluxo " +
+          "de informação, conforme condições reais verificadas.",
+        relacoes:
+          "Avaliar as relações de trabalho, a conduta da liderança e o apoio entre colegas, " +
+          "conforme condições reais verificadas.",
+        interface:
+          "Avaliar jornada, horas extras e a interferência das demandas do trabalho na vida " +
+          "pessoal, conforme condições reais verificadas.",
+        ofensivos:
+          "Apurar as situações relatadas e verificar o funcionamento do canal de denúncias e da " +
+          "política antiassédio (Lei 14.457/2022, art. 23).",
+        reconhecimento:
+          "Avaliar os critérios de reconhecimento, recompensa e justiça organizacional, conforme " +
+          "condições reais verificadas.",
+        seguranca:
+          "Avaliar a comunicação preventiva e a gestão de segurança do trabalho, conforme " +
+          "condições reais verificadas.",
+        saude:
+          "Avaliar as condições de trabalho do GES para identificar quais fatores produzem o " +
+          "desgaste referido, antes de nomear o perigo e definir medidas.",
+      };
+      const acaoVerificacao = (dimId: string) =>
+        VERIFICACAO_POR_DIM[dimId] ??
+        "Avaliar as condições reais de trabalho do GES relacionadas ao fator identificado.";
 
       const ordem: NivelRisco[] = ["Crítico", "Alto", "Médio", "Baixo"];
       const planoBody: any[] = [];
@@ -1225,28 +1176,20 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           const nivelPgr: NivelRisco = fp.risco.nivel;
           if (nivelPgr !== nivel) return;
           const mte = mteParaDim(fp.dim.id, nivelPgr);
-          if (mte.perigo === INDICADOR_COMPLEMENTAR) {
-            acumular(
-              "Analisar as condições de trabalho do GES para identificar quais fatores produzem o " +
-              "desgaste referido, antes de nomear o perigo e definir medidas.",
-              "Indicador complementar — perigo a identificar",
-              nivelPgr,
-              formatLabelGes(s.label),
-            );
-            return;
-          }
-          const acoes = getRecomendacoes(fp.dim.id, fp.scorePct);
-          const acaoBase = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-          acumular(acaoBase, mte.perigo, nivelPgr, formatLabelGes(s.label));
+          const fator = mte.perigo === INDICADOR_COMPLEMENTAR
+            ? "Indicador complementar — perigo a identificar"
+            : mte.perigo;
+          acumular(acaoVerificacao(fp.dim.id), fator, nivelPgr, formatLabelGes(s.label));
         });
         if (data.setores.length === 0) {
           fatoresValidos
             .filter((f) => amostraSuficiente(f.n) && f.risco.nivel === nivel)
             .forEach((f) => {
               const mte = mteParaDim(f.dim.id, f.risco.nivel);
-              const acoes = getRecomendacoes(f.dim.id, f.scorePct);
-              const acaoTxt = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-              acumular(acaoTxt, mte.perigo, nivel, data.empresaNome);
+              const fator = mte.perigo === INDICADOR_COMPLEMENTAR
+                ? "Indicador complementar — perigo a identificar"
+                : mte.perigo;
+              acumular(acaoVerificacao(f.dim.id), fator, nivel, data.empresaNome);
             });
         }
       });
@@ -1262,8 +1205,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           l.perigo,
           l.acao,
           respDefault,
-          NIVEL_PRAZO[l.nivel],
-          NIVEL_PRIORIDADE[l.nivel],
+          // Sem nível de risco não há prazo nem prioridade a derivar. "Médio
+          // prazo (até 180 dias)" era uma sugestão da ferramenta que a empresa
+          // teria de justificar numa fiscalização sem ter de onde.
+          "A definir",
+          "A definir",
         ]);
       });
 
@@ -1276,7 +1222,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           ACAO_SEM_DADO,
           respDefault,
           "A definir",
-          "Preliminar",
+          "A definir",
         ]);
       }
 
@@ -1297,7 +1243,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           5: { cellWidth: 60, halign: "center", fontStyle: "bold" },
         },
         rowPageBreak: "avoid",
-        didParseCell: colorirNivel(5, true),
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
@@ -1320,16 +1265,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     paragraph(
       "A avaliação identificou fatores psicossociais que devem ser considerados no gerenciamento " +
-      "dos riscos ocupacionais, subsidiando o GRO/PGR." +
+      "dos riscos ocupacionais, subsidiando o GRO/PGR. Nenhum risco foi classificado nesta etapa: a " +
+      "classificação depende da verificação das condições reais de trabalho." +
       (gesSemBase > 0
-        ? " Os resultados dos GES com participação insuficiente requerem avaliação complementar das " +
-          "condições de trabalho antes de sua classificação."
+        ? ` Além disso, ${gesSemBase} GES tiveram participação insuficiente para leitura quantitativa ` +
+          "do questionário e exigem avaliação complementar."
         : "")
     );
     paragraph(
-      "A classificação preliminar dos riscos, os controles existentes e a caracterização da " +
-      "exposição devem ser validados em campo pelo responsável técnico. Implementadas as medidas do " +
-      "Plano de Ação, a avaliação deve ser revista e o resultado registrado no inventário de riscos.",
+      "A caracterização da exposição, os controles existentes e a classificação do risco dependem da " +
+      "verificação das condições reais de trabalho pelo responsável técnico. Concluída essa " +
+      "verificação e implementadas as medidas, a avaliação deve ser revista e o resultado registrado " +
+      "no inventário de riscos.",
       9,
     );
 
