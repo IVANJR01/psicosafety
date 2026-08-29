@@ -113,13 +113,9 @@ export const RECOMENDACOES: RecomendacaoDim[] = [
         { titulo: "Roda de conversa sobre estresse", detalhe: "Sessões mensais com profissional de saúde mental.", prazo: "Curto prazo (até 30 dias)" },
         { titulo: "Triagem de saúde mental", detalhe: "Incluir avaliação psicossocial nos exames ocupacionais.", prazo: "Médio prazo (até 90 dias)" },
       ],
-      // O PAE saiu da primeira posição: é medida de apoio ao trabalhador já
-      // exposto, não medida sobre a condição que produz a exposição. Como ação
-      // principal de um GES com risco alto, respondia ao efeito e deixava a
-      // causa intacta.
       alto: [
         { titulo: "Reavaliar as condições de trabalho do GES", detalhe: "Rever jornada, ritmo, pausas e fatores ambientais (ruído, iluminação, temperatura, ergonomia) que agravam o desgaste.", prazo: "Curto prazo (até 30 dias)" },
-        { titulo: "Programa de apoio ao empregado (PAE)", detalhe: "Medida complementar: canal confidencial de apoio psicológico, jurídico e financeiro.", prazo: "Médio prazo (até 90 dias)" },
+        { titulo: "Analisar a organização do trabalho no GES", detalhe: "Verificar distribuição de tarefas, metas e cobertura de ausências como origem do desgaste relatado.", prazo: "Curto prazo (até 30 dias)" },
       ],
       critico: [
         { titulo: "Acionar SESMT/Medicina do Trabalho", detalhe: "Avaliação clínica imediata e CAT quando aplicável; afastamento se necessário.", prazo: "Imediato" },

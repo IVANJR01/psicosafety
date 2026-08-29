@@ -525,22 +525,31 @@ export type MteFator = {
   consequencia: string;   // Possível consequência (lesão / agravo) — Guia MTE
 };
 
+// Os agentes/situações eram frases enumerativas de até 150 caracteres, que na
+// tabela do Inventário viravam cinco linhas por célula. Viram rótulos curtos —
+// a mesma informação, legível.
+//
+// A consequência deixou de ser "Transtorno mental" isolado. Num inventário,
+// nomear um quadro clínico como possível agravo de um fator identificado por
+// questionário aproxima o documento de afirmar causalidade, sem fundamentação
+// específica para aquele contexto. A formulação atual descreve o agravo
+// ocupacional compatível com o fator, que é o que a AEP pode sustentar.
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Demandas no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental" },
-  { dominio: "Demandas no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
-  { dominio: "Controle sobre o Trabalho", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental" },
-  { dominio: "Relações Sociais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Reconhecimento e Recompensa", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental" },
-  { dominio: "Justiça Organizacional", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
-  { dominio: "Clareza de Papel / Função", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
-  { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental" },
-  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
-  { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
-  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento profissional, percepção de injustiça organizacional, tratamento desigual, baixa valorização, ausência de feedback e recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Controle sobre o Trabalho", agente: "Baixa autonomia sobre a tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Relações Sociais e Liderança", agente: "Conflitos e ambiente hostil", perigo: "Más relações no local de trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Comportamentos Ofensivos", agente: "Assédio, humilhação ou discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Reconhecimento e Recompensa", agente: "Falta de reconhecimento e recompensa", perigo: "Baixas recompensas e reconhecimento", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Organização do Trabalho", agente: "Comunicação organizacional deficiente", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Justiça Organizacional", agente: "Tratamento desigual e decisões pouco transparentes", perigo: "Baixa justiça organizacional", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Clareza de Papel / Função", agente: "Funções e responsabilidades mal definidas", perigo: "Baixa clareza de papel / função", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Gestão Organizacional", agente: "Mudanças organizacionais sem planejamento", perigo: "Má gestão de mudanças organizacionais", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de apoio da liderança e dos colegas", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Eventos Críticos", agente: "Agressões, ameaças e eventos críticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Estresse ocupacional e insegurança psicossocial" },
+  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Estresse ocupacional e sofrimento psíquico relacionado ao trabalho" },
   /*
    * Os dois itens abaixo existem para que "Interface Trabalho-Indivíduo" e
    * "Saúde e Bem-estar" parem de reaproveitar o perigo de sobrecarga
@@ -553,8 +562,8 @@ export const MTE_MAPA: MteFator[] = [
    * Acrescentados no FIM do array de propósito: MTE_POR_DIM referencia por
    * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
    */
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental; fadiga; sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Saúde e Bem-estar", agente: "Indicadores de desgaste referidos pelos trabalhadores — estresse, exaustão, problemas de sono e queda de bem-estar percebido", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental; estresse ocupacional; esgotamento profissional" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Fadiga e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Estresse ocupacional e esgotamento profissional" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
@@ -587,7 +596,7 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[15];
   if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[16];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
-  return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
+  return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" };
 }
 
 // ----- Resultado identificado por domínio (fator específico dominante) -----
