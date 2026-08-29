@@ -145,7 +145,7 @@ export const SEVERIDADE_FATOR: Record<string, 1 | 2 | 3 | 4 | 5> = {
 };
 
 export const SEV_LABEL: Record<number, string> = {
-  1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica",
+  1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Extrema",
 };
 
 // ----- Classificação Risco = P x S (Matriz 5x5 — NR-01 / AIHA / ISO 31000) -----
@@ -338,21 +338,18 @@ export function caracterizarExposicao(f: LinhaFator): {
   intensidade: string;
   grupo: string;
 } {
-  const duracao =
-    f.prob >= 4 ? "Contínua / habitual" :
-    f.prob >= 3 ? "Prolongada"          :
-    f.prob >= 2 ? "Intermitente"        : "Esporádica";
-  const frequencia =
-    f.prob >= 4 ? "Diária"                     :
-    f.prob >= 3 ? "Várias vezes por semana"    :
-    f.prob >= 2 ? "Semanal / mensal"           : "Eventual";
-  const intensidade =
-    f.sev >= 5 ? "Crítica"   :
-    f.sev >= 4 ? "Alta"      :
-    f.sev >= 3 ? "Moderada"  :
-    f.sev >= 2 ? "Baixa"     : "Leve";
-  const grupo = f.n > 0 ? `${f.n} trabalhador(es) avaliado(s)` : "—";
-  return { duracao, frequencia, intensidade, grupo };
+  // Duração, frequência e intensidade eram DERIVADAS de f.prob e f.sev — e
+  // f.prob vem do percentual do questionário. Ou seja: o relatório escrevia
+  // "Contínua / habitual", "Diária" e "Alta" sem que ninguém tivesse ido a
+  // campo medir duração, contar frequência ou avaliar intensidade. Era o
+  // questionário renomeado três vezes.
+  //
+  // Um auditor que pergunte "de onde veio 'Diária'?" não tem resposta. A
+  // plataforma não coleta esses dados, então o campo fica declarado como
+  // pendente até que o responsável técnico o preencha em campo.
+  const PENDENTE = "Pendente de validação em campo";
+  const grupo = f.n > 0 ? `${f.n} respondente(s)` : "Não informado";
+  return { duracao: PENDENTE, frequencia: PENDENTE, intensidade: PENDENTE, grupo };
 }
 
 // ----- Medidas de prevenção existentes (estimativa por nível de risco) -----
@@ -529,27 +526,26 @@ export type MteFator = {
 // tabela do Inventário viravam cinco linhas por célula. Viram rótulos curtos —
 // a mesma informação, legível.
 //
-// A consequência deixou de ser "Transtorno mental" isolado. Num inventário,
-// nomear um quadro clínico como possível agravo de um fator identificado por
-// questionário aproxima o documento de afirmar causalidade, sem fundamentação
-// específica para aquele contexto. A formulação atual descreve o agravo
-// ocupacional compatível com o fator, que é o que a AEP pode sustentar.
+// As consequências seguem a nomenclatura do Guia MTE, "Transtorno mental" e
+// "DORT" incluídos: a coluna registra o POSSÍVEL agravo associado ao fator,
+// que é o que o Guia lista. O que a AEP não pode fazer é afirmar o quadro num
+// trabalhador — isso seria diagnóstico, e não aparece em lugar nenhum.
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Controle sobre o Trabalho", agente: "Baixa autonomia sobre a tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Relações Sociais e Liderança", agente: "Conflitos e ambiente hostil", perigo: "Más relações no local de trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Comportamentos Ofensivos", agente: "Assédio, humilhação ou discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Reconhecimento e Recompensa", agente: "Falta de reconhecimento e recompensa", perigo: "Baixas recompensas e reconhecimento", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Organização do Trabalho", agente: "Comunicação organizacional deficiente", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Justiça Organizacional", agente: "Tratamento desigual e decisões pouco transparentes", perigo: "Baixa justiça organizacional", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Clareza de Papel / Função", agente: "Funções e responsabilidades mal definidas", perigo: "Baixa clareza de papel / função", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Gestão Organizacional", agente: "Mudanças organizacionais sem planejamento", perigo: "Má gestão de mudanças organizacionais", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de apoio da liderança e dos colegas", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Eventos Críticos", agente: "Agressões, ameaças e eventos críticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Estresse ocupacional e insegurança psicossocial" },
-  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Estresse ocupacional e sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
+  { dominio: "Controle sobre o Trabalho", agente: "Baixa autonomia sobre a tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Relações Sociais e Liderança", agente: "Conflitos e ambiente hostil", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Comportamentos Ofensivos", agente: "Assédio, humilhação ou discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Reconhecimento e Recompensa", agente: "Falta de reconhecimento e recompensa", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
+  { dominio: "Organização do Trabalho", agente: "Comunicação organizacional deficiente", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Justiça Organizacional", agente: "Tratamento desigual e decisões pouco transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
+  { dominio: "Clareza de Papel / Função", agente: "Funções e responsabilidades mal definidas", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
+  { dominio: "Gestão Organizacional", agente: "Mudanças organizacionais sem planejamento", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de apoio da liderança e dos colegas", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Eventos Críticos", agente: "Agressões, ameaças e eventos críticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
+  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
+  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
   /*
    * Os dois itens abaixo existem para que "Interface Trabalho-Indivíduo" e
    * "Saúde e Bem-estar" parem de reaproveitar o perigo de sobrecarga
@@ -562,8 +558,8 @@ export const MTE_MAPA: MteFator[] = [
    * Acrescentados no FIM do array de propósito: MTE_POR_DIM referencia por
    * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
    */
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Fadiga e sofrimento psíquico relacionado ao trabalho" },
-  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Estresse ocupacional e esgotamento profissional" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental; fadiga; sofrimento psíquico relacionado ao trabalho" },
+  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: "Desgaste da saúde mental relacionado ao trabalho", consequencia: "Transtorno mental; estresse ocupacional; esgotamento profissional" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
@@ -596,7 +592,7 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[15];
   if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[16];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
-  return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Estresse ocupacional, fadiga e sofrimento psíquico relacionado ao trabalho" };
+  return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
 }
 
 // ----- Resultado identificado por domínio (fator específico dominante) -----

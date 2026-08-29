@@ -54,6 +54,13 @@ const NIVEL_FILL: Record<NivelRisco, [number, number, number]> = {
   Crítico: [254, 226, 226],
 };
 
+const NIVEL_PRIORIDADE: Record<NivelRisco, string> = {
+  Crítico: "1ª — Imediata",
+  Alto:    "2ª — Alta",
+  Médio:   "3ª — Média",
+  Baixo:   "4ª — Monitorar",
+};
+
 const NIVEL_CONTROLE: Record<NivelRisco, string> = {
   Crítico: "Intolerável — ações imediatas",
   Alto:    "Substancial — controle necessário",
@@ -385,15 +392,25 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "gerenciamento dos riscos ocupacionais."
     );
     paragraph(
-      "Critério de interpretação adotado: 0–33% = BAIXO · 34–66% = MÉDIO · 67–100% = ALTO. " +
-      `Recortes com menos de ${MIN_RESPONDENTES_CONCLUSAO} respondentes não foram classificados ` +
-      "quantitativamente e permanecem sujeitos à avaliação complementar das condições de trabalho."
+      "Critério metodológico interno da ferramenta, não definido pelo MTE: 0–33% = BAIXO · " +
+      `34–66% = MÉDIO · 67–100% = ALTO; e mínimo de ${MIN_RESPONDENTES_CONCLUSAO} respondentes por ` +
+      "recorte. Abaixo desse mínimo o recorte não é classificado quantitativamente e permanece " +
+      "sujeito à avaliação complementar das condições de trabalho."
     );
 
     paragraph(
-      "Cada domínio é relacionado a um agente/situação, a um perigo e a possíveis agravos à saúde, " +
-      "com nomenclatura do Guia de Fatores de Riscos Psicossociais do MTE, e classificado pela " +
-      "matriz Probabilidade × Severidade para compor o Inventário e o Plano de Ação."
+      "Cada domínio é relacionado a uma fonte/circunstância, a um fator de risco e a possíveis " +
+      "consequências, com nomenclatura do Guia de Fatores de Riscos Psicossociais do MTE. A " +
+      "classificação usa a matriz Probabilidade × Severidade, adotada como critério técnico interno " +
+      "para integração ao GRO/PGR — o MTE não determina matriz específica."
+    );
+    paragraph(
+      "Origem de P e S nesta avaliação preliminar: a Probabilidade parte do resultado do domínio no " +
+      "questionário e a Severidade, de escala de referência por domínio adotada pela ferramenta. " +
+      "São valores PRELIMINARES, não avaliação técnica caso a caso: cabe ao responsável técnico " +
+      "confirmá-los ou ajustá-los à luz das condições reais de trabalho antes da integração ao PGR. " +
+      "Duração, frequência e intensidade da exposição não foram medidas em campo e constam como " +
+      "pendentes de validação."
     );
 
 
@@ -423,7 +440,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const funcoesDedup = dedupFuncoes(s.funcoes);
         return [
           formatLabelGes(s.label),
-          funcoesDedup.map((f) => `${f.funcao} (${f.n})`).join("\n") || "—",
+          funcoesDedup.map((f) => `${f.funcao} (${f.n})`).join("\n") || "Não informado",
+          // A plataforma não cadastra efetivo por GES. Antes esta coluna
+          // repetia o número de respondentes, e quem comparasse as duas
+          // concluiria participação de 100%. Diz o que se sabe.
+          "Não informado",
           String(s.n),
           `${part}%`,
         ];
@@ -434,16 +455,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // (a plataforma não cadastra efetivo por GES), e um leitor que compara
         // as duas conclui participação de 100% onde só existe o número de quem
         // respondeu. Sobra o dado que o sistema de fato possui.
-        head: [["GES / Setores", "Funções avaliadas", "Respondentes\nválidos", "% da\namostra"]],
+        head: [["GES / Setores", "Funções avaliadas", "Trabalhadores\nno GES", "Respondentes\nválidos", "% da\namostra"]],
         body: gheBody,
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle", cellPadding: 4 },
         styles: { fontSize: 8, cellPadding: 3.5, valign: "middle", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { fontStyle: "bold", cellWidth: 150, halign: "left" },
+          0: { fontStyle: "bold", cellWidth: 140, halign: "left" },
           1: { cellWidth: "auto" },
-          2: { halign: "center", cellWidth: 76 },
-          3: { halign: "center", cellWidth: 55 },
+          2: { halign: "center", cellWidth: 62 },
+          3: { halign: "center", cellWidth: 62 },
+          4: { halign: "center", cellWidth: 48 },
         },
         margin: { left: margin, right: margin },
       });
@@ -451,8 +473,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
       paragraph(
         "Observação: \"Respondentes válidos\" são os trabalhadores que participaram da avaliação no " +
-        "GES, não o efetivo do grupo. O percentual da amostra refere-se ao total de participantes " +
-        "da avaliação.",
+        "GES. O efetivo por GES não consta do cadastro e não foi validado. O percentual da amostra " +
+        "refere-se ao total de participantes da avaliação.",
         9,
       );
 
@@ -656,7 +678,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Exige mais que o padrão: título (46) + parágrafo de abertura (~50) + a
     // matriz 5x5, que pede 260 e tem ensure() próprio. Com o mínimo padrão o
     // título ficava no pé de uma página e a matriz caía na seguinte.
-    sectionTitle("Critérios de Classificação do Risco", { samePageIfFits: 190 });
+    sectionTitle("Critérios de Classificação do Risco", { samePageIfFits: 168 });
     paragraph(
       "O nível de risco do Inventário resulta do produto Probabilidade × Severidade, pelas escalas " +
       "e faixas abaixo."
@@ -754,12 +776,22 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     let linhasBaseFraca = 0;
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
-    const CONTROLE_A_VALIDAR = "A validar\nem campo";
-    // A coluna "Função" saiu do Inventário: as funções de cada GES já saem na
-    // seção de caracterização, com o número de respondentes por função, e aqui
-    // custavam duas linhas em TODA linha da tabela — era o que empurrava o
-    // inventário para uma segunda página paisagem. O risco é inventariado por
-    // GES, que é a unidade de exposição similar.
+    const CONTROLE_A_VALIDAR = "Não evidenciado\nno momento da\navaliação";
+    // A coluna "Função" volta ao inventário. Cabe agora porque duração,
+    // frequência e intensidade deixaram de ser três colunas: viraram uma só,
+    // "Exposição", já que não são medidas em campo.
+    const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
+    const dedupFuncoesInv = (fs: typeof data.setores[number]["funcoes"]) => {
+      const seen = new Set<string>();
+      const out: string[] = [];
+      fs.forEach((f) => {
+        const k = cleanFuncNomeInv(f.funcao);
+        if (!k || seen.has(k)) return;
+        seen.add(k);
+        out.push(k);
+      });
+      return out;
+    };
 
     // Índice setor.nome (normalizado) → setor.id, para casar com controles cadastrados.
     const setorNomeParaId = new Map<string, string>();
@@ -843,16 +875,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // PGR. O perigo continua inventariado — some a conclusão, não a linha —
         // e o Plano de Ação recebe a ação de avaliação complementar.
         const car = caracterizarExposicao(fp);
+        const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "Não informado";
         invBody.push([
           formatLabelGes(s.label) + (baseFraca ? " *" : ""),
+          funcoesTxt,
           protectWords(fp.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           semControle ? CONTROLE_A_VALIDAR : protectWords(controleTxt),
-          baseFraca ? "—" : car.duracao,
-          baseFraca ? "—" : car.frequencia,
-          baseFraca ? "—" : car.intensidade,
+          car.duracao,
           baseFraca ? "—" : String(fp.prob),
           baseFraca ? "—" : String(fp.sev),
           baseFraca ? "A avaliar" : fp.risco.nivel5,
@@ -870,14 +902,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const car = caracterizarExposicao(f);
         invBody.push([
           protectWords(data.empresaNome) + (baseFraca ? " *" : ""),
+          "Não informado",
           protectWords(f.dim.title),
           protectWords(mte.agente),
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           CONTROLE_A_VALIDAR,
-          baseFraca ? "—" : car.duracao,
-          baseFraca ? "—" : car.frequencia,
-          baseFraca ? "—" : car.intensidade,
+          car.duracao,
           baseFraca ? "—" : String(f.prob),
           baseFraca ? "—" : String(f.sev),
           baseFraca ? "A avaliar" : f.risco.nivel5,
@@ -904,7 +935,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
     const introLines = doc.splitTextToSize(
-      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado: a confirmação depende da avaliação das condições de trabalho. Duração, frequência e intensidade são caracterização preliminar da exposição, a confirmar em campo pelo responsável técnico (NR-17, subitem 17.3.1.1).",
+      "Resultado preliminar da AEP, para validação pela organização e integração ao Inventário de Riscos do PGR. Cada linha é hipótese técnica levantada por questionário, não risco confirmado. P e S são preliminares e a exposição (duração, frequência e intensidade) não foi medida em campo: cabe ao responsável técnico confirmá-las a partir das condições reais de trabalho (NR-17, subitem 17.3.1.1).",
       lwPageW - margin * 2,
     );
     doc.text(introLines, margin, 84);
@@ -918,30 +949,32 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // Duração/Frequência/Intensidade migraram da seção "Caracterização da
       // Exposição", que era uma página retrato inteira repetindo GES e domínio
       // para dizer três palavras derivadas do mesmo P e S já impressos aqui.
-      head: [["GES / Setores", "Domínio", "Agente / Situação", "Perigo", "Possíveis agravos à saúde relacionados ao trabalho", "Controles", "Duração", "Frequência", "Intensidade", "P", "S", "Nível de\nrisco PGR"]],
-      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
+      // "Agente / Situação" virou "Fonte / Circunstância": é a expressão do
+      // Guia MTE, que pede a descrição dos perigos com identificação das
+      // fontes e/ou circunstâncias. O conteúdo já era esse.
+      head: [["GES / Setores", "Função", "Domínio", "Fonte / Circunstância", "Fator de risco", "Possível consequência", "Controles existentes", "Exposição", "P", "S", "Nível de\nrisco"]],
+      body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 6.8, halign: "center", valign: "middle", cellPadding: 2 },
       styles: { fontSize: 6.8, cellPadding: 2, valign: "top", overflow: "linebreak" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       // Soma = 762pt — exatamente a A4 paisagem (842 - 80 de margens).
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 104 },
-        1: { cellWidth: 76 },
-        2: { cellWidth: 96 },
-        3: { cellWidth: 86, fontStyle: "bold" },
-        4: { cellWidth: 100 },
-        5: { cellWidth: 72, halign: "left" },
-        6: { halign: "center", cellWidth: 50 },
-        7: { halign: "center", cellWidth: 52 },
-        8: { halign: "center", cellWidth: 46 },
+        0: { fontStyle: "bold", cellWidth: 92 },
+        1: { cellWidth: 62 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 92 },
+        4: { cellWidth: 84, fontStyle: "bold" },
+        5: { cellWidth: 100 },
+        6: { cellWidth: 68, halign: "left" },
+        7: { cellWidth: 66, halign: "center" },
+        8: { halign: "center", cellWidth: 14 },
         9: { halign: "center", cellWidth: 14 },
-        10: { halign: "center", cellWidth: 14 },
-        11: { halign: "center", cellWidth: 52, fontStyle: "bold" },
+        10: { halign: "center", cellWidth: 100, fontStyle: "bold" },
       },
       didParseCell: (h: any) => {
-        colorirNivel(11)(h);
+        colorirNivel(10)(h);
         // "A avaliar" não é um nível de risco e não pode receber cor de nível.
-        if (h.section === "body" && h.column.index === 11 && String(h.cell.raw ?? "") === "A avaliar") {
+        if (h.section === "body" && h.column.index === 10 && String(h.cell.raw ?? "") === "A avaliar") {
           h.cell.styles.fillColor = [243, 244, 246];
           h.cell.styles.textColor = [75, 85, 99];
         }
@@ -957,10 +990,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       rgb([90, 90, 90]); doc.setFont("helvetica", "italic"); doc.setFontSize(7.5);
       if (linhasSemControle > 0) {
         doc.text(
-          'Nota: "A validar em campo" significa que a existência e a eficácia dos controles não ' +
-          "foram evidenciadas no momento da avaliação — o que não equivale a afirmar que não " +
-          "existam. Requer validação documental e/ou em campo pela empresa. Confirmada a ausência " +
-          'na validação, a linha passa a "Não identificado na validação".',
+          "Nota: controles não evidenciados no momento da avaliação — o que não equivale a afirmar " +
+          "que não existam. Requer validação documental e/ou em campo pela empresa.",
           margin, yNota, { maxWidth: larguraNota } as any,
         );
         yNota += 20;
@@ -1102,6 +1133,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           l.acao,
           respDefault,
           NIVEL_PRAZO[l.nivel],
+          NIVEL_PRIORIDADE[l.nivel],
         ]);
       });
 
@@ -1114,25 +1146,28 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           ACAO_SEM_DADO,
           respDefault,
           "A definir",
+          "Preliminar",
         ]);
       }
 
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Fator identificado", "Medida recomendada", "Responsável", "Prazo"]],
-        body: planoBody.length ? planoBody : [["—", "Sem ações no recorte", "—", "—", "—"]],
-        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center" },
-        styles: { fontSize: 8, cellPadding: 4, valign: "top", overflow: "linebreak" },
+        head: [["GES / Setores", "Fator de risco", "Medida de prevenção", "Responsável", "Prazo", "Prioridade"]],
+        body: planoBody.length ? planoBody : [["—", "Sem ações no recorte", "—", "—", "—", "—"]],
+        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center" },
+        styles: { fontSize: 7.5, cellPadding: 3.5, valign: "top", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         // Soma = 515pt, a área útil da A4 retrato (595,28 - 2 x 40).
         columnStyles: {
-          0: { cellWidth: 110, fontStyle: "bold" },
-          1: { cellWidth: 105 },
-          2: { cellWidth: 155 },
-          3: { cellWidth: 75 },
-          4: { cellWidth: 70, halign: "center" },
+          0: { cellWidth: 96, fontStyle: "bold" },
+          1: { cellWidth: 92 },
+          2: { cellWidth: 143 },
+          3: { cellWidth: 66 },
+          4: { cellWidth: 58, halign: "center" },
+          5: { cellWidth: 60, halign: "center", fontStyle: "bold" },
         },
         rowPageBreak: "avoid",
+        didParseCell: colorirNivel(5, true),
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
@@ -1155,11 +1190,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     paragraph(
       "A avaliação identificou fatores psicossociais que devem ser considerados no gerenciamento " +
-      "dos riscos ocupacionais." +
+      "dos riscos ocupacionais, subsidiando o GRO/PGR." +
       (gesSemBase > 0
         ? " Os resultados dos GES com participação insuficiente requerem avaliação complementar das " +
           "condições de trabalho antes de sua classificação."
         : "")
+    );
+    paragraph(
+      "A classificação preliminar dos riscos, os controles existentes e a caracterização da " +
+      "exposição devem ser validados em campo pelo responsável técnico. Implementadas as medidas do " +
+      "Plano de Ação, a avaliação deve ser revista e o resultado registrado no inventário de riscos.",
+      9,
     );
 
     // Ressalva de amostra no nível do documento inteiro: uma AEP de três
