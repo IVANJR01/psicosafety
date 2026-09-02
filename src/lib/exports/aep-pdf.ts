@@ -190,10 +190,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     };
 
     // ============== CAPA ==============
-    // Página de rosto técnica. A capa anterior era uma peça comercial em PNG:
-    // slogans, quatro blocos de benefícios do sistema e um QR estático — o
-    // mesmo em todos os relatórios — sob "Documento auditável". Aqui só o que
-    // identifica o documento: o que é, sob quais normas, de quem e quando.
+    // Fundo branco e texto PRETO. A versão anterior punha o título em branco
+    // sobre uma faixa azul-escura e os dados em cinza — o conjunto ficava
+    // apagado e sem hierarquia clara. Aqui a página é limpa: empresa no topo,
+    // o que é o documento no centro, elaboração no pé.
     {
       const e0 = data.empresa;
       const razao = String((e0 as any)?.razao_social ?? e0?.nome ?? data.empresaNome ?? "").trim();
@@ -201,36 +201,41 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       const rt0 = data.responsavelTec;
       const respCapa = (rt0?.nome || data.responsavelTecnico || "").trim();
 
-      // Faixa superior: identifica o documento.
-      fillRgb(PRIMARY); doc.rect(0, 0, pageW, 200, "F");
-      rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-      doc.text("RELATÓRIO TÉCNICO", margin, 92);
-      doc.setFontSize(20);
-      doc.text("AVALIAÇÃO ERGONÔMICA", margin, 122);
-      doc.text("PRELIMINAR — AEP", margin, 148);
-      doc.setFontSize(11); doc.setFont("helvetica", "normal"); rgb([191, 219, 254]);
-      doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", margin, 172);
+      const PRETO: [number, number, number] = [0, 0, 0];
+      const centro = pageW / 2;
 
-      // Corpo: quem, quando, por quem.
-      let yc = 268;
+      // Empresa, no alto.
+      rgb(PRETO); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      doc.text(razao.toUpperCase(), centro, 118, { align: "center", maxWidth: pageW - margin * 2 } as any);
+
+      // O que é o documento, no centro óptico da página.
+      doc.setFontSize(46);
+      doc.text("AEP", centro, 372, { align: "center" });
+      doc.setFontSize(14);
+      doc.text("AVALIAÇÃO ERGONÔMICA PRELIMINAR", centro, 404, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+      doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", centro, 424, { align: "center" });
+
+      // Identificação, no pé.
+      let yc = pageH - 176;
       const linhaCapa = (rotulo: string, valor: string) => {
         if (!valor) return;
-        rgb([120, 120, 120]); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-        doc.text(rotulo.toUpperCase(), margin, yc);
-        rgb(PRIMARY); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-        doc.text(valor, margin, yc + 17, { maxWidth: pageW - margin * 2 } as any);
-        yc += 46;
+        rgb(PRETO); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+        doc.text(`${rotulo}: `, margin, yc);
+        const w = doc.getTextWidth(`${rotulo}: `);
+        doc.setFont("helvetica", "bold");
+        doc.text(valor, margin + w, yc, { maxWidth: pageW - margin * 2 - w } as any);
+        yc += 18;
       };
-      linhaCapa("Empresa", razao);
       linhaCapa("CNPJ", cnpj);
-      linhaCapa("Data de emissão", data.emitidoEm.slice(0, 10));
       linhaCapa("Responsável técnico", respCapa);
+      linhaCapa("Elaboração", data.emitidoEm.slice(0, 10));
 
-      doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]); doc.setLineWidth(2);
-      doc.line(margin, pageH - 92, margin + 60, pageH - 92);
-      rgb([110, 110, 110]); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      doc.text("NR-01  |  NR-17  |  Guia de Fatores de Riscos Psicossociais — MTE", margin, pageH - 68);
-      doc.text("Documento técnico preliminar. Uso restrito à empresa.", margin, pageH - 54);
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.6);
+      doc.line(margin, pageH - 96, pageW - margin, pageH - 96);
+      rgb(PRETO); doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      doc.text("NR-01  |  NR-17  |  Guia de Fatores de Riscos Psicossociais — MTE", margin, pageH - 78);
+      doc.text("Documento técnico preliminar. Uso restrito à empresa.", margin, pageH - 64);
 
       doc.addPage();
     }
@@ -1268,8 +1273,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       "dos riscos ocupacionais, subsidiando o GRO/PGR. Nenhum risco foi classificado nesta etapa: a " +
       "classificação depende da verificação das condições reais de trabalho." +
       (gesSemBase > 0
-        ? ` Além disso, ${gesSemBase} GES tiveram participação insuficiente para leitura quantitativa ` +
-          "do questionário e exigem avaliação complementar."
+        ? ` Além disso, ${gesSemBase} ${gesSemBase === 1 ? "GES teve" : "GES tiveram"} participação ` +
+          `insuficiente para leitura quantitativa do questionário e ${gesSemBase === 1 ? "exige" : "exigem"} ` +
+          "avaliação complementar."
         : "")
     );
     paragraph(
@@ -1314,7 +1320,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       paragraph("Base normativa: NR-01, NR-17 e Guia MTE de Fatores de Riscos Psicossociais.", 9);
     }
 
-    // ----- Bloco de assinatura do Responsável Técnico -----
+    // ----- Assinaturas: responsável técnico e empresa -----
+    // Duas colunas lado a lado. A AEP é elaborada pelo responsável técnico e
+    // RECEBIDA pela empresa: a devolutiva técnica, os controles, os prazos e a
+    // participação da CIPA são obrigações dela, e sem a assinatura de ciência
+    // o documento não registra que ela tomou conhecimento do que precisa fazer.
     {
       const rt = data.responsavelTec;
       const nome = (rt?.nome || data.responsavelTecnico || "").trim();
@@ -1325,21 +1335,39 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         .replace(/Segurnça/gi, "Segurança")
         .replace(/Seguranca/g, "Segurança");
       const dataE = (rt?.dataEmissao || data.emitidoEm.slice(0, 10));
-      // 82pt é o que o bloco realmente ocupa (linha + 4 linhas de 12pt).
-      // Reservando 150 + 24 de folga ele caía sozinho na última página.
-      ensure(82);
-      y += 8;
+      const e2 = data.empresa;
+      const razaoEmp = String((e2 as any)?.razao_social ?? e2?.nome ?? data.empresaNome ?? "").trim();
+
+      ensure(112);
+      y += 14;
+      const lineY = y + 18;
+      const larg = (pageW - margin * 2 - 40) / 2;
+      const cx1 = margin + larg / 2;
+      const cx2 = margin + larg + 40 + larg / 2;
+
       doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.5);
-      const lineY = y + 16;
-      doc.line(margin + 60, lineY, pageW - margin - 60, lineY);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(10); rgb(PRIMARY);
-      doc.text(nome || "Responsável Técnico", pageW / 2, lineY + 13, { align: "center" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9); rgb([60, 60, 60]);
+      doc.line(margin, lineY, margin + larg, lineY);
+      doc.line(margin + larg + 40, lineY, pageW - margin, lineY);
+
+      // Coluna esquerda: quem elaborou.
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); rgb(PRIMARY);
+      doc.text(nome || "Responsável Técnico", cx1, lineY + 13, { align: "center", maxWidth: larg } as any);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); rgb([60, 60, 60]);
       const linha2 = [form, reg].filter(Boolean).join(" — ") || "Formação / Registro Profissional";
-      doc.text(linha2, pageW / 2, lineY + 25, { align: "center" });
-      if (cargo) doc.text(cargo, pageW / 2, lineY + 37, { align: "center" });
-      doc.text(`Data de emissão: ${dataE}`, pageW / 2, lineY + 49, { align: "center" });
-      y = lineY + 60;
+      doc.text(linha2, cx1, lineY + 25, { align: "center", maxWidth: larg } as any);
+      if (cargo) doc.text(cargo, cx1, lineY + 36, { align: "center", maxWidth: larg } as any);
+      doc.text("Responsável técnico — elaboração", cx1, lineY + 47, { align: "center" });
+
+      // Coluna direita: quem recebeu.
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); rgb(PRIMARY);
+      doc.text(razaoEmp.toUpperCase() || "EMPRESA", cx2, lineY + 13, { align: "center", maxWidth: larg } as any);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); rgb([60, 60, 60]);
+      doc.text("Nome e cargo do representante", cx2, lineY + 25, { align: "center", maxWidth: larg } as any);
+      doc.text("Empresa — ciência e recebimento", cx2, lineY + 47, { align: "center" });
+
+      rgb([110, 110, 110]); doc.setFontSize(8);
+      doc.text(`Data de emissão: ${dataE}`, pageW / 2, lineY + 66, { align: "center" });
+      y = lineY + 78;
     }
 
     // ============== Remoção de páginas vazias ==============
