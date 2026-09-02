@@ -15,22 +15,18 @@ export const SEVERIDADE_DIM: Record<string, Nivel> = {
   reconhecimento: 2,
 };
 
-// Sem DORT nesta tabela: é agravo osteomuscular, e a tela de relatório o
-// exibia como consequência de fator psicossocial. Afirmá-lo a partir de
-// questionário é concluir sobre carga física sem avaliação ergonômica física
-// documentada. Só volta com AET ou avaliação física que sustente o caso.
 export const DIM_META: Record<string, { agente: string; danos: string }> = {
   demandas: {
     agente: "Excesso de demandas no trabalho",
-    danos: "Transtorno mental; estresse ocupacional; fadiga mental",
+    danos: "Transtorno mental; DORT; estresse ocupacional; fadiga mental",
   },
   organizacao: {
     agente: "Baixo controle no trabalho / Falta de autonomia",
-    danos: "Transtorno mental; ansiedade",
+    danos: "Transtorno mental; DORT; ansiedade",
   },
   relacoes: {
     agente: "Más relações no local de trabalho / Falta de apoio",
-    danos: "Transtorno mental; conflitos interpessoais",
+    danos: "Transtorno mental; conflitos interpessoais; DORT",
   },
   interface: {
     agente: "Conflito trabalho-vida / Sobrecarga fora do expediente",
