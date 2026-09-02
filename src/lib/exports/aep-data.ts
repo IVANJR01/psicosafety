@@ -96,6 +96,22 @@ export function validarSetorGes(respostas: Resposta[], gesMap?: GesMap): Validac
   return { semGes, duplicados };
 }
 
+/**
+ * Menor e maior data de resposta do recorte, em dd/mm/aaaa.
+ *
+ * É a data em que a avaliação REALMENTE aconteceu. Ignora respostas cujo
+ * `criadoEm` não é uma data legível em vez de deixá-las virar "Invalid Date"
+ * e contaminar o intervalo.
+ */
+export function periodoDeColeta(respostas: Resposta[]): { inicio?: string; fim?: string } {
+  const ts = respostas
+    .map((r) => new Date(r.criadoEm).getTime())
+    .filter((t) => Number.isFinite(t));
+  if (ts.length === 0) return {};
+  const fmt = (t: number) => new Date(t).toLocaleDateString("pt-BR");
+  return { inicio: fmt(Math.min(...ts)), fim: fmt(Math.max(...ts)) };
+}
+
 // ----- Probabilidade (1..5) baseada no % de respostas críticas -----
 export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
   if (pct >= 81) return 5;
@@ -509,7 +525,7 @@ export const MTE_MAPA: MteFator[] = [
   { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
   { dominio: "Reconhecimento e Recompensa", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
   { dominio: "Organização do Trabalho", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Conflito trabalho-vida / Sobrecarga fora do expediente", consequencia: "Transtorno mental; DORT" },
   { dominio: "Justiça Organizacional", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
   { dominio: "Clareza de Papel / Função", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
   { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
@@ -517,6 +533,14 @@ export const MTE_MAPA: MteFator[] = [
   { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
   { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
   { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento profissional, percepção de injustiça organizacional, tratamento desigual, baixa valorização, ausência de feedback e recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
+  // 15 — Saúde e Bem-estar tem perigo PRÓPRIO no Guia. Antes o domínio era
+  // mapeado para MTE_MAPA[0] ("sobrecarga"), com um comentário assumindo que
+  // sobrecarga seria "o agente ocupacional associado". O documento então se
+  // contradizia: o Anexo I declarava "Saúde e Bem-estar » Sofrimento psíquico
+  // relacionado ao trabalho" e o Inventário, três páginas antes, imprimia
+  // "Excesso de demandas (sobrecarga)" para o mesmo domínio — e o Plano
+  // colava medidas de saúde ("triagem de saúde mental") num perigo de carga.
+  { dominio: "Saúde e Bem-estar", agente: "Estresse, esgotamento, prejuízo ao sono, fadiga persistente", perigo: "Sofrimento psíquico relacionado ao trabalho", consequencia: "Transtorno mental; burnout; doenças psicossomáticas" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
@@ -527,7 +551,7 @@ export const MTE_POR_DIM: Record<string, MteFator[]> = {
   organizacao: [MTE_MAPA[2], MTE_MAPA[6], MTE_MAPA[9], MTE_MAPA[10]],
   relacoes:    [MTE_MAPA[3], MTE_MAPA[11], MTE_MAPA[5]],
   interface:   [MTE_MAPA[7], MTE_MAPA[8]],
-  saude:       [MTE_MAPA[0]], // sobrecarga é o agente ocupacional associado
+  saude:       [MTE_MAPA[15]], // perigo próprio do Guia, não "sobrecarga"
   ofensivos:   [MTE_MAPA[4], MTE_MAPA[12]],
   "segurança":    [MTE_MAPA[13]],
   seguranca:      [MTE_MAPA[13]],
@@ -547,7 +571,7 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[2];
   if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[3];
   if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[7];
-  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[0];
+  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[15];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
   return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
 }
@@ -620,8 +644,21 @@ export type AepDataset = {
   setorFiltro: string;        // "Todos" ou nome
   campanhaNome: string;       // "Todas" ou nome
   periodo: { inicio?: string; fim?: string };
+  /**
+   * Quando as respostas do recorte foram efetivamente coletadas — menor e
+   * maior `criadoEm` das respostas que entraram no relatório.
+   *
+   * Derivado dos dados, não do filtro: `periodo` só é preenchido quando o
+   * usuário exporta com uma campanha de escopo selecionado, e antes disso a
+   * "Data da Avaliação" caía silenciosamente na data de HOJE. Uma coleta feita
+   * em julho era impressa como se tivesse sido feita no dia da emissão.
+   *
+   * Vazio apenas quando nenhuma resposta tem `criadoEm` legível.
+   */
+  coleta: { inicio?: string; fim?: string };
   responsavelTecnico: string;
   responsavelTec?: ResponsavelTecnico;
+  /** Data/hora em que o PDF foi gerado. Não confundir com `coleta`. */
   emitidoEm: string;
   totalRespostas: number;
   totalConvidados?: number;   // para taxa de participação
@@ -956,6 +993,7 @@ export function buildAepDataset(opts: {
     setorFiltro: opts.setorFiltro,
     campanhaNome: opts.campanhaNome,
     periodo: opts.periodo ?? {},
+    coleta: periodoDeColeta(respostas),
     responsavelTecnico: opts.responsavelTecnico,
     responsavelTec: opts.responsavelTec,
     emitidoEm: new Date().toLocaleString("pt-BR"),
