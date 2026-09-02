@@ -225,8 +225,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     {
       const e0 = data.empresa;
       const razao = String((e0 as any)?.razao_social ?? e0?.nome ?? data.empresaNome ?? "").trim();
-      const cnpj = String(e0?.cnpj ?? "").trim();
-      const respCapa = (data.responsavelTec?.nome || data.responsavelTecnico || "").trim();
 
       const PRETO: [number, number, number] = [0, 0, 0];
       const centro = pageW / 2;
@@ -243,26 +241,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       doc.setFont("helvetica", "normal"); doc.setFontSize(11);
       doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", centro, 424, { align: "center" });
 
-      // Identificação, no pé.
-      let yc = pageH - 176;
-      const linhaCapa = (rotulo: string, valor: string) => {
-        if (!valor) return;
-        rgb(PRETO); doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-        doc.text(`${rotulo}: `, margin, yc);
-        const w = doc.getTextWidth(`${rotulo}: `);
-        doc.setFont("helvetica", "bold");
-        doc.text(valor, margin + w, yc, { maxWidth: pageW - margin * 2 - w } as any);
-        yc += 18;
-      };
-      linhaCapa("CNPJ", cnpj);
-      linhaCapa("Responsável técnico", respCapa);
-      linhaCapa("Elaboração", data.emitidoEm.slice(0, 10));
-
-      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.6);
-      doc.line(margin, pageH - 96, pageW - margin, pageH - 96);
-      rgb(PRETO); doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-      doc.text("NR-01  |  NR-17  |  Guia de Fatores de Riscos Psicossociais — MTE", margin, pageH - 78);
-      doc.text("Documento técnico preliminar. Uso restrito à empresa.", margin, pageH - 64);
+      // Sem bloco de identificação no pé. CNPJ, responsável técnico, formação,
+      // registro, cargo e as datas são a seção 01 (Dados da Empresa), na página
+      // seguinte; a base normativa está no rodapé de toda página e no Anexo II.
+      // Repeti-los na capa só duplicava — e obrigava a manter dois lugares em
+      // dia com a mesma informação.
     }
 
     // ============== 01. DADOS DA EMPRESA ==============
@@ -279,9 +262,29 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const setoresLista = data.setores.length > 0
       ? data.setores.map((s) => s.label).join(", ")
       : "—";
-    const dataAval = data.periodo.inicio || data.periodo.fim
-      ? `${data.periodo.inicio ?? "-"} a ${data.periodo.fim ?? "-"}`
-      : data.emitidoEm.slice(0, 10);
+    // DUAS datas distintas, e elas quase nunca coincidem:
+    //
+    //   coleta  — quando os trabalhadores responderam (fato, vindo das
+    //             próprias respostas do recorte)
+    //   emissão — quando este PDF foi gerado
+    //
+    // Antes existia só "Data da Avaliação", alimentada pelo período da
+    // campanha — que só é preenchido ao exportar com campanha de escopo
+    // selecionado. Em qualquer outro recorte caía em `emitidoEm`, e uma coleta
+    // feita meses antes era impressa com a data de hoje. Um documento que
+    // declara ter avaliado a empresa no dia em que foi impresso não se sustenta
+    // numa fiscalização.
+    //
+    // A campanha, quando existe, continua tendo precedência: ela é o período
+    // oficialmente pactuado. Sem ela, vale o intervalo real das respostas.
+    const perColeta = (data.periodo.inicio || data.periodo.fim)
+      ? { inicio: data.periodo.inicio, fim: data.periodo.fim }
+      : data.coleta;
+    const dataColeta = perColeta.inicio || perColeta.fim
+      ? (perColeta.inicio === perColeta.fim
+          ? (perColeta.inicio ?? "—")
+          : `${perColeta.inicio ?? "—"} a ${perColeta.fim ?? "—"}`)
+      : "Não informado";
 
     const gesCadStr = data.gesCadastrados.length
       ? data.gesCadastrados.map((g) => `• ${g.label}`).join("\n")
@@ -331,7 +334,8 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       linhasEmpresa.push([`GES sem avaliação neste ciclo (${totSem})`, gesSemStr]);
     }
     linhasEmpresa.push(["GES Avaliados (consolidado)", setoresLista]);
-    linhasEmpresa.push(["Data da Avaliação", dataAval]);
+    linhasEmpresa.push(["Data da avaliação (coleta das respostas)", dataColeta]);
+    linhasEmpresa.push(["Data de emissão deste documento", data.emitidoEm.slice(0, 10)]);
     linhasEmpresa.push(["Responsável Técnico", respNome]);
     linhasEmpresa.push(["Formação", respForm]);
     linhasEmpresa.push(["Registro Profissional", respReg]);
@@ -1128,19 +1132,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
-        "Plano consolidado a partir do Inventário de Riscos Ocupacionais para o PGR. A prioridade " +
-        "e o prazo seguem o Nível de Risco PGR (Probabilidade × Severidade), e não a classificação " +
-        "psicossocial do COPSOQBR — esta última serve apenas como apoio interpretativo (observação). " +
-        "Para atender à NR-01 (item 1.5.5), cada ação deve ter, na devolutiva técnica da empresa: " +
-        "responsável formal, forma de acompanhamento, evidência esperada, data prevista e status atualizado. " +
-        "Enquanto esses campos não estiverem pactuados, o Plano possui caráter técnico-preliminar."
+        "As medidas abaixo são SUGESTÕES técnicas, derivadas do perigo identificado em cada GES. " +
+        "Não são obrigações e não substituem a decisão da empresa: cabe à organização, na devolutiva " +
+        "técnica, escolher as medidas que vai adotar e definir, para cada uma, o responsável formal, " +
+        "a data prevista, a forma de acompanhamento e a evidência esperada (NR-01, item 1.5.5)."
+      );
+      paragraph(
+        "O prazo e a prioridade sugeridos seguem o Nível de Risco PGR do Inventário " +
+        "(Probabilidade × Severidade), e não o percentual do COPSOQBR."
       );
 
 
       const ordem: NivelRisco[] = ["Crítico", "Alto", "Médio", "Baixo"];
       const planoBody: any[] = [];
-      let item = 0;
-      const respDefault = "A definir pela empresa na devolutiva técnica";
       ordem.forEach((nivel) => {
         // Prioridade e prazo seguem o Nível de Risco PGR do Inventário
         data.setores.forEach((s) => {
@@ -1151,18 +1155,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           const mte = mteParaDim(fp.dim.id, nivelPgr);
           const acoes = getRecomendacoes(fp.dim.id, fp.scorePct);
           const acaoBase = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-          item += 1;
           planoBody.push([
-            String(item).padStart(2, "0"),
-            acaoBase,
-
-            mte.perigo,
             formatLabelGes(s.label),
-            respDefault,
+            mte.perigo,
+            acaoBase,
             NIVEL_PRAZO[nivelPgr],
             NIVEL_PRIORIDADE[nivelPgr],
-            "A iniciar",
-            "—",
           ]);
         });
         if (data.setores.length === 0) {
@@ -1172,50 +1170,45 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
               const mte = mteParaDim(f.dim.id, f.risco.nivel);
               const acoes = getRecomendacoes(f.dim.id, f.scorePct);
               const acaoTxt = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
-              item += 1;
               planoBody.push([
-                String(item).padStart(2, "0"),
-                acaoTxt,
-                mte.perigo,
                 data.empresaNome,
-                respDefault,
+                mte.perigo,
+                acaoTxt,
                 NIVEL_PRAZO[nivel],
                 NIVEL_PRIORIDADE[nivel],
-                "A iniciar",
-                "—",
               ]);
             });
         }
       });
 
+      // Cinco colunas. Saíram quatro que não informavam nada:
+      //   Item        — numeração decorativa; o GES já identifica a linha
+      //   Responsável — o mesmo texto ("A definir pela empresa…") em TODAS as
+      //                 linhas; dito uma vez no parágrafo acima
+      //   Status      — "A iniciar" em todas; é campo de controle do plano da
+      //                 empresa, que ainda nem foi pactuado
+      //   Evid.       — "—" em todas; coluna vazia ocupando largura
+      // O que sobrou cabe sem espremer: 110+96+169+70+70 = 515pt (a área útil
+      // do A4 retrato: 595,28 − 80 de margens).
       autoTable(doc, {
         startY: y,
-        head: [["Item", "Ação", "Perigo relacionado", "GES / Setores", "Responsável", "Prazo", "Prioridade", "Status", "Evid."]],
-        body: planoBody.length ? planoBody : [["—", "Sem ações no recorte", "—", "—", "—", "—", "—", "—", "—"]],
-        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center" },
-        styles: { fontSize: 7.5, cellPadding: 3.5, valign: "top", overflow: "linebreak" },
+        head: [["GES / Setores", "Perigo relacionado", "Medidas sugeridas", "Prazo\nsugerido", "Prioridade\nsugerida"]],
+        body: planoBody.length ? planoBody : [["—", "—", "Sem medidas a sugerir no recorte", "—", "—"]],
+        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8.5, halign: "center" },
+        styles: { fontSize: 8.5, cellPadding: 5, valign: "top", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { halign: "center", cellWidth: 22, fontStyle: "bold" },
-          1: { cellWidth: 100 },
-          2: { cellWidth: 66, fontStyle: "bold" },
-          3: { cellWidth: 90 },
-          4: { cellWidth: 70 },
-          5: { cellWidth: 52, halign: "center" },
-          6: { cellWidth: 48, halign: "center", fontStyle: "bold" },
-          7: { cellWidth: 38, halign: "center" },
-          8: { cellWidth: 24, halign: "center" },
+          0: { cellWidth: 110, fontStyle: "bold" },
+          1: { cellWidth: 96 },
+          2: { cellWidth: 169 },
+          3: { cellWidth: 70, halign: "center" },
+          4: { cellWidth: 70, halign: "center", fontStyle: "bold" },
         },
         rowPageBreak: "avoid",
-        didParseCell: colorirNivel(6, true),
+        didParseCell: colorirNivel(4, true),
         margin: { left: margin, right: margin },
       });
       y = (doc as any).lastAutoTable.finalY + 10;
-      paragraph(
-        "Observação: a classificação psicossocial do COPSOQBR foi utilizada apenas como apoio " +
-        "interpretativo, sem alterar a prioridade formal do Plano de Ação, que segue o Nível de " +
-        "Risco PGR do Inventário."
-      );
       y += 8;
     }
 
