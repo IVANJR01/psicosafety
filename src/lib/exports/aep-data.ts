@@ -506,74 +506,117 @@ export function agravosPara(nomeFator: string): string {
 }
 
 // =====================================================================
-// MAPEAMENTO OBRIGATÓRIO — Guia de Fatores de Riscos Psicossociais (MTE)
-// COPSOQBR → Agente/Situação → Perigo (fator de risco) → Possível agravo
-// O sistema NÃO inventa: o agravo só pode vir desta tabela.
+// LISTAGEM DO GUIA MTE — Fatores de Riscos Psicossociais (NR-01)
+//
+// As colunas `perigo` e `consequencia` são TRANSCRIÇÃO LITERAL da tabela
+// "Listagem exemplificativa de fatores de risco psicossociais relacionados ao
+// trabalho que podem acarretar agravos à saúde do trabalhador" do Guia. São
+// treze linhas, nesta ordem, e NADA além delas pode ser impresso nessas duas
+// colunas do Inventário.
+//
+// A auditoria contra o Guia encontrou cinco perigos que não existem nele:
+//   "Sofrimento psíquico relacionado ao trabalho"        (inventado)
+//   "Conflito trabalho-vida / Sobrecarga fora do expediente" (inventado)
+//   "Más relações no local de trabalho"                  (o Guia diz
+//                                                        "Más RELACIONAMENTOS")
+//   "… / Falhas na gestão da segurança do trabalho"      (metade inventada)
+//   "Baixas recompensas e reconhecimento / Baixa justiça organizacional"
+//                                                        (dois perigos fundidos)
+// e agravos que o Guia não lista — "burnout", "doenças psicossomáticas",
+// "estresse ocupacional", "insegurança psicossocial". Faltavam ainda dois
+// perigos oficiais: "Más relacionamentos no local de trabalho" e "Trabalho
+// remoto e isolado".
+//
+// `dominio` e `agente` são NOSSOS: o Guia não traz essas colunas. Servem para
+// explicar por que o domínio do COPSOQBR foi enquadrado naquele perigo, e por
+// isso são redigidos como descrição da situação — nunca como se fossem termo
+// do Guia.
+//
+// Onde o Guia imprime "Transtorno mental;" com ponto e vírgula solto ao final
+// e nada depois, transcrevemos "Transtorno mental": o ponto e vírgula pendente
+// é artefato tipográfico da fonte e, reproduzido aqui, pareceria texto cortado.
 // =====================================================================
 export type MteFator = {
-  dominio: string;        // Domínio COPSOQBR
-  agente: string;         // Agente / situação relacionada
-  perigo: string;         // Perigo (fator de risco) — nomenclatura MTE
-  consequencia: string;   // Possível consequência (lesão / agravo) — Guia MTE
+  dominio: string;        // COPSOQBR — nosso
+  agente: string;         // situação observada — nosso
+  perigo: string;         // Guia MTE — literal
+  consequencia: string;   // Guia MTE — literal
 };
 
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Demandas no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Demandas no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
-  { dominio: "Controle sobre o Trabalho", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Relações Sociais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
   { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Reconhecimento e Recompensa", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Conflito trabalho-vida / Sobrecarga fora do expediente", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Justiça Organizacional", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
-  { dominio: "Clareza de Papel / Função", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
-  { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
-  { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
-  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento profissional, percepção de injustiça organizacional, tratamento desigual, baixa valorização, ausência de feedback e recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
-  // 15 — Saúde e Bem-estar tem perigo PRÓPRIO no Guia. Antes o domínio era
-  // mapeado para MTE_MAPA[0] ("sobrecarga"), com um comentário assumindo que
-  // sobrecarga seria "o agente ocupacional associado". O documento então se
-  // contradizia: o Anexo I declarava "Saúde e Bem-estar » Sofrimento psíquico
-  // relacionado ao trabalho" e o Inventário, três páginas antes, imprimia
-  // "Excesso de demandas (sobrecarga)" para o mesmo domínio — e o Plano
-  // colava medidas de saúde ("triagem de saúde mental") num perigo de carga.
-  { dominio: "Saúde e Bem-estar", agente: "Estresse, esgotamento, prejuízo ao sono, fadiga persistente", perigo: "Sofrimento psíquico relacionado ao trabalho", consequencia: "Transtorno mental; burnout; doenças psicossomáticas" },
+  { dominio: "Organização do Trabalho e Conteúdo", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Organização do Trabalho e Conteúdo", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel/função", consequencia: "Transtorno mental" },
+  { dominio: "Valores / Capital Social", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
+  { dominio: "Relações Interpessoais e Liderança", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte/apoio no trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Organização do Trabalho e Conteúdo", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho/Falta de autonomia", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Valores / Capital Social", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
+  { dominio: "Comportamentos Ofensivos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
+  { dominio: "Exigências no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
+  { dominio: "Exigências no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso, invasão do tempo pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Relações Interpessoais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relacionamentos no local de trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Organização do Trabalho e Conteúdo", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
+  { dominio: "Organização do Trabalho e Conteúdo", agente: "Trabalho à distância ou em posto isolado, com contato reduzido com colegas e chefia", perigo: "Trabalho remoto e isolado", consequencia: "Transtorno mental; Fadiga" },
 ];
 
-// Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
-// Para domínios COPSOQ amplos, o índice principal é o primeiro; em risco
-// elevado podemos ainda exibir o secundário (ex.: demandas → sobrecarga/subcarga).
-export const MTE_POR_DIM: Record<string, MteFator[]> = {
-  demandas:    [MTE_MAPA[0], MTE_MAPA[1]],
-  organizacao: [MTE_MAPA[2], MTE_MAPA[6], MTE_MAPA[9], MTE_MAPA[10]],
-  relacoes:    [MTE_MAPA[3], MTE_MAPA[11], MTE_MAPA[5]],
-  interface:   [MTE_MAPA[7], MTE_MAPA[8]],
-  saude:       [MTE_MAPA[15]], // perigo próprio do Guia, não "sobrecarga"
-  ofensivos:   [MTE_MAPA[4], MTE_MAPA[12]],
-  "segurança":    [MTE_MAPA[13]],
-  seguranca:      [MTE_MAPA[13]],
-  reconhecimento: [MTE_MAPA[14]],
-  justica:        [MTE_MAPA[14]],
+/**
+ * Domínio do COPSOQBR » perigo do Guia.
+ *
+ * SAÚDE E BEM-ESTAR NÃO ENTRA AQUI, DE PROPÓSITO.
+ *
+ * Esse domínio mede DESFECHO — estresse, esgotamento, sono ruim. É sinal de
+ * que alguém está adoecendo, não a condição de trabalho que causa o
+ * adoecimento, e o Guia não tem perigo correspondente. Já foi mapeado para
+ * "sobrecarga" (afirmando uma causa que ninguém apurou) e para um
+ * "Sofrimento psíquico relacionado ao trabalho" que não existe no Guia. As
+ * duas saídas inventavam. Resultado elevado aqui manda IR A CAMPO descobrir
+ * qual perigo o produz — é o que `INDICADOR_COMPLEMENTAR` diz na linha.
+ */
+export const INDICADOR_COMPLEMENTAR: MteFator = {
+  dominio: "Saúde e Bem-estar",
+  agente: "Estresse, esgotamento, prejuízo ao sono, fadiga persistente relatados pelos trabalhadores",
+  perigo: "Indicador complementar — perigo a identificar em campo",
+  consequencia: "A definir após identificação do perigo",
 };
 
+// Para domínios amplos o índice principal é o primeiro da lista.
+export const MTE_POR_DIM: Record<string, MteFator[]> = {
+  demandas:    [MTE_MAPA[9], MTE_MAPA[8]],
+  organizacao: [MTE_MAPA[5], MTE_MAPA[11], MTE_MAPA[2], MTE_MAPA[1]],
+  relacoes:    [MTE_MAPA[10], MTE_MAPA[4], MTE_MAPA[3]],
+  // Interface trabalho-indivíduo: o trabalho invadindo o tempo pessoal É
+  // excesso de demanda. O Guia não tem perigo de "conflito trabalho-vida", e
+  // criar um seria inventar.
+  interface:   [MTE_MAPA[9]],
+  saude:       [INDICADOR_COMPLEMENTAR],
+  ofensivos:   [MTE_MAPA[0], MTE_MAPA[7]],
+  "segurança":    [MTE_MAPA[11]],
+  seguranca:      [MTE_MAPA[11]],
+  reconhecimento: [MTE_MAPA[3], MTE_MAPA[6]],
+  justica:        [MTE_MAPA[6]],
+};
 // Item MTE principal por domínio + nível (escolhe o mais grave em risco alto)
 export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   const arr = MTE_POR_DIM[dimId] ?? [];
   if (arr.length > 0) return arr[0];
-  // Fallback por palavra-chave no slug/título (caso o DB use slug diferente)
+  // Fallback por palavra-chave no slug/título (caso o DB use slug diferente).
+  // Índices conferidos contra MTE_MAPA acima — a ordem é a do Guia.
   const key = (dimId || "").toLowerCase();
-  if (key.includes("segur")) return MTE_MAPA[13];
-  if (key.includes("reconhec") || key.includes("justi")) return MTE_MAPA[14];
-  if (key.includes("demand")) return MTE_MAPA[0];
-  if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[2];
-  if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[3];
-  if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[7];
-  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[15];
-  if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
-  return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
+  if (key.includes("saud") || key.includes("bem")) return INDICADOR_COMPLEMENTAR;
+  if (key.includes("segur")) return MTE_MAPA[11];   // difícil comunicação
+  if (key.includes("reconhec")) return MTE_MAPA[3]; // baixas recompensas
+  if (key.includes("justi")) return MTE_MAPA[6];    // baixa justiça
+  if (key.includes("demand") || key.includes("interface") || key.includes("vida")) return MTE_MAPA[9]; // sobrecarga
+  if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[5];
+  if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[10];
+  if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[0];
+  // Domínio desconhecido: não se atribui perigo nem agravo por dedução.
+  return {
+    dominio: dimId,
+    agente: "—",
+    perigo: "Domínio não mapeado — perigo a identificar em campo",
+    consequencia: "A definir após identificação do perigo",
+  };
 }
 
 // ----- Resultado identificado por domínio (fator específico dominante) -----
