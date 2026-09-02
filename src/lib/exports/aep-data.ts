@@ -96,25 +96,6 @@ export function validarSetorGes(respostas: Resposta[], gesMap?: GesMap): Validac
   return { semGes, duplicados };
 }
 
-/**
- * Abaixo deste número de respondentes o resultado não sustenta conclusão.
- *
- * O caso que motiva o corte é o mais perigoso do relatório: um domínio de
- * assédio pontuando 0% com três respondentes sai impresso como se dissesse
- * "não há assédio aqui". Não diz — diz que não há dado. E fica registrado num
- * documento da empresa, que vira prova contrária se alguém denunciar depois.
- *
- * Cinco é também o piso usual de anonimato em pesquisa organizacional: abaixo
- * disso, resultado por recorte começa a permitir identificar quem respondeu, o
- * que enfraquece a garantia de anonimato que o Guia do MTE pede (p. 10).
- */
-export const MIN_RESPONDENTES_CONCLUSAO = 5;
-
-/** O recorte tem respondentes suficientes para o resultado valer como conclusão? */
-export function amostraSuficiente(n: number): boolean {
-  return n >= MIN_RESPONDENTES_CONCLUSAO;
-}
-
 // ----- Probabilidade (1..5) baseada no % de respostas críticas -----
 export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
   if (pct >= 81) return 5;
@@ -124,11 +105,8 @@ export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
   return 1;
 }
 
-// Chance de ocorrência, não magnitude. Mesmo vocabulário do eixo da matriz
-// 5x5 e da Escala de Probabilidade do AEP — se divergirem, o relatório volta a
-// ter duas escalas para o mesmo número.
 export const PROB_LABEL: Record<number, string> = {
-  1: "Rara", 2: "Pouco provável", 3: "Possível", 4: "Provável", 5: "Muito provável",
+  1: "Baixa", 2: "Moderada", 3: "Significativa", 4: "Alta", 5: "Muito alta",
 };
 
 // ----- Severidade por fator (1..5) — assédio/violência/discriminação = 5 -----
@@ -145,7 +123,7 @@ export const SEVERIDADE_FATOR: Record<string, 1 | 2 | 3 | 4 | 5> = {
 };
 
 export const SEV_LABEL: Record<number, string> = {
-  1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Extrema",
+  1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica",
 };
 
 // ----- Classificação Risco = P x S (Matriz 5x5 — NR-01 / AIHA / ISO 31000) -----
@@ -207,15 +185,22 @@ export function nivel4From5(n5: Nivel5): NivelRisco {
 }
 
 // ----- Classificação Psicossocial pelo PERCENTUAL (não pela matriz P×S) -----
-// Regra oficial do sistema:
-//   0% – 33%   = Baixo
-//   34% – 66%  = Médio
-//   67% – 84%  = Alto
-//   85% – 100% = Crítico
+// Regra oficial do sistema — TRÊS faixas:
+//   0% – 49%   = Baixo
+//   50% – 79%  = Médio
+//   80% – 100% = Alto
+//
+// Estas faixas são as que o relatório imprime na Metodologia (4.2) e na
+// seção de Resultado do questionário. Antes havia uma quarta faixa
+// ("Crítico", ≥85%) que existia só no código: o documento nunca a declarou,
+// e os cortes divergiam do texto impresso (34% virava MÉDIO num documento
+// que dizia BAIXO até 33%... e ALTO a partir de 67% num que não previa isso).
+// Código e documento passam a dizer a mesma coisa. `NivelRisco` mantém
+// "Crítico" porque outros consumidores do tipo ainda o usam; esta função
+// simplesmente não o emite.
 export function classifPsicoFromPct(pct: number): NivelRisco {
-  if (pct >= 85) return "Crítico";
-  if (pct >= 67) return "Alto";
-  if (pct >= 34) return "Médio";
+  if (pct >= 80) return "Alto";
+  if (pct >= 50) return "Médio";
   return "Baixo";
 }
 
@@ -276,15 +261,6 @@ export function textoInterpretacao(nivel: NivelRisco): string {
 // ----- Interpretação técnica profunda por fator (estilo consultoria) -----
 // Combina o id da dimensão (COPSOQ) com o nível de risco para gerar
 // um parágrafo técnico-executivo específico — não genérico.
-//
-// SEM USO no momento: o único consumidor era o gerador DOCX, removido por
-// nunca ter sido alcançável. Mantido como conteúdo técnico aproveitável, com
-// uma ressalva antes de religar: os textos de nível Baixo AFIRMAM ausência.
-// O de `ofensivos` diz "Não foram identificados indícios relevantes de
-// comportamentos ofensivos" — uma declaração de ausência de assédio que,
-// impressa a partir de três respondentes, é exatamente o que o piso de
-// MIN_RESPONDENTES_CONCLUSAO existe para impedir. Quem voltar a consumir este
-// mapa precisa passar por amostraSuficiente() antes, como o PDF faz.
 const INTERPRETACAO_FATOR: Record<string, Record<NivelRisco, string>> = {
   demandas: {
     Baixo: "Os indicadores apontam carga de trabalho percebida como compatível com os recursos disponíveis. Recomenda-se preservar o equilíbrio entre demandas quantitativas, cognitivas e emocionais, monitorando picos sazonais e mudanças organizacionais.",
@@ -338,18 +314,21 @@ export function caracterizarExposicao(f: LinhaFator): {
   intensidade: string;
   grupo: string;
 } {
-  // Duração, frequência e intensidade eram DERIVADAS de f.prob e f.sev — e
-  // f.prob vem do percentual do questionário. Ou seja: o relatório escrevia
-  // "Contínua / habitual", "Diária" e "Alta" sem que ninguém tivesse ido a
-  // campo medir duração, contar frequência ou avaliar intensidade. Era o
-  // questionário renomeado três vezes.
-  //
-  // Um auditor que pergunte "de onde veio 'Diária'?" não tem resposta. A
-  // plataforma não coleta esses dados, então o campo fica declarado como
-  // pendente até que o responsável técnico o preencha em campo.
-  const PENDENTE = "Não informado";
-  const grupo = f.n > 0 ? `${f.n} respondente(s)` : "Não informado";
-  return { duracao: PENDENTE, frequencia: PENDENTE, intensidade: PENDENTE, grupo };
+  const duracao =
+    f.prob >= 4 ? "Contínua / habitual" :
+    f.prob >= 3 ? "Prolongada"          :
+    f.prob >= 2 ? "Intermitente"        : "Esporádica";
+  const frequencia =
+    f.prob >= 4 ? "Diária"                     :
+    f.prob >= 3 ? "Várias vezes por semana"    :
+    f.prob >= 2 ? "Semanal / mensal"           : "Eventual";
+  const intensidade =
+    f.sev >= 5 ? "Crítica"   :
+    f.sev >= 4 ? "Alta"      :
+    f.sev >= 3 ? "Moderada"  :
+    f.sev >= 2 ? "Baixa"     : "Leve";
+  const grupo = f.n > 0 ? `${f.n} trabalhador(es) avaliado(s)` : "—";
+  return { duracao, frequencia, intensidade, grupo };
 }
 
 // ----- Medidas de prevenção existentes (estimativa por nível de risco) -----
@@ -443,7 +422,7 @@ export const FATORES_ESPECIFICOS: Record<string, FatorEspecifico[]> = {
     { nome: "Conflito trabalho-família / desequilíbrio trabalho-vida", dano: "Insônia, esgotamento, conflito familiar" },
     { nome: "Insegurança no emprego / organizacional",                  dano: "Ansiedade, estresse crônico" },
     { nome: "Desequilíbrio esforço-recompensa",                         dano: "Desmotivação, adoecimento" },
-    { nome: "Excesso de demandas no trabalho (sobrecarga)",             dano: "Transtorno mental" },
+    { nome: "Excesso de demandas no trabalho (sobrecarga)",             dano: "Transtorno mental; DORT" },
   ],
   saude: [
     { nome: "Sofrimento psíquico relacionado ao trabalho", dano: "Transtornos mentais (CID-F)" },
@@ -473,7 +452,7 @@ export const DESCRICAO_DOMINIO: Record<string, string> = {
 // NUNCA livre: a IA apenas seleciona desta lista; não inventa diagnósticos.
 export const AGRAVOS_FIXOS: Record<string, string> = {
   // demandas
-  "Excesso de demandas no trabalho": "Transtornos mentais",
+  "Excesso de demandas no trabalho": "Transtornos mentais; DORT",
   "Sobrecarga de trabalho":           "Transtornos mentais; fadiga ocupacional",
   "Pressão temporal":                  "Ansiedade; transtornos mentais",
   "Metas excessivas":                  "Sofrimento psíquico; transtornos mentais",
@@ -493,7 +472,7 @@ export const AGRAVOS_FIXOS: Record<string, string> = {
   "Conflito trabalho-família / desequilíbrio trabalho-vida": "Insônia; transtornos mentais",
   "Insegurança no emprego / organizacional":                  "Ansiedade; transtornos mentais",
   "Desequilíbrio esforço-recompensa":                         "Sofrimento psíquico; transtornos mentais",
-  "Excesso de demandas no trabalho (sobrecarga)":              "Transtorno mental",
+  "Excesso de demandas no trabalho (sobrecarga)":              "Transtorno mental; DORT",
   // saude
   "Sofrimento psíquico relacionado ao trabalho": "Transtornos mentais (CID-F)",
   "Estresse ocupacional":                         "Transtornos mentais; doenças psicossomáticas",
@@ -512,71 +491,32 @@ export function agravosPara(nomeFator: string): string {
 
 // =====================================================================
 // MAPEAMENTO OBRIGATÓRIO — Guia de Fatores de Riscos Psicossociais (MTE)
-// Questionário psicossocial → Agente/Situação → Perigo (fator de risco) → Possível agravo
+// COPSOQBR → Agente/Situação → Perigo (fator de risco) → Possível agravo
 // O sistema NÃO inventa: o agravo só pode vir desta tabela.
 // =====================================================================
 export type MteFator = {
-  dominio: string;        // Domínio avaliado
+  dominio: string;        // Domínio COPSOQBR
   agente: string;         // Agente / situação relacionada
   perigo: string;         // Perigo (fator de risco) — nomenclatura MTE
   consequencia: string;   // Possível consequência (lesão / agravo) — Guia MTE
 };
 
-// Os agentes/situações eram frases enumerativas de até 150 caracteres, que na
-// tabela do Inventário viravam cinco linhas por célula. Viram rótulos curtos —
-// a mesma informação, legível.
-//
-// Os pares perigo -> possível consequência reproduzem a tabela do Guia MTE
-// ("Perigo (fator de risco)" x "Possível consequência (lesão ou agravo)").
-// DORT aparece exatamente nos três perigos em que o Guia o lista: sobrecarga,
-// baixo controle/falta de autonomia e má gestão de mudanças organizacionais.
-// Onde o perigo não consta naquela tabela, aplica-se "Transtorno mental", que
-// é o agravo que o Guia atribui a todos os demais fatores psicossociais.
-//
-// A coluna registra o POSSÍVEL agravo associado ao fator. O que a AEP não pode
-// fazer é afirmar o quadro num trabalhador — isso seria diagnóstico, e não
-// aparece em lugar nenhum do documento.
-// Marca as linhas que o Guia NÃO enquadra como perigo. O domínio continua
-// visível no relatório — some a conclusão, não a evidência —, mas sem perigo
-// nomeado, sem agravo e sem classificação de risco.
-export const INDICADOR_COMPLEMENTAR = "Indicador complementar — não enquadrado como perigo";
-
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Demandas no Trabalho", agente: "Sobrecarga e ritmo intenso de trabalho", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Demandas no Trabalho", agente: "Monotonia e subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
-  { dominio: "Controle sobre o Trabalho", agente: "Baixa autonomia sobre a tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Relações Sociais e Liderança", agente: "Conflitos e ambiente hostil", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Comportamentos Ofensivos", agente: "Assédio, humilhação ou discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Reconhecimento e Recompensa", agente: "Falta de reconhecimento e recompensa", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho", agente: "Comunicação organizacional deficiente", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Justiça Organizacional", agente: "Tratamento desigual e decisões pouco transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
-  { dominio: "Clareza de Papel / Função", agente: "Funções e responsabilidades mal definidas", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
-  { dominio: "Gestão Organizacional", agente: "Mudanças organizacionais sem planejamento", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de apoio da liderança e dos colegas", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Eventos Críticos", agente: "Agressões, ameaças e eventos críticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
-  { dominio: "Segurança no Trabalho", agente: "Falhas percebidas na comunicação e gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento e percepção de injustiça", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental" },
-  /*
-   * Os dois itens abaixo existem para que "Interface Trabalho-Indivíduo" e
-   * "Saúde e Bem-estar" parem de reaproveitar o perigo de sobrecarga
-   * (MTE_MAPA[0]).
-   *
-   * O reaproveitamento produzia linha incoerente no Inventário: o Domínio dizia
-   * uma coisa e o Agente/Perigo descreviam outra. Quem lê o PGR vê "Saúde e
-   * bem-estar" inteiramente descrito como sobrecarga, sem explicação.
-   *
-   * Acrescentados no FIM do array de propósito: MTE_POR_DIM referencia por
-   * índice, então inserir no meio deslocaria todos os mapeamentos existentes.
-   */
-  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência do trabalho na vida pessoal", perigo: "Interferência do trabalho na vida pessoal (conflito trabalho-família)", consequencia: "Transtorno mental" },
-  // "Desgaste da saúde mental relacionado ao trabalho" NÃO é um perigo do Guia:
-  // foi inventado aqui para dar um enquadramento ao domínio Saúde e Bem-estar.
-  // Mas o Guia manda identificar quais fatores da ATIVIDADE são estressores, não
-  // partir do sintoma referido. Saúde e bem-estar é indicador complementar: ele
-  // sinaliza que há algo a investigar, e o perigo só se nomeia depois de a
-  // análise das condições de trabalho dizer qual fator o produz.
-  { dominio: "Saúde e Bem-estar", agente: "Desgaste referido: estresse, exaustão e sono", perigo: INDICADOR_COMPLEMENTAR, consequencia: "—" },
+  { dominio: "Demandas no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Demandas no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
+  { dominio: "Controle sobre o Trabalho", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho / Falta de autonomia", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Relações Sociais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relações no local de trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Reconhecimento e Recompensa", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
+  { dominio: "Organização do Trabalho", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
+  { dominio: "Interface Trabalho-Indivíduo", agente: "Interferência das demandas do trabalho na vida pessoal, com consumo de tempo e energia pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Justiça Organizacional", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
+  { dominio: "Clareza de Papel / Função", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel / função", consequencia: "Transtorno mental" },
+  { dominio: "Gestão Organizacional", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
+  { dominio: "Apoio Social / Apoio da Gestão", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte / apoio no trabalho", consequencia: "Transtorno mental" },
+  { dominio: "Eventos Críticos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
+  { dominio: "Segurança no Trabalho", agente: "Percepção de insegurança ocupacional, falhas na comunicação preventiva, ausência de confiança nas condições de trabalho, deficiência na gestão preventiva", perigo: "Trabalho em condições de difícil comunicação / Falhas na gestão da segurança do trabalho", consequencia: "Transtorno mental; estresse ocupacional; insegurança psicossocial" },
+  { dominio: "Reconhecimento e Justiça", agente: "Falta de reconhecimento profissional, percepção de injustiça organizacional, tratamento desigual, baixa valorização, ausência de feedback e recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento / Baixa justiça organizacional", consequencia: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho" },
 ];
 
 // Mapeia o id de dimensão COPSOQ deste sistema para o(s) item(ns) MTE.
@@ -586,8 +526,8 @@ export const MTE_POR_DIM: Record<string, MteFator[]> = {
   demandas:    [MTE_MAPA[0], MTE_MAPA[1]],
   organizacao: [MTE_MAPA[2], MTE_MAPA[6], MTE_MAPA[9], MTE_MAPA[10]],
   relacoes:    [MTE_MAPA[3], MTE_MAPA[11], MTE_MAPA[5]],
-  interface:   [MTE_MAPA[15], MTE_MAPA[8]],
-  saude:       [MTE_MAPA[16]],
+  interface:   [MTE_MAPA[7], MTE_MAPA[8]],
+  saude:       [MTE_MAPA[0]], // sobrecarga é o agente ocupacional associado
   ofensivos:   [MTE_MAPA[4], MTE_MAPA[12]],
   "segurança":    [MTE_MAPA[13]],
   seguranca:      [MTE_MAPA[13]],
@@ -606,8 +546,8 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   if (key.includes("demand")) return MTE_MAPA[0];
   if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[2];
   if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[3];
-  if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[15];
-  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[16];
+  if (key.includes("interface") || key.includes("vida")) return MTE_MAPA[7];
+  if (key.includes("saud") || key.includes("bem")) return MTE_MAPA[0];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[4];
   return { dominio: dimId, agente: "—", perigo: "—", consequencia: "Transtorno mental" };
 }
@@ -774,29 +714,6 @@ export function buildAepDataset(opts: {
   const respostas = opts.respostas;
   const agruparPorGes = opts.agruparPorGes ?? true;
   const dims = opts.dimensoes ?? DIMENSIONS;
-
-  /*
-   * Um relatório cobre UMA versão do instrumento.
-   *
-   * Misturar não é questão de implementação, é de sentido: não se tira média
-   * entre "Demandas no trabalho" de um instrumento e "Exigências quantitativas"
-   * de outro — são construtos diferentes, medidos por perguntas diferentes.
-   * Um AEP que somasse as duas produziria número sem significado, e ninguém
-   * lendo o PDF teria como perceber.
-   *
-   * Por isso interrompe em vez de escolher sozinho: a decisão de qual recorte
-   * emitir é de quem assina o documento.
-   */
-  const versoesPresentes = new Set(
-    respostas.map((r) => r.versaoId).filter((v): v is string => !!v),
-  );
-  if (versoesPresentes.size > 1) {
-    throw new Error(
-      `O recorte selecionado mistura ${versoesPresentes.size} versões do questionário. ` +
-        "Escores de instrumentos diferentes não podem ser somados. " +
-        "Selecione uma campanha ou período que use uma única versão.",
-    );
-  }
 
   const escopoSetorialPermitido = opts.escopoSetorialPermitido ?? [];
   if (escopoSetorialPermitido.length > 0) {
