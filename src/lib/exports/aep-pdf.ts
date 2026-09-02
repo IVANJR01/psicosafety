@@ -928,6 +928,20 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const invBody: any[] = [];
     // Quebra explícita antes de "validar em campo" para nunca cortar a palavra.
     const CONTROLE_PADRAO = "Controle não evidenciado no momento da avaliação —\nvalidar em campo.";
+
+    // Linha sem perigo identificado (Saúde e Bem-estar, domínio não mapeado):
+    // não se classifica o risco de um perigo que ainda não se nomeou. Imprimir
+    // "MODERADO" ao lado de "perigo a identificar em campo" seria classificar o
+    // que não foi identificado.
+    //
+    // P e S ficam com travessão, não com "A avaliar": essas colunas têm 14pt,
+    // largura de um dígito, e o texto quebrava letra a letra ("A / av / ali /
+    // ar"). O travessão cabe, e a coluna de nível — 70pt — carrega o "A
+    // avaliar" por extenso.
+    const A_AVALIAR = "A avaliar";
+    const SEM_VALOR = "—";
+    const perigoNaoIdentificado = (m: { perigo: string }) =>
+      /perigo a identificar em campo/i.test(m.perigo);
     const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
     const dedupFuncoesInv = (fs: typeof data.setores[number]["funcoes"]) => {
       const seen = new Set<string>();
@@ -1009,6 +1023,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         // Uma função por linha → autoTable nunca precisa quebrar dentro da palavra.
         const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "—";
         const controleTxt = textoControleParaLinha(s.setor, fp.dim.id);
+        const semPerigo = perigoNaoIdentificado(mte);
         invBody.push([
           formatLabelGes(s.label),
           funcoesTxt,
@@ -1017,9 +1032,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           protectWords(controleTxt),
-          String(fp.prob),
-          String(fp.sev),
-          fp.risco.nivel5,
+          semPerigo ? SEM_VALOR : String(fp.prob),
+          semPerigo ? SEM_VALOR : String(fp.sev),
+          semPerigo ? A_AVALIAR : fp.risco.nivel5,
         ]);
       });
     }
@@ -1028,6 +1043,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (data.setores.length === 0) {
       fatoresValidos.forEach((f) => {
         const mte = mteParaDim(f.dim.id, f.risco.nivel);
+        const semPerigo = perigoNaoIdentificado(mte);
         invBody.push([
           protectWords(data.empresaNome),
           "—",
@@ -1036,9 +1052,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           protectWords(mte.perigo),
           protectWords(mte.consequencia),
           protectWords(CONTROLE_PADRAO),
-          String(f.prob),
-          String(f.sev),
-          f.risco.nivel5,
+          semPerigo ? SEM_VALOR : String(f.prob),
+          semPerigo ? SEM_VALOR : String(f.sev),
+          semPerigo ? A_AVALIAR : f.risco.nivel5,
         ]);
       });
     }
@@ -1344,9 +1360,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
       subTitle("Anexo I — Mapeamento técnico COPSOQBR - Guia MTE");
       paragraph(
-        "Tabela de conversão obrigatória utilizada pelo sistema. O sistema NÃO inventa perigos nem " +
-        "agravos: o campo 'Possível consequência' segue exclusivamente o Guia de Fatores de Riscos " +
-        "Psicossociais do MTE."
+        "As colunas 'Perigo (fator de risco)' e 'Possível consequência' são transcrição literal da " +
+        "listagem exemplificativa do Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho " +
+        "(MTE) — treze fatores, nesta ordem. O Inventário não imprime nenhum perigo nem nenhum agravo " +
+        "fora desta tabela."
+      );
+      paragraph(
+        "As colunas 'Domínio COPSOQBR' e 'Agente / Situação' não constam do Guia: são a leitura " +
+        "técnica que justifica o enquadramento de cada domínio do questionário no perigo " +
+        "correspondente.",
+        8.5
       );
       autoTable(doc, {
         startY: y,
