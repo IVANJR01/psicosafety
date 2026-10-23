@@ -42,7 +42,10 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// `error` chega como `unknown` desde o @tanstack/react-start 1.168.61: o tipo
+// passou a refletir que um throw pode lançar qualquer coisa, não só Error.
+// Aqui ele só vai para o console, então `unknown` basta — a UI não lê o erro.
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   return (
