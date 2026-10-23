@@ -18,12 +18,11 @@ import { toast } from "sonner";
 import {
   classifyRisco,
   probFromScorePct,
-  DIM_META,
   severidadeDaDimensao,
   type ApuLinha,
   type LinhaSetor,
 } from "@/lib/risco-matriz";
-import { buildAepDataset, lookupGes, formatSetorLabel, formatGes, validarSetorGes, MSG_RELATORIO_GES_BLOQUEADO, type GesMap } from "@/lib/exports/aep-data";
+import { buildAepDataset, lookupGes, formatSetorLabel, formatGes, validarSetorGes, mteParaDim, MSG_RELATORIO_GES_BLOQUEADO, type GesMap } from "@/lib/exports/aep-data";
 import { carregarGesCadastradosDoModuloSetores } from "@/lib/exports/aep-ges-client";
 import { gerarRelatorioAEPpdf } from "@/lib/exports/aep-pdf";
 import { AEPErrorDialog, type AEPErrorInfo } from "@/components/admin/AEPErrorDialog";
@@ -1045,18 +1044,24 @@ function ApuracaoTabelaInner({ linhas }: { linhas: ApuLinha[] }) {
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-primary text-primary-foreground">
-            <Th className="w-[18%]">DOMÍNIO</Th>
-            <Th className="w-[7%] text-center">%</Th>
-            <Th className="w-[20%]">AGENTE NOCIVO</Th>
-            <Th className="w-[22%]">POSSÍVEIS DANOS</Th>
-            <Th className="w-[10%] text-center">PROBABILIDADE<div className="text-[10px] font-normal opacity-80">(1 a 5)</div></Th>
-            <Th className="w-[10%] text-center">SEVERIDADE<div className="text-[10px] font-normal opacity-80">(1 a 5)</div></Th>
-            <Th className="w-[13%] text-center">NÍVEL DE RISCO</Th>
+            <Th className="w-[15%]">DOMÍNIO</Th>
+            <Th className="w-[6%] text-center">%</Th>
+            <Th className="w-[18%]">AGENTE / SITUAÇÃO</Th>
+            <Th className="w-[17%]">PERIGO<div className="text-[10px] font-normal opacity-80">(Guia MTE)</div></Th>
+            <Th className="w-[17%]">POSSÍVEL CONSEQUÊNCIA<div className="text-[10px] font-normal opacity-80">(Guia MTE)</div></Th>
+            <Th className="w-[9%] text-center">PROBABILIDADE<div className="text-[10px] font-normal opacity-80">(1 a 5)</div></Th>
+            <Th className="w-[9%] text-center">SEVERIDADE<div className="text-[10px] font-normal opacity-80">(1 a 5)</div></Th>
+            <Th className="w-[9%] text-center">NÍVEL DE RISCO</Th>
           </tr>
         </thead>
         <tbody>
           {linhas.map((l) => {
-            const meta = DIM_META[l.dim.id] ?? { agente: l.dim.description, danos: "—" };
+            // Mesma função que alimenta o Inventário do PDF, para a tela não
+            // poder discordar dele. O DIM_META que existia aqui trazia agravos
+            // fora da listagem do Guia MTE ("Burnout", "doenças
+            // psicossomáticas", "insônia", "ansiedade"), justamente o que a
+            // coluna POSSÍVEIS DANOS não pode afirmar.
+            const meta = mteParaDim(l.dim.id);
             const pctCls =
               l.score >= 70 ? "bg-destructive/15 text-destructive"
               : l.score >= 50 ? "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300"
@@ -1071,7 +1076,8 @@ function ApuracaoTabelaInner({ linhas }: { linhas: ApuLinha[] }) {
                   </span>
                 </Td>
                 <Td className="text-muted-foreground">{meta.agente}</Td>
-                <Td className="text-muted-foreground">{meta.danos}</Td>
+                <Td className="font-medium">{meta.perigo}</Td>
+                <Td className="text-muted-foreground">{meta.consequencia}</Td>
                 <Td className="text-center font-bold tabular-nums">{l.prob}</Td>
                 <Td className="text-center font-bold tabular-nums">{l.sev}</Td>
                 <Td className="text-center">

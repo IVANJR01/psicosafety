@@ -42,44 +42,12 @@ export function severidadeDaDimensao(dimId: string): Nivel {
   return SEVERIDADE_DIM[dimId] ?? SEVERIDADE_PADRAO;
 }
 
-export const DIM_META: Record<string, { agente: string; danos: string }> = {
-  demandas: {
-    agente: "Excesso de demandas no trabalho",
-    danos: "Transtorno mental; DORT; estresse ocupacional; fadiga mental",
-  },
-  organizacao: {
-    agente: "Baixo controle no trabalho / Falta de autonomia",
-    danos: "Transtorno mental; DORT; ansiedade",
-  },
-  relacoes: {
-    agente: "Más relações no local de trabalho / Falta de apoio",
-    danos: "Transtorno mental; conflitos interpessoais; DORT",
-  },
-  interface: {
-    agente: "Conflito trabalho-vida / Sobrecarga fora do expediente",
-    danos: "Transtorno mental; insônia; esgotamento",
-  },
-  saude: {
-    agente: "Estresse, esgotamento e prejuízo ao sono",
-    danos: "Burnout; depressão; doenças psicossomáticas",
-  },
-  ofensivos: {
-    agente: "Assédio moral, sexual e violência no trabalho",
-    danos: "Transtorno mental grave; estresse pós-traumático; afastamento",
-  },
-  "segurança": {
-    agente: "Percepção de insegurança ocupacional / falhas na gestão da segurança do trabalho",
-    danos: "Transtorno mental; estresse ocupacional; insegurança psicossocial",
-  },
-  seguranca: {
-    agente: "Percepção de insegurança ocupacional / falhas na gestão da segurança do trabalho",
-    danos: "Transtorno mental; estresse ocupacional; insegurança psicossocial",
-  },
-  reconhecimento: {
-    agente: "Falta de reconhecimento profissional / percepção de injustiça organizacional",
-    danos: "Transtorno mental; estresse ocupacional; sofrimento psíquico relacionado ao trabalho",
-  },
-};
+// DIM_META saiu daqui. Era uma QUARTA tabela de domínio » agente » danos, e
+// a única que ninguém havia revisado contra o Guia MTE: trazia "Burnout",
+// "doenças psicossomáticas", "insônia", "ansiedade", "conflitos
+// interpessoais" — agravos que a listagem oficial não contém — na coluna
+// POSSÍVEIS DANOS da tela do relatório. A tela passa a chamar `mteParaDim`,
+// a mesma função que monta o Inventário do PDF.
 
 export function probFromScorePct(pct: number): Nivel {
   if (pct >= 81) return 5;
