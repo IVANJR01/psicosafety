@@ -407,97 +407,20 @@ export function caracterizarAtividadesAmbiente(setor: string): {
 // nomenclatura específica esperada em auditoria — derivada de cada categoria.
 export type FatorEspecifico = { nome: string; dano: string };
 
-export const FATORES_ESPECIFICOS: Record<string, FatorEspecifico[]> = {
-  demandas: [
-    { nome: "Excesso de demandas no trabalho", dano: "Estresse ocupacional, fadiga mental" },
-    { nome: "Sobrecarga de trabalho",         dano: "Exaustão emocional, risco de burnout" },
-    { nome: "Pressão temporal",                dano: "Ansiedade, erros operacionais" },
-    { nome: "Metas excessivas",                dano: "Sofrimento psíquico, adoecimento" },
-  ],
-  organizacao: [
-    { nome: "Baixa autonomia",                          dano: "Desmotivação, estresse crônico" },
-    { nome: "Falta de clareza de função",               dano: "Ambiguidade de papel, ansiedade" },
-    { nome: "Má gestão de mudanças organizacionais",   dano: "Insegurança, resistência, conflito" },
-    { nome: "Baixa previsibilidade",                    dano: "Insegurança, estresse crônico" },
-    { nome: "Comunicação deficiente",                   dano: "Retrabalho, conflitos, erro humano" },
-  ],
-  relacoes: [
-    { nome: "Falta de suporte da liderança",     dano: "Desengajamento, sofrimento psíquico" },
-    { nome: "Baixo apoio social",                 dano: "Isolamento, adoecimento mental" },
-    { nome: "Conflitos interpessoais",            dano: "Estresse, queda de produtividade" },
-    { nome: "Baixa justiça organizacional",       dano: "Desmotivação, turnover" },
-    { nome: "Baixa recompensa e reconhecimento", dano: "Desmotivação, sofrimento psíquico" },
-  ],
-  interface: [
-    { nome: "Conflito trabalho-família / desequilíbrio trabalho-vida", dano: "Insônia, esgotamento, conflito familiar" },
-    { nome: "Insegurança no emprego / organizacional",                  dano: "Ansiedade, estresse crônico" },
-    { nome: "Desequilíbrio esforço-recompensa",                         dano: "Desmotivação, adoecimento" },
-    { nome: "Excesso de demandas no trabalho (sobrecarga)",             dano: "Transtorno mental; DORT" },
-  ],
-  saude: [
-    { nome: "Sofrimento psíquico relacionado ao trabalho", dano: "Transtornos mentais (CID-F)" },
-    { nome: "Estresse ocupacional",                         dano: "Doenças psicossomáticas, afastamentos" },
-    { nome: "Exaustão emocional",                           dano: "Burnout, incapacidade laboral" },
-    { nome: "Burnout relacionado ao trabalho (CID-11 QD85)", dano: "Esgotamento profissional, afastamento prolongado" },
-  ],
-  ofensivos: [
-    { nome: "Assédio moral",         dano: "Dano psicológico grave, judicialização" },
-    { nome: "Violência psicológica", dano: "Trauma, transtornos mentais" },
-    { nome: "Discriminação",          dano: "Sofrimento, dano à dignidade, passivo legal" },
-    { nome: "Assédio sexual",         dano: "Dano grave — obrigação legal Lei 14.457/2022" },
-  ],
-};
 
-// ----- Descrição FIXA dos domínios (linguagem MTE / executiva) -----
-export const DESCRICAO_DOMINIO: Record<string, string> = {
-  demandas:    "Carga, ritmo e exigências emocionais.",
-  organizacao: "Autonomia, sentido do trabalho, previsibilidade e organização das atividades.",
-  relacoes:    "Apoio social, liderança, reconhecimento e relacionamento interpessoal.",
-  interface:   "Equilíbrio trabalho-família, segurança, estabilidade e integração indivíduo-trabalho.",
-  saude:       "Estresse ocupacional, fadiga, exaustão emocional e saúde psicológica.",
-  ofensivos:   "Assédio moral, violência psicológica, discriminação e comportamentos abusivos.",
-};
 
-// ----- Biblioteca FIXA de possíveis agravos por fator específico (Guia MTE) -----
-// NUNCA livre: a IA apenas seleciona desta lista; não inventa diagnósticos.
-export const AGRAVOS_FIXOS: Record<string, string> = {
-  // demandas
-  "Excesso de demandas no trabalho": "Transtornos mentais; DORT",
-  "Sobrecarga de trabalho":           "Transtornos mentais; fadiga ocupacional",
-  "Pressão temporal":                  "Ansiedade; transtornos mentais",
-  "Metas excessivas":                  "Sofrimento psíquico; transtornos mentais",
-  // organizacao
-  "Baixa autonomia":                          "Transtornos mentais",
-  "Falta de clareza de função":               "Ansiedade; transtornos mentais",
-  "Má gestão de mudanças organizacionais":    "Insegurança; transtornos mentais",
-  "Baixa previsibilidade":                    "Transtornos mentais",
-  "Comunicação deficiente":                   "Ansiedade; conflitos interpessoais",
-  // relacoes
-  "Falta de suporte da liderança":     "Transtornos mentais",
-  "Baixo apoio social":                 "Isolamento social; transtornos mentais",
-  "Conflitos interpessoais":            "Transtornos mentais",
-  "Baixa justiça organizacional":       "Sofrimento psíquico; transtornos mentais",
-  "Baixa recompensa e reconhecimento":  "Sofrimento psíquico; transtornos mentais",
-  // interface
-  "Conflito trabalho-família / desequilíbrio trabalho-vida": "Insônia; transtornos mentais",
-  "Insegurança no emprego / organizacional":                  "Ansiedade; transtornos mentais",
-  "Desequilíbrio esforço-recompensa":                         "Sofrimento psíquico; transtornos mentais",
-  "Excesso de demandas no trabalho (sobrecarga)":              "Transtorno mental; DORT",
-  // saude
-  "Sofrimento psíquico relacionado ao trabalho": "Transtornos mentais (CID-F)",
-  "Estresse ocupacional":                         "Transtornos mentais; doenças psicossomáticas",
-  "Exaustão emocional":                           "Burnout; transtornos mentais",
-  "Burnout relacionado ao trabalho (CID-11 QD85)": "Exaustão emocional; transtornos mentais",
-  // ofensivos
-  "Assédio moral":         "Sofrimento psíquico; transtornos mentais",
-  "Violência psicológica": "Trauma emocional; transtornos mentais",
-  "Discriminação":          "Sofrimento psíquico; transtornos mentais",
-  "Assédio sexual":         "Trauma emocional; transtornos mentais",
-};
-
-export function agravosPara(nomeFator: string): string {
-  return AGRAVOS_FIXOS[nomeFator] ?? "Transtornos mentais";
-}
+// FATORES_ESPECIFICOS, AGRAVOS_FIXOS, DESCRICAO_DOMINIO, agravosPara() e
+// resultadoIdentificado() foram removidos daqui.
+//
+// Eram ~90 linhas que nada chamava: `resultadoIdentificado` não tinha nenhum
+// consumidor, e ele era o único caminho até as outras quatro. Código morto
+// seria motivo suficiente, mas o problema era o conteúdo: AGRAVOS_FIXOS
+// listava agravos fora da listagem do Guia MTE sob o comentário "NUNCA livre:
+// a IA apenas seleciona desta lista; não inventa diagnósticos" — afirmação
+// que a própria tabela desmentia. Bastaria alguém religar essa função para o
+// documento voltar a imprimir agravo que o Guia não traz.
+//
+// O que vale é MTE_MAPA, mais abaixo: transcrição literal das treze linhas.
 
 // =====================================================================
 // LISTAGEM DO GUIA MTE — Fatores de Riscos Psicossociais (NR-01)
@@ -613,20 +536,6 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   };
 }
 
-// ----- Resultado identificado por domínio (fator específico dominante) -----
-// Escolhe o fator específico mais representativo do domínio com base no nível
-// de risco apurado: quanto mais alto o risco, mais grave o fator escolhido.
-export function resultadoIdentificado(dimId: string, nivel: NivelRisco): { nome: string; dano: string } {
-  const lista = FATORES_ESPECIFICOS[dimId] ?? [];
-  if (lista.length === 0) return { nome: "—", dano: "—" };
-  // Crítico/Alto → primeiro item (geralmente o mais grave da lista);
-  // Médio → segundo; Baixo → último (manutenção).
-  let idx = 0;
-  if (nivel === "Médio") idx = Math.min(1, lista.length - 1);
-  else if (nivel === "Baixo") idx = lista.length - 1;
-  const escolhido = lista[idx];
-  return { nome: escolhido.nome, dano: agravosPara(escolhido.nome) };
-}
 
 // ----- Classificação das medidas existentes (NR-01 / GRO-PGR) -----
 export type EfetividadeMedida = "Inexistente" | "Insuficiente" | "Parcial" | "Adequada" | "Eficaz";
