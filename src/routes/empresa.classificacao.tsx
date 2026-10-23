@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentEmpresa, listRespostasEmpresa, type Resposta } from "@/lib/storage";
-import { aggregateBySetor, aggregateDimensions, classifyRisco, probFromScore, SEVERIDADE_DIM, type Nivel } from "@/lib/empresa-stats";
+import { aggregateBySetor, aggregateDimensions, classifyRisco, probFromScore } from "@/lib/empresa-stats";
+import { severidadeDaDimensao, type Nivel } from "@/lib/risco-matriz";
 import { DIMENSIONS } from "@/lib/copsoq";
 
 export const Route = createFileRoute("/empresa/classificacao")({
@@ -99,7 +100,7 @@ function ClassificacaoEmpresa() {
                         {s.porDim.map((d) => {
                           const dim = DIMENSIONS.find((x) => x.id === d.dimId)!;
                           const p = probFromScore(d.score);
-                          const sev = (SEVERIDADE_DIM[d.dimId] ?? 2) as Nivel;
+                          const sev = severidadeDaDimensao(d.dimId);
                           const risco = classifyRisco(p, sev);
                           return (
                             <TableRow key={d.dimId}>

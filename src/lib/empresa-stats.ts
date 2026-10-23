@@ -1,38 +1,38 @@
 import { DIMENSIONS, dimensionRiskScore, type Dimension } from "./copsoq";
 import { severidadeFromScore, type Severidade } from "./recomendacoes";
+import {
+  SEVERIDADE_DIM,
+  faixaPxS,
+  probFromScorePct,
+  severidadeDaDimensao,
+  type Nivel,
+} from "./risco-matriz";
 import type { Resposta } from "./storage";
 
-export type Nivel = 1 | 2 | 3 | 4 | 5;
-
-export const SEVERIDADE_DIM: Record<string, Nivel> = {
-  ofensivos: 5,
-  saude: 4,
-  demandas: 3,
-  interface: 3,
-  relacoes: 2,
-  organizacao: 2,
-  "segurança": 3,
-  seguranca: 3,
-  reconhecimento: 2,
-};
+// `Nivel` e `SEVERIDADE_DIM` eram redefinidos aqui — cópia idêntica da de
+// `risco-matriz.ts`. Re-exportados para não quebrar quem já importa deste
+// módulo; a definição passa a ser uma só.
+export { SEVERIDADE_DIM, type Nivel };
 
 export function probFromScore(score: number): Nivel {
-  if (score >= 81) return 5;
-  if (score >= 61) return 4;
-  if (score >= 41) return 3;
-  if (score >= 21) return 2;
-  return 1;
+  return probFromScorePct(score);
 }
 
-// Matriz 5x5 oficial (NR-01 / AIHA / ISO 31000) — faixas não-sobrepostas:
-//   1–3 TRIVIAL • 4–8 TOLERÁVEL • 9–12 MODERADO • 13–15 SUBSTANCIAL • 16–25 INTOLERÁVEL
+// Mesma faixa de `risco-matriz.classifyRisco`, em hexadecimal para os
+// gráficos. Antes os cortes (>=16, >=13, >=9, >=4) estavam escritos de novo
+// aqui; agora vêm de `faixaPxS` e só as cores pertencem a este módulo.
+const COR_FAIXA: Record<ReturnType<typeof faixaPxS>, string> = {
+  INTOLERÁVEL: "#dc2626",
+  SUBSTANCIAL: "#f97316",
+  MODERADO: "#eab308",
+  TOLERÁVEL: "#22c55e",
+  TRIVIAL: "#86efac",
+};
+
 export function classifyRisco(p: Nivel, s: Nivel) {
   const r = p * s;
-  if (r >= 16) return { nivel: r, label: "INTOLERÁVEL" as const, color: "#dc2626" };
-  if (r >= 13) return { nivel: r, label: "SUBSTANCIAL" as const, color: "#f97316" };
-  if (r >= 9)  return { nivel: r, label: "MODERADO"   as const, color: "#eab308" };
-  if (r >= 4)  return { nivel: r, label: "TOLERÁVEL"  as const, color: "#22c55e" };
-  return         { nivel: r, label: "TRIVIAL"    as const, color: "#86efac" };
+  const label = faixaPxS(r);
+  return { nivel: r, label, color: COR_FAIXA[label] };
 }
 
 export type DimAgg = {
@@ -49,7 +49,7 @@ export function aggregateDimensions(respostas: Resposta[]): DimAgg[] {
   return DIMENSIONS.map((d) => {
     const scores = respostas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
     const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    const sev = SEVERIDADE_DIM[d.id] ?? 2;
+    const sev = severidadeDaDimensao(d.id);
     const prob = probFromScore(score);
     return {
       dim: d,

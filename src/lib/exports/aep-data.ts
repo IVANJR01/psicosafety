@@ -4,6 +4,7 @@
 // =====================================================================
 
 import { DIMENSIONS, dimensionRiskScore, type Dimension } from "@/lib/copsoq";
+import { severidadeDaDimensao } from "@/lib/risco-matriz";
 import type { Resposta } from "@/lib/storage";
 import type { Empresa } from "@/lib/empresas";
 
@@ -126,17 +127,10 @@ export const PROB_LABEL: Record<number, string> = {
 };
 
 // ----- Severidade por fator (1..5) — assédio/violência/discriminação = 5 -----
-export const SEVERIDADE_FATOR: Record<string, 1 | 2 | 3 | 4 | 5> = {
-  ofensivos: 5,   // assédio moral, sexual, violência, discriminação
-  saude:     4,
-  demandas:  3,
-  interface: 3,
-  relacoes:  2,
-  organizacao: 2,
-  "segurança": 3,
-  seguranca: 3,
-  reconhecimento: 2,
-};
+// Era uma TERCEIRA cópia da mesma tabela (as outras em `risco-matriz.ts` e
+// `empresa-stats.ts`). Agora é só um apelido da tabela única: o PDF e as telas
+// não têm mais como discordar sobre a severidade da mesma dimensão.
+export { SEVERIDADE_DIM as SEVERIDADE_FATOR } from "@/lib/risco-matriz";
 
 export const SEV_LABEL: Record<number, string> = {
   1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica",
@@ -872,7 +866,7 @@ export function buildAepDataset(opts: {
     const scores = respostas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
     const scorePct = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
     const prob = probabilidadeFromPct(scorePct);
-    const sev = SEVERIDADE_FATOR[d.id] ?? 3;
+    const sev = severidadeDaDimensao(d.id);
     return { dim: d, scorePct, prob, sev, n: scores.length, risco: classificarRisco(prob, sev), classifPsico: classifPsicoFromPct(scorePct) };
   });
 
@@ -912,7 +906,7 @@ export function buildAepDataset(opts: {
       const scores = arr.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
       const scorePct = scores.length ? Math.round(scores.reduce((a, b2) => a + b2, 0) / scores.length) : 0;
       const prob = probabilidadeFromPct(scorePct);
-      const sev = SEVERIDADE_FATOR[d.id] ?? 3;
+      const sev = severidadeDaDimensao(d.id);
       return { dim: d, scorePct, prob, sev, n: scores.length, risco: classificarRisco(prob, sev), classifPsico: classifPsicoFromPct(scorePct) };
     });
     const fatoresValidos = fatores.filter((f) => f.n > 0);
