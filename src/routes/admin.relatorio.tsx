@@ -19,7 +19,7 @@ import {
   classifyRisco,
   probFromScorePct,
   DIM_META,
-  SEVERIDADE_DIM,
+  severidadeDaDimensao,
   type ApuLinha,
   type LinhaSetor,
 } from "@/lib/risco-matriz";
@@ -261,7 +261,7 @@ function Relatorio() {
   const apuracaoGeral = useMemo(() => DIMENSIONS.map((d) => {
     const scores = filtradas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
     const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    const sev = SEVERIDADE_DIM[d.id] ?? 3;
+    const sev = severidadeDaDimensao(d.id);
     const prob = probFromScorePct(score);
     const risco = classifyRisco(prob, sev);
     return { dim: d, score, prob, sev, risco, n: scores.length };
@@ -916,7 +916,7 @@ function Relatorio() {
                 {apuracaoSetores.map((s) => {
                   const linhasSetor = DIMENSIONS.map((d) => {
                     const score = s.porDim.find((x) => x.dimId === d.id)?.score ?? 0;
-                    const sev = SEVERIDADE_DIM[d.id] ?? 3;
+                    const sev = severidadeDaDimensao(d.id);
                     const prob = probFromScorePct(score);
                     return { dim: d, score, prob, sev, risco: classifyRisco(prob, sev), n: s.n };
                   });
@@ -1008,7 +1008,7 @@ function Relatorio() {
         {apuracaoSetores.map((s) => {
           const linhasSetor = DIMENSIONS.map((d) => {
             const score = s.porDim.find((x) => x.dimId === d.id)?.score ?? 0;
-            const sev = SEVERIDADE_DIM[d.id] ?? 3;
+            const sev = severidadeDaDimensao(d.id);
             const prob = probFromScorePct(score);
             return { dim: d, score, prob, sev, risco: classifyRisco(prob, sev), n: s.n };
           });
