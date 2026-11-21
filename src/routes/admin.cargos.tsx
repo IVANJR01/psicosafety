@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { getCurrentAccountInfo } from "@/lib/account";
+import { lerPlanilha } from "@/lib/planilha";
 
 type ParsedRow = { cargo: string; setor?: string };
 
@@ -49,44 +50,25 @@ function normalizeKey(k: string) {
     .trim();
 }
 
-// O parser de planilha (xlsx, ~420 kB minificado) é carregado SÓ quando alguém
-// escolhe um arquivo, não ao abrir a página. Antes era `import * as XLSX` no
-// topo, então o peso entrava no chunk da rota e todo acesso a /admin/cargos
-// baixava o parser inteiro — inclusive quem só vinha cadastrar um cargo à mão.
+// A leitura do arquivo (.xlsx ou .csv) fica em lib/planilha.ts, que só carrega
+// o leitor de .xlsx quando alguém escolhe um arquivo. Aqui fica apenas o que é
+// regra desta tela: quais colunas valem como setor e cargo.
 async function parseSpreadsheet(file: File): Promise<ParsedRow[]> {
-  const XLSX = await import("xlsx");
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
-    reader.onload = () => {
-      try {
-        const data = new Uint8Array(reader.result as ArrayBuffer);
-        const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        const rows: ParsedRow[] = json
-          .flatMap((r) => {
-            // Object.create(null) em vez de {}: as chaves vêm do cabeçalho da
-            // planilha, que é conteúdo de arquivo enviado. Um objeto sem
-            // protótipo não tem `__proto__` nem `constructor` para sobrescrever.
-            const map: Record<string, any> = Object.create(null);
-            for (const k of Object.keys(r)) map[normalizeKey(k)] = r[k];
-            const cargoRaw = cleanText(
-              map["cargo"] ?? map["funcao"] ?? map["funcao/cargo"] ?? map["funcao cargo"] ?? "",
-            );
-            const setor = cleanText(map["setor"] ?? map["ges"] ?? map["ghe"] ?? "");
-            return cargoRaw
-              .split(/\r?\n|;|\s\/\s/g)
-              .map((cargo) => ({ cargo: cleanText(cargo), setor: setor || undefined }));
-          })
-          .filter((r) => r.cargo && r.setor);
-        resolve(rows);
-      } catch (e: any) {
-        reject(e);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  });
+  const linhas = await lerPlanilha(file);
+  return linhas
+    .flatMap((r) => {
+      // Object.create(null): as chaves vêm do cabeçalho do arquivo enviado.
+      const map: Record<string, unknown> = Object.create(null);
+      for (const k of Object.keys(r)) map[normalizeKey(k)] = r[k];
+      const cargoRaw = cleanText(
+        map["cargo"] ?? map["funcao"] ?? map["funcao/cargo"] ?? map["funcao cargo"] ?? "",
+      );
+      const setor = cleanText(map["setor"] ?? map["ges"] ?? map["ghe"] ?? "");
+      return cargoRaw
+        .split(/\r?\n|;|\s\/\s/g)
+        .map((cargo) => ({ cargo: cleanText(cargo), setor: setor || undefined }));
+    })
+    .filter((r) => r.cargo && r.setor);
 }
 
 export const Route = createFileRoute("/admin/cargos")({
@@ -308,7 +290,7 @@ function CargosPage() {
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx"
               className="hidden"
               onChange={(e) => handleFile(e.target.files?.[0])}
             />
