@@ -2,14 +2,28 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { GitCompare, TrendingUp, Download } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
-  LineChart, Line,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 import { listEmpresas, listRespostas, type Resposta, type Empresa } from "@/lib/storage";
 import { listCampanhas, type CampanhaComEmpresa } from "@/lib/campanhas";
@@ -19,7 +33,9 @@ import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/comparativo")({
-  head: () => ({ meta: [{ title: "Comparativo | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Comparativo | PsicoSafe Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: Comparativo,
 });
 
@@ -70,7 +86,8 @@ function Comparativo() {
   }, []);
 
   const respostasFiltradas = useMemo(
-    () => campanhaSel === "__all__" ? respostas : respostas.filter((r) => r.campanhaId === campanhaSel),
+    () =>
+      campanhaSel === "__all__" ? respostas : respostas.filter((r) => r.campanhaId === campanhaSel),
     [respostas, campanhaSel],
   );
 
@@ -139,23 +156,35 @@ function Comparativo() {
       // Capa
       doc.setFillColor(15, 23, 42);
       doc.rect(0, 0, pageW, 90, "F");
-      doc.setTextColor(255); doc.setFontSize(16);
+      doc.setTextColor(255);
+      doc.setFontSize(16);
       doc.text("Comparativo entre Empresas", margin, 50);
-      doc.setFontSize(10); doc.setTextColor(180, 200, 230);
+      doc.setFontSize(10);
+      doc.setTextColor(180, 200, 230);
       doc.text("Riscos psicossociais — COPSOQ / NR-01", margin, 70);
       doc.setTextColor(20);
 
       let y = 120;
-      doc.setFontSize(10); doc.setTextColor(80);
-      doc.text(`Empresas: ${codigosSel.map(nomeDe).join(", ")}`, margin, y); y += 14;
-      const campNome = campanhaSel === "__all__" ? "Todas" : campanhas.find((c) => c.id === campanhaSel)?.nome ?? "—";
-      doc.text(`Campanha: ${campNome}`, margin, y); y += 14;
-      doc.text(`Granularidade temporal: ${granularidade}`, margin, y); y += 14;
-      doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, margin, y); y += 20;
+      doc.setFontSize(10);
+      doc.setTextColor(80);
+      doc.text(`Empresas: ${codigosSel.map(nomeDe).join(", ")}`, margin, y);
+      y += 14;
+      const campNome =
+        campanhaSel === "__all__"
+          ? "Todas"
+          : (campanhas.find((c) => c.id === campanhaSel)?.nome ?? "—");
+      doc.text(`Campanha: ${campNome}`, margin, y);
+      y += 14;
+      doc.text(`Granularidade temporal: ${granularidade}`, margin, y);
+      y += 14;
+      doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, margin, y);
+      y += 20;
 
       // Tabela comparativa
-      doc.setFontSize(13); doc.setTextColor(30, 64, 175);
-      doc.text("Comparativo por dimensão (% risco)", margin, y); y += 8;
+      doc.setFontSize(13);
+      doc.setTextColor(30, 64, 175);
+      doc.text("Comparativo por dimensão (% risco)", margin, y);
+      y += 8;
       doc.setTextColor(20);
       autoTable(doc, {
         startY: y + 4,
@@ -172,10 +201,15 @@ function Comparativo() {
 
       // Evolução temporal
       if (dadosEvolucao.length > 0) {
-        if (y > pageH - 200) { doc.addPage(); y = margin; }
+        if (y > pageH - 200) {
+          doc.addPage();
+          y = margin;
+        }
         const dimTitle = DIMENSIONS.find((d) => d.id === dimEvol)?.title ?? dimEvol;
-        doc.setFontSize(13); doc.setTextColor(30, 64, 175);
-        doc.text(`Evolução temporal — ${dimTitle}`, margin, y); y += 8;
+        doc.setFontSize(13);
+        doc.setTextColor(30, 64, 175);
+        doc.text(`Evolução temporal — ${dimTitle}`, margin, y);
+        y += 8;
         doc.setTextColor(20);
         autoTable(doc, {
           startY: y + 4,
@@ -190,7 +224,8 @@ function Comparativo() {
         });
       }
 
-      doc.setFontSize(8); doc.setTextColor(140);
+      doc.setFontSize(8);
+      doc.setTextColor(140);
       const pages = doc.getNumberOfPages();
       for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
@@ -228,11 +263,15 @@ function Comparativo() {
         <CardContent className="pt-6">
           <Label className="text-xs">Campanha</Label>
           <Select value={campanhaSel} onValueChange={setCampanhaSel}>
-            <SelectTrigger className="w-full md:w-96 mt-1"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-96 mt-1">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Todas as campanhas</SelectItem>
               {campanhas.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome} — {c.empresa_nome}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.nome} — {c.empresa_nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -244,16 +283,28 @@ function Comparativo() {
         <CardContent className="pt-6">
           <div className="flex items-center justify-between mb-3">
             <Label className="text-sm font-medium">Empresas (apenas com respostas)</Label>
-            <span className="text-xs text-muted-foreground">{selecionadas.size} selecionada(s)</span>
+            <span className="text-xs text-muted-foreground">
+              {selecionadas.size} selecionada(s)
+            </span>
           </div>
           {empresasComResp.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma empresa possui respostas no recorte atual.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma empresa possui respostas no recorte atual.
+            </p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {empresasComResp.map((e) => (
-                <label key={e.codigo} className="flex items-center gap-2 rounded border bg-card px-3 py-2 cursor-pointer hover:bg-muted/50">
-                  <Checkbox checked={selecionadas.has(e.codigo)} onCheckedChange={() => toggle(e.codigo)} />
-                  <span className="text-sm truncate" title={e.nome}>{e.nome}</span>
+                <label
+                  key={e.codigo}
+                  className="flex items-center gap-2 rounded border bg-card px-3 py-2 cursor-pointer hover:bg-muted/50"
+                >
+                  <Checkbox
+                    checked={selecionadas.has(e.codigo)}
+                    onCheckedChange={() => toggle(e.codigo)}
+                  />
+                  <span className="text-sm truncate" title={e.nome}>
+                    {e.nome}
+                  </span>
                 </label>
               ))}
             </div>
@@ -269,18 +320,43 @@ function Comparativo() {
             Média do score de risco (0–100) por dimensão. Quanto maior, maior o risco.
           </p>
           {codigosSel.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Selecione ao menos uma empresa.</p>
+            <p className="text-sm text-muted-foreground py-12 text-center">
+              Selecione ao menos uma empresa.
+            </p>
           ) : (
             <div style={{ width: "100%", height: 380 }}>
               <ResponsiveContainer>
-                <BarChart data={dadosComparativo} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
+                <BarChart
+                  data={dadosComparativo}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 60 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="dimensao" angle={-20} textAnchor="end" interval={0} height={80} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <XAxis
+                    dataKey="dimensao"
+                    angle={-20}
+                    textAnchor="end"
+                    interval={0}
+                    height={80}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                  />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                    }}
+                  />
                   <Legend />
                   {codigosSel.map((cod, i) => (
-                    <Bar key={cod} dataKey={cod} name={nomeDe(cod)} fill={COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+                    <Bar
+                      key={cod}
+                      dataKey={cod}
+                      name={nomeDe(cod)}
+                      fill={COLORS[i % COLORS.length]}
+                      radius={[4, 4, 0, 0]}
+                    />
                   ))}
                 </BarChart>
               </ResponsiveContainer>
@@ -294,14 +370,22 @@ function Comparativo() {
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="text-left px-3 py-2">Dimensão</th>
-                    {codigosSel.map((c) => <th key={c} className="text-right px-3 py-2">{nomeDe(c)}</th>)}
+                    {codigosSel.map((c) => (
+                      <th key={c} className="text-right px-3 py-2">
+                        {nomeDe(c)}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {dadosComparativo.map((row) => (
                     <tr key={String(row.dimensao)} className="border-t">
                       <td className="px-3 py-1.5 font-medium">{row.dimensao}</td>
-                      {codigosSel.map((c) => <td key={c} className="px-3 py-1.5 text-right tabular-nums">{Number(row[c] || 0)}%</td>)}
+                      {codigosSel.map((c) => (
+                        <td key={c} className="px-3 py-1.5 text-right tabular-nums">
+                          {Number(row[c] || 0)}%
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -323,16 +407,27 @@ function Comparativo() {
               <div>
                 <Label className="text-xs">Dimensão</Label>
                 <Select value={dimEvol} onValueChange={setDimEvol}>
-                  <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-56">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {DIMENSIONS.map((d) => <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>)}
+                    {DIMENSIONS.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.title}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-xs">Granularidade</Label>
-                <Select value={granularidade} onValueChange={(v) => setGranularidade(v as Granularidade)}>
-                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                <Select
+                  value={granularidade}
+                  onValueChange={(v) => setGranularidade(v as Granularidade)}
+                >
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mes">Mês</SelectItem>
                     <SelectItem value="trimestre">Trimestre</SelectItem>
@@ -347,17 +442,30 @@ function Comparativo() {
           </p>
 
           {codigosSel.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Selecione ao menos uma empresa.</p>
+            <p className="text-sm text-muted-foreground py-12 text-center">
+              Selecione ao menos uma empresa.
+            </p>
           ) : dadosEvolucao.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Sem respostas no recorte.</p>
+            <p className="text-sm text-muted-foreground py-12 text-center">
+              Sem respostas no recorte.
+            </p>
           ) : (
             <div style={{ width: "100%", height: 360 }}>
               <ResponsiveContainer>
-                <LineChart data={dadosEvolucao} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                <LineChart
+                  data={dadosEvolucao}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="periodo" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                   <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                    }}
+                  />
                   <Legend />
                   {codigosSel.map((cod, i) => (
                     <Line

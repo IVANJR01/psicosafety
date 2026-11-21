@@ -80,7 +80,9 @@ export function aggregateBySetor(respostas: Resposta[]): SetorRow[] {
   buckets.forEach((arr, setor) => {
     const porDim = DIMENSIONS.map((d) => {
       const scores = arr.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
-      const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+      const score = scores.length
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : 0;
       return { dimId: d.id, dimTitle: d.title, score };
     });
     out.push({ setor, n: arr.length, porDim });
@@ -92,7 +94,9 @@ export function distribSeveridade(respostas: Resposta[]) {
   // % de dimensões em cada nível, considerando média geral por dim
   const aggs = aggregateDimensions(respostas);
   const counts: Record<Severidade, number> = { baixo: 0, moderado: 0, alto: 0, critico: 0 };
-  aggs.forEach((a) => { if (a.n > 0) counts[a.severidade]++; });
+  aggs.forEach((a) => {
+    if (a.n > 0) counts[a.severidade]++;
+  });
   return [
     { name: "Baixo", value: counts.baixo, color: "#10b981" },
     { name: "Moderado", value: counts.moderado, color: "#3b82f6" },

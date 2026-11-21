@@ -57,12 +57,18 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Tentar novamente
           </button>
-          <a href="/" className="rounded-md border bg-background px-4 py-2 text-sm font-medium hover:bg-accent">
+          <a
+            href="/"
+            className="rounded-md border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+          >
             Início
           </a>
         </div>
@@ -77,11 +83,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PsicoSafe NR-01 — Gestão de Riscos Psicossociais" },
-      { name: "description", content: "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01." },
+      {
+        name: "description",
+        content:
+          "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01.",
+      },
       { property: "og:title", content: "PsicoSafe NR-01 — Gestão de Riscos Psicossociais" },
       { name: "twitter:title", content: "PsicoSafe NR-01 — Gestão de Riscos Psicossociais" },
-      { property: "og:description", content: "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01." },
-      { name: "twitter:description", content: "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01." },
+      {
+        property: "og:description",
+        content:
+          "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Plataforma para gestão de fatores de riscos psicossociais relacionados ao trabalho conforme NR-01.",
+      },
       { property: "og:image", content: OG_IMAGE },
       { name: "twitter:image", content: OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
@@ -94,7 +112,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@300;400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@300;400;500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -106,7 +127,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -121,8 +144,9 @@ function RootComponent() {
   // Rotas sem o layout institucional (questionário e admin têm seu próprio chrome)
   const bare = path.startsWith("/q/") || path.startsWith("/admin");
 
-  useEffect(() => { loadDimensions(); }, []);
-
+  useEffect(() => {
+    loadDimensions();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

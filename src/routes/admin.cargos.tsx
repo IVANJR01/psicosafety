@@ -6,10 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +28,9 @@ import { getCurrentAccountInfo } from "@/lib/account";
 type ParsedRow = { cargo: string; setor?: string };
 
 function cleanText(v: unknown) {
-  return String(v ?? "").trim().replace(/\s+/g, " ");
+  return String(v ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function normalizeLookup(v: string) {
@@ -49,15 +60,19 @@ function parseSpreadsheet(file: File): Promise<ParsedRow[]> {
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        const rows: ParsedRow[] = json.flatMap((r) => {
-          const map: Record<string, any> = {};
-          for (const k of Object.keys(r)) map[normalizeKey(k)] = r[k];
-          const cargoRaw = cleanText(map["cargo"] ?? map["funcao"] ?? map["funcao/cargo"] ?? map["funcao cargo"] ?? "");
-          const setor = cleanText(map["setor"] ?? map["ges"] ?? map["ghe"] ?? "");
-          return cargoRaw
-            .split(/\r?\n|;|\s\/\s/g)
-            .map((cargo) => ({ cargo: cleanText(cargo), setor: setor || undefined }));
-        }).filter((r) => r.cargo && r.setor);
+        const rows: ParsedRow[] = json
+          .flatMap((r) => {
+            const map: Record<string, any> = {};
+            for (const k of Object.keys(r)) map[normalizeKey(k)] = r[k];
+            const cargoRaw = cleanText(
+              map["cargo"] ?? map["funcao"] ?? map["funcao/cargo"] ?? map["funcao cargo"] ?? "",
+            );
+            const setor = cleanText(map["setor"] ?? map["ges"] ?? map["ghe"] ?? "");
+            return cargoRaw
+              .split(/\r?\n|;|\s\/\s/g)
+              .map((cargo) => ({ cargo: cleanText(cargo), setor: setor || undefined }));
+          })
+          .filter((r) => r.cargo && r.setor);
         resolve(rows);
       } catch (e: any) {
         reject(e);
@@ -98,7 +113,11 @@ function CargosPage() {
     }
     const [e, s, f] = await Promise.all([
       empQ,
-      supabase.from("empresa_setores").select("id, empresa_id, nome").eq("status", "active").order("nome"),
+      supabase
+        .from("empresa_setores")
+        .select("id, empresa_id, nome")
+        .eq("status", "active")
+        .order("nome"),
       supabase.from("empresa_funcoes").select("id, empresa_id, nome, setor_id").order("nome"),
     ]);
     const empList = e.data ?? [];
@@ -110,7 +129,9 @@ function CargosPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const setoresEmpresa = setores.filter((s) => s.empresa_id === empresaId);
   const funcoesEmpresa = funcoes.filter((f) => f.empresa_id === empresaId);
@@ -142,9 +163,8 @@ function CargosPage() {
   };
 
   const setorNome = (id: string | null) =>
-    id ? setores.find((s) => s.id === id)?.nome ?? "—" : "Sem setor";
-  const empresaNome = (id: string) =>
-    empresas.find((x) => x.id === id)?.nome ?? "—";
+    id ? (setores.find((s) => s.id === id)?.nome ?? "—") : "Sem setor";
+  const empresaNome = (id: string) => empresas.find((x) => x.id === id)?.nome ?? "—";
 
   const handleFile = async (file: File | undefined) => {
     if (!file) return;
@@ -173,7 +193,7 @@ function CargosPage() {
       for (const s of setoresEmpresa) setMap.set(norm(s.nome), s.id);
       // funções existentes para dedup
       const existentes = new Set(
-        funcoesEmpresa.map((f) => `${f.setor_id ?? "null"}|${norm(f.nome)}`)
+        funcoesEmpresa.map((f) => `${f.setor_id ?? "null"}|${norm(f.nome)}`),
       );
 
       let criadosSetores = 0;
@@ -203,14 +223,23 @@ function CargosPage() {
           }
           const cargoLimpo = cleanText(r.cargo);
           const dedupKey = `${sId ?? "null"}|${norm(cargoLimpo)}`;
-          if (existentes.has(dedupKey)) { ignorados++; continue; }
+          if (existentes.has(dedupKey)) {
+            ignorados++;
+            continue;
+          }
           const { error } = await supabase
             .from("empresa_funcoes")
             .insert({ empresa_id: empresaId, nome: cargoLimpo, setor_id: sId });
           if (error) {
             // duplicate key vindo do índice único = ignorado, não erro
-            if (String(error.message || "").toLowerCase().includes("duplicate")) {
-              ignorados++; existentes.add(dedupKey); continue;
+            if (
+              String(error.message || "")
+                .toLowerCase()
+                .includes("duplicate")
+            ) {
+              ignorados++;
+              existentes.add(dedupKey);
+              continue;
             }
             throw error;
           }
@@ -222,7 +251,7 @@ function CargosPage() {
       }
 
       toast.success(
-        `${criadosCargos} cargo(s) criado(s)${criadosSetores ? `, ${criadosSetores} setor(es)` : ""}${ignorados ? `, ${ignorados} ignorado(s)` : ""}.`
+        `${criadosCargos} cargo(s) criado(s)${criadosSetores ? `, ${criadosSetores} setor(es)` : ""}${ignorados ? `, ${ignorados} ignorado(s)` : ""}.`,
       );
       if (erros.length) toast.warning(`${erros.length} erro(s). Ex: ${erros[0]}`);
       setImportOpen(false);
@@ -278,20 +307,34 @@ function CargosPage() {
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-4 gap-3">
-          <Select value={empresaId} onValueChange={(v) => { setEmpresaId(v); setSetorId("__none__"); }}>
-            <SelectTrigger><SelectValue placeholder="Empresa" /></SelectTrigger>
+          <Select
+            value={empresaId}
+            onValueChange={(v) => {
+              setEmpresaId(v);
+              setSetorId("__none__");
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Empresa" />
+            </SelectTrigger>
             <SelectContent>
               {empresas.map((e) => (
-                <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                <SelectItem key={e.id} value={e.id}>
+                  {e.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={setorId} onValueChange={setSetorId}>
-            <SelectTrigger><SelectValue placeholder="Setor (opcional)" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Setor (opcional)" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">Sem setor</SelectItem>
               {setoresEmpresa.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {s.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -334,10 +377,12 @@ function CargosPage() {
                     <div className="font-medium truncate">{f.nome}</div>
                     <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                       <span className="flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />{empresaNome(f.empresa_id)}
+                        <Building2 className="h-3 w-3" />
+                        {empresaNome(f.empresa_id)}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Layers className="h-3 w-3" />{setorNome(f.setor_id)}
+                        <Layers className="h-3 w-3" />
+                        {setorNome(f.setor_id)}
                       </span>
                     </div>
                   </div>
@@ -364,11 +409,10 @@ function CargosPage() {
             </DialogTitle>
             <DialogDescription>
               {importRows.length} vínculo(s) setor + cargo encontrados para a empresa{" "}
-              <span className="font-medium">{empresaNome(empresaId)}</span>.
-              A mesma função pode aparecer em setores diferentes — só é tratada
-              como duplicada quando setor <strong>e</strong> função forem idênticos.
-              Linhas sem setor ou sem função são descartadas. Setores novos são
-              criados automaticamente.
+              <span className="font-medium">{empresaNome(empresaId)}</span>. A mesma função pode
+              aparecer em setores diferentes — só é tratada como duplicada quando setor{" "}
+              <strong>e</strong> função forem idênticos. Linhas sem setor ou sem função são
+              descartadas. Setores novos são criados automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-80 overflow-auto rounded border">

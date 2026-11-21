@@ -36,8 +36,17 @@ function genCodigo() {
 
 export async function hydrateEmpresa(row: any): Promise<Empresa> {
   const [setores, funcoes] = await Promise.all([
-    supabase.from("empresa_setores").select("id, nome, ges, status").eq("empresa_id", row.id).eq("status", "active").order("nome"),
-    supabase.from("empresa_funcoes").select("id, nome, setor_id").eq("empresa_id", row.id).order("nome"),
+    supabase
+      .from("empresa_setores")
+      .select("id, nome, ges, status")
+      .eq("empresa_id", row.id)
+      .eq("status", "active")
+      .order("nome"),
+    supabase
+      .from("empresa_funcoes")
+      .select("id, nome, setor_id")
+      .eq("empresa_id", row.id)
+      .order("nome"),
   ]);
   const setoresFull: SetorRow[] = (setores.data ?? []) as any;
   const funcoesFull: FuncaoRow[] = (funcoes.data ?? []) as any;
@@ -94,7 +103,7 @@ export async function getEmpresa(codigo: string): Promise<Empresa | null> {
 
     const { data: camp, error: errC } = await supabase
       .from("campanhas")
-          .select("id, empresa_id, codigo, scope_mode, empresas(*)")
+      .select("id, empresa_id, codigo, scope_mode, empresas(*)")
       .ilike("codigo", codigo)
       .maybeSingle();
     if (errC) throw errC;
@@ -109,7 +118,9 @@ export async function getEmpresa(codigo: string): Promise<Empresa | null> {
         const allowed = new Set((cs ?? []).map((r: any) => r.setor_id));
         emp.setoresFull = (emp.setoresFull ?? []).filter((s) => allowed.has(s.id));
         emp.setores = emp.setoresFull.map((s) => s.nome);
-        emp.funcoesFull = (emp.funcoesFull ?? []).filter((f) => !f.setor_id || allowed.has(f.setor_id));
+        emp.funcoesFull = (emp.funcoesFull ?? []).filter(
+          (f) => !f.setor_id || allowed.has(f.setor_id),
+        );
         emp.funcoes = emp.funcoesFull.map((f) => f.nome);
       }
       return emp;
@@ -177,9 +188,22 @@ export async function createEmpresa(nome: string, extra?: Partial<Empresa>): Pro
 
 export async function updateEmpresa(codigo: string, patch: Partial<Empresa>): Promise<void> {
   const allowed = [
-    "nome", "cnpj", "razao_social", "telefone", "email",
-    "endereco", "cidade", "estado", "responsavel_nome", "responsavel_cargo", "logo_url",
-    "cnae", "grau_risco", "num_trabalhadores", "resp_formacao", "resp_registro",
+    "nome",
+    "cnpj",
+    "razao_social",
+    "telefone",
+    "email",
+    "endereco",
+    "cidade",
+    "estado",
+    "responsavel_nome",
+    "responsavel_cargo",
+    "logo_url",
+    "cnae",
+    "grau_risco",
+    "num_trabalhadores",
+    "resp_formacao",
+    "resp_registro",
   ] as const;
   const update: any = {};
   for (const k of allowed) if (k in patch) update[k] = (patch as any)[k];
@@ -268,7 +292,11 @@ export async function bulkImport(rows: ImportRow[]): Promise<ImportResult> {
 
   const ensureSetorMap = async (empresaId: string) => {
     if (setoresCache.has(empresaId)) return setoresCache.get(empresaId)!;
-    const { data } = await supabase.from("empresa_setores").select("id, nome").eq("empresa_id", empresaId).eq("status", "active");
+    const { data } = await supabase
+      .from("empresa_setores")
+      .select("id, nome")
+      .eq("empresa_id", empresaId)
+      .eq("status", "active");
     const m = new Map<string, string>();
     for (const r of data ?? []) m.set(String(r.nome).toLowerCase(), r.id);
     setoresCache.set(empresaId, m);
@@ -276,7 +304,10 @@ export async function bulkImport(rows: ImportRow[]): Promise<ImportResult> {
   };
   const ensureFuncoesSet = async (empresaId: string) => {
     if (funcoesCache.has(empresaId)) return funcoesCache.get(empresaId)!;
-    const { data } = await supabase.from("empresa_funcoes").select("nome, setor_id").eq("empresa_id", empresaId);
+    const { data } = await supabase
+      .from("empresa_funcoes")
+      .select("nome, setor_id")
+      .eq("empresa_id", empresaId);
     const s = new Set<string>();
     for (const r of data ?? []) s.add(`${r.setor_id ?? "null"}|${String(r.nome).toLowerCase()}`);
     funcoesCache.set(empresaId, s);

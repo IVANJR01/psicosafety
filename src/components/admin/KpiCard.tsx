@@ -22,7 +22,9 @@ export function KpiCard({ label, value, icon: Icon, hint, tone = "default", clas
   return (
     <div className={cn("rounded-2xl border bg-card p-5 shadow-sm", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
         {Icon && <Icon className={cn("h-4 w-4", toneClasses[tone])} />}
       </div>
       <div className={cn("mt-2 text-3xl font-bold tracking-tight", toneClasses[tone])}>{value}</div>

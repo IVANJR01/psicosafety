@@ -1,16 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Building2, FileText, AlertTriangle, TrendingUp, Download, FileBarChart2, Megaphone, ClipboardList, Layers, ListChecks } from "lucide-react";
+import {
+  Building2,
+  FileText,
+  AlertTriangle,
+  TrendingUp,
+  Download,
+  FileBarChart2,
+  Megaphone,
+  ClipboardList,
+  Layers,
+  ListChecks,
+} from "lucide-react";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell,
-  Area, AreaChart, PieChart, Pie,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  Cell,
+  Area,
+  AreaChart,
+  PieChart,
+  Pie,
 } from "recharts";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { listEmpresas, listRespostas, type Resposta } from "@/lib/storage";
 import { DIMENSIONS, dimensionRiskScore, riskLabel } from "@/lib/copsoq";
 import { listarDenuncias } from "@/lib/denuncias";
@@ -21,7 +55,9 @@ import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Dashboard | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Dashboard | PsicoSafe Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: Dashboard,
 });
 
@@ -59,7 +95,9 @@ function Dashboard() {
       const [r, e, c] = await Promise.all([
         listRespostas(),
         listEmpresas(ownerOnly ? { ownerOnly: true } : undefined),
-        listCampanhas(ownerOnly ? { ownerOnly: true } : undefined).catch(() => [] as Awaited<ReturnType<typeof listCampanhas>>),
+        listCampanhas(ownerOnly ? { ownerOnly: true } : undefined).catch(
+          () => [] as Awaited<ReturnType<typeof listCampanhas>>,
+        ),
       ]);
       setRespostas(r);
       setEmpresas(e);
@@ -67,7 +105,9 @@ function Dashboard() {
       try {
         const d = await listarDenuncias();
         setDenuncias(d as any);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
   }, []);
 
@@ -99,19 +139,33 @@ function Dashboard() {
     });
   }, [respostas, empresaSel, setorSel, funcaoSel]);
 
-  const dimChart = useMemo(() => DIMENSIONS.map((d) => {
-    const scores = filtradas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
-    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    const { label, color } = riskLabel(avg);
-    return { name: d.title.split(" ")[0], score: avg, label, fill: colorMap[color] };
-  }), [filtradas]);
+  const dimChart = useMemo(
+    () =>
+      DIMENSIONS.map((d) => {
+        const scores = filtradas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
+        const avg = scores.length
+          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+          : 0;
+        const { label, color } = riskLabel(avg);
+        return { name: d.title.split(" ")[0], score: avg, label, fill: colorMap[color] };
+      }),
+    [filtradas],
+  );
 
   const piorDim = [...dimChart].sort((a, b) => b.score - a.score)[0];
-  const mediaGeral = dimChart.length ? Math.round(dimChart.reduce((a, b) => a + b.score, 0) / dimChart.length) : 0;
+  const mediaGeral = dimChart.length
+    ? Math.round(dimChart.reduce((a, b) => a + b.score, 0) / dimChart.length)
+    : 0;
 
   // Breakdown por setor
-  const porSetor = useMemo(() => agregarPor(filtradas, (r) => r.setor || "(sem setor)"), [filtradas]);
-  const porFuncao = useMemo(() => agregarPor(filtradas, (r) => r.cargo || "(sem função)"), [filtradas]);
+  const porSetor = useMemo(
+    () => agregarPor(filtradas, (r) => r.setor || "(sem setor)"),
+    [filtradas],
+  );
+  const porFuncao = useMemo(
+    () => agregarPor(filtradas, (r) => r.cargo || "(sem função)"),
+    [filtradas],
+  );
 
   // Distribuição por dimensão (donut + barras)
   const distrib = useMemo(() => {
@@ -132,7 +186,9 @@ function Dashboard() {
     }
     return months.map((m) => ({
       name: m.name,
-      respostas: respostas.filter((r) => ((r as any).criadoEm ?? (r as any).created_at ?? "").slice(0, 7) === m.key).length,
+      respostas: respostas.filter(
+        (r) => ((r as any).criadoEm ?? (r as any).created_at ?? "").slice(0, 7) === m.key,
+      ).length,
     }));
   }, [respostas]);
 
@@ -152,7 +208,9 @@ function Dashboard() {
   );
   const gesAvaliados = useMemo(() => {
     const set = new Set<string>();
-    filtradas.forEach((r) => { if (r.setor) set.add(`${r.codigoEmpresa}::${r.setor}`); });
+    filtradas.forEach((r) => {
+      if (r.setor) set.add(`${r.codigoEmpresa}::${r.setor}`);
+    });
     return set.size;
   }, [filtradas]);
   const pendenciasCriticas = useMemo(() => {
@@ -161,7 +219,10 @@ function Dashboard() {
   }, [filtradas]);
   const planosAbertos = 0; // módulo de Planos de Ação ainda não implementado
 
-  const empresaNome = empresaSel === ALL ? "Todas as empresas" : (empresas.find((e) => e.codigo === empresaSel)?.nome ?? empresaSel);
+  const empresaNome =
+    empresaSel === ALL
+      ? "Todas as empresas"
+      : (empresas.find((e) => e.codigo === empresaSel)?.nome ?? empresaSel);
 
   return (
     <div className="space-y-6">
@@ -170,26 +231,43 @@ function Dashboard() {
         className="relative overflow-hidden rounded-2xl p-6 md:p-8 text-white"
         style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-elegant)" }}
       >
-        <div className="absolute inset-0 opacity-70 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+        <div
+          className="absolute inset-0 opacity-70 pointer-events-none"
+          style={{ background: "var(--gradient-mesh)" }}
+        />
         <div className="relative z-10 flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-white/70 px-2 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> {empresaNome} • Visão geral dos dados
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> {empresaNome} •
+              Visão geral dos dados
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold mt-3 tracking-tight">Painel Administrativo</h1>
+            <h1 className="text-3xl md:text-5xl font-extrabold mt-3 tracking-tight">
+              Painel Administrativo
+            </h1>
             <p className="text-sm text-white/70 mt-2 max-w-xl">
               Conformidade NR-01 • COPSOQ II • Riscos psicossociais consolidados em tempo real.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="min-w-[220px]">
-              <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setSetorSel(ALL); setFuncaoSel(ALL); }}>
+              <Select
+                value={empresaSel}
+                onValueChange={(v) => {
+                  setEmpresaSel(v);
+                  setSetorSel(ALL);
+                  setFuncaoSel(ALL);
+                }}
+              >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white hover:bg-white/15 focus:ring-white/40">
                   <SelectValue placeholder="Todas as empresas" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL}>Todas as empresas</SelectItem>
-                  {empresas.map((e) => <SelectItem key={e.codigo} value={e.codigo}>{e.nome}</SelectItem>)}
+                  {empresas.map((e) => (
+                    <SelectItem key={e.codigo} value={e.codigo}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -203,7 +281,8 @@ function Dashboard() {
         const totalEmpresas = account ? account.empresasUsadas : empresas.length;
         const totalAvaliacoes = account ? account.avaliacoesUsadas : respostas.length;
         const maxAval = account?.plan?.max_avaliacoes ?? 0;
-        const restantes = maxAval > 0 ? Math.max(0, maxAval - totalAvaliacoes) : Math.max(0, totalAvaliacoes);
+        const restantes =
+          maxAval > 0 ? Math.max(0, maxAval - totalAvaliacoes) : Math.max(0, totalAvaliacoes);
         return (
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {!isConsultor && (
@@ -212,7 +291,10 @@ function Dashboard() {
                 icon={Building2}
                 label="Total de Empresas"
                 value={totalEmpresas}
-                spark={sparkRespostas.map((s, i) => ({ x: s.x, y: Math.max(0, Math.round(totalEmpresas * (0.5 + i / 10))) }))}
+                spark={sparkRespostas.map((s, i) => ({
+                  x: s.x,
+                  y: Math.max(0, Math.round(totalEmpresas * (0.5 + i / 10))),
+                }))}
               />
             )}
             <ColorKpi
@@ -243,7 +325,13 @@ function Dashboard() {
               label="Denúncias"
               value={totalDenuncias}
               sub={denunciasMes > 0 ? `${denunciasMes} este mês` : undefined}
-              spark={sparkRespostas.map((s, i) => ({ x: s.x, y: i === sparkRespostas.length - 1 ? Math.max(0, totalDenuncias) : Math.max(0, Math.round(totalDenuncias * (0.3 + i * 0.1))) }))}
+              spark={sparkRespostas.map((s, i) => ({
+                x: s.x,
+                y:
+                  i === sparkRespostas.length - 1
+                    ? Math.max(0, totalDenuncias)
+                    : Math.max(0, Math.round(totalDenuncias * (0.3 + i * 0.1))),
+              }))}
             />
           </div>
         );
@@ -251,34 +339,74 @@ function Dashboard() {
 
       {/* KPIs operacionais — visão executiva por status */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <KpiCard icon={Megaphone}     tone="primary"     label="Campanhas ativas"     value={campanhasAtivas}    hint="Em vigência hoje" />
-        <KpiCard icon={Layers}        tone="success"     label="GES avaliados"        value={gesAvaliados}       hint="Setores com respostas no filtro" />
-        <KpiCard icon={AlertTriangle} tone="destructive" label="Pendências críticas"  value={pendenciasCriticas} hint="Respostas sem função vinculada" />
-        <KpiCard icon={ListChecks}    tone="warning"     label="Planos de ação"       value={planosAbertos}      hint="Em aberto" />
+        <KpiCard
+          icon={Megaphone}
+          tone="primary"
+          label="Campanhas ativas"
+          value={campanhasAtivas}
+          hint="Em vigência hoje"
+        />
+        <KpiCard
+          icon={Layers}
+          tone="success"
+          label="GES avaliados"
+          value={gesAvaliados}
+          hint="Setores com respostas no filtro"
+        />
+        <KpiCard
+          icon={AlertTriangle}
+          tone="destructive"
+          label="Pendências críticas"
+          value={pendenciasCriticas}
+          hint="Respostas sem função vinculada"
+        />
+        <KpiCard
+          icon={ListChecks}
+          tone="warning"
+          label="Planos de ação"
+          value={planosAbertos}
+          hint="Em aberto"
+        />
       </div>
-
-
 
       {/* Filtros secundários */}
       <Card>
         <CardContent className="pt-6 grid gap-3 sm:grid-cols-2">
           <div>
             <Label>GES / Setores</Label>
-            <Select value={setorSel} onValueChange={(v) => { setSetorSel(v); setFuncaoSel(ALL); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={setorSel}
+              onValueChange={(v) => {
+                setSetorSel(v);
+                setFuncaoSel(ALL);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>Todos</SelectItem>
-                {setoresDisp.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {setoresDisp.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Função</Label>
             <Select value={funcaoSel} onValueChange={setFuncaoSel}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>Todas</SelectItem>
-                {funcoesDisp.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                {funcoesDisp.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -292,7 +420,9 @@ function Dashboard() {
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-lg font-semibold tracking-tight">Distribuição por Segmento</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Peso relativo de cada dimensão COPSOQ no risco total</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Peso relativo de cada dimensão COPSOQ no risco total
+                </p>
               </div>
             </div>
             {filtradas.length === 0 ? (
@@ -311,15 +441,21 @@ function Dashboard() {
                         paddingAngle={2}
                         stroke="none"
                       >
-                        {distrib.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                        {distrib.map((d, i) => (
+                          <Cell key={i} fill={d.fill} />
+                        ))}
                       </Pie>
                       <Tooltip formatter={(v: number) => [`${v}%`, "Risco"]} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 grid place-items-center pointer-events-none">
                     <div className="text-center">
-                      <div className="text-3xl font-extrabold tracking-tight">{filtradas.length}</div>
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">respostas</div>
+                      <div className="text-3xl font-extrabold tracking-tight">
+                        {filtradas.length}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        respostas
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -334,7 +470,10 @@ function Dashboard() {
                         <span className="font-semibold tabular-nums">{d.pct}%</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${d.pct}%`, background: d.fill }} />
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${d.pct}%`, background: d.fill }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -352,7 +491,8 @@ function Dashboard() {
                 <p className="text-xs text-muted-foreground mt-0.5">Últimos 6 meses</p>
               </div>
               <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="h-2 w-2 rounded-full" style={{ background: "var(--primary)" }} /> Avaliações Realizadas
+                <span className="h-2 w-2 rounded-full" style={{ background: "var(--primary)" }} />{" "}
+                Avaliações Realizadas
               </span>
             </div>
             <div className="h-64">
@@ -365,9 +505,24 @@ function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                    }}
+                  />
                   <Bar dataKey="respostas" fill="url(#barGrad)" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -382,7 +537,9 @@ function Dashboard() {
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div>
               <h2 className="text-lg font-semibold tracking-tight">Risco médio por dimensão</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Média ponderada das respostas filtradas</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Média ponderada das respostas filtradas
+              </p>
             </div>
             {piorDim?.score ? (
               <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-destructive/10 text-destructive font-medium">
@@ -399,14 +556,31 @@ function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dimChart}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <Tooltip
-                    contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--foreground)" }}
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      color: "var(--foreground)",
+                    }}
                     formatter={(v: number) => [`${v}%`, "Risco"]}
                   />
                   <Bar dataKey="score" radius={[8, 8, 0, 0]}>
-                    {dimChart.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                    {dimChart.map((d, i) => (
+                      <Cell key={i} fill={d.fill} />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -424,15 +598,50 @@ function Dashboard() {
 }
 
 const KPI_VARIANTS = {
-  blue:   { bg: "from-sky-50 to-sky-100/60 dark:from-sky-950/40 dark:to-sky-900/20", text: "text-sky-700 dark:text-sky-300", stroke: "rgb(14 165 233)", iconBg: "bg-sky-500/15 text-sky-600 dark:text-sky-300", border: "border-sky-200/60 dark:border-sky-800/40" },
-  green:  { bg: "from-emerald-50 to-emerald-100/60 dark:from-emerald-950/40 dark:to-emerald-900/20", text: "text-emerald-700 dark:text-emerald-300", stroke: "rgb(16 185 129)", iconBg: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/40" },
-  amber:  { bg: "from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20", text: "text-amber-700 dark:text-amber-300", stroke: "rgb(245 158 11)", iconBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300", border: "border-amber-200/60 dark:border-amber-800/40" },
-  violet: { bg: "from-violet-50 to-violet-100/60 dark:from-violet-950/40 dark:to-violet-900/20", text: "text-violet-700 dark:text-violet-300", stroke: "rgb(139 92 246)", iconBg: "bg-violet-500/15 text-violet-600 dark:text-violet-300", border: "border-violet-200/60 dark:border-violet-800/40" },
-  rose:   { bg: "from-rose-50 to-rose-100/60 dark:from-rose-950/40 dark:to-rose-900/20", text: "text-rose-700 dark:text-rose-300", stroke: "rgb(244 63 94)", iconBg: "bg-rose-500/15 text-rose-600 dark:text-rose-300", border: "border-rose-200/60 dark:border-rose-800/40" },
+  blue: {
+    bg: "from-sky-50 to-sky-100/60 dark:from-sky-950/40 dark:to-sky-900/20",
+    text: "text-sky-700 dark:text-sky-300",
+    stroke: "rgb(14 165 233)",
+    iconBg: "bg-sky-500/15 text-sky-600 dark:text-sky-300",
+    border: "border-sky-200/60 dark:border-sky-800/40",
+  },
+  green: {
+    bg: "from-emerald-50 to-emerald-100/60 dark:from-emerald-950/40 dark:to-emerald-900/20",
+    text: "text-emerald-700 dark:text-emerald-300",
+    stroke: "rgb(16 185 129)",
+    iconBg: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300",
+    border: "border-emerald-200/60 dark:border-emerald-800/40",
+  },
+  amber: {
+    bg: "from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20",
+    text: "text-amber-700 dark:text-amber-300",
+    stroke: "rgb(245 158 11)",
+    iconBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    border: "border-amber-200/60 dark:border-amber-800/40",
+  },
+  violet: {
+    bg: "from-violet-50 to-violet-100/60 dark:from-violet-950/40 dark:to-violet-900/20",
+    text: "text-violet-700 dark:text-violet-300",
+    stroke: "rgb(139 92 246)",
+    iconBg: "bg-violet-500/15 text-violet-600 dark:text-violet-300",
+    border: "border-violet-200/60 dark:border-violet-800/40",
+  },
+  rose: {
+    bg: "from-rose-50 to-rose-100/60 dark:from-rose-950/40 dark:to-rose-900/20",
+    text: "text-rose-700 dark:text-rose-300",
+    stroke: "rgb(244 63 94)",
+    iconBg: "bg-rose-500/15 text-rose-600 dark:text-rose-300",
+    border: "border-rose-200/60 dark:border-rose-800/40",
+  },
 } as const;
 
 function ColorKpi({
-  variant, icon: Icon, label, value, sub, spark,
+  variant,
+  icon: Icon,
+  label,
+  value,
+  sub,
+  spark,
 }: {
   variant: keyof typeof KPI_VARIANTS;
   icon: any;
@@ -444,15 +653,25 @@ function ColorKpi({
   const v = KPI_VARIANTS[variant];
   const gid = `spark-${variant}`;
   return (
-    <Card className={`relative overflow-hidden border ${v.border} bg-gradient-to-br ${v.bg} hover:shadow-xl transition-all hover:-translate-y-0.5`}>
+    <Card
+      className={`relative overflow-hidden border ${v.border} bg-gradient-to-br ${v.bg} hover:shadow-xl transition-all hover:-translate-y-0.5`}
+    >
       <CardContent className="pt-5 pb-3 relative">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1 min-w-0">
-            <div className={`text-[10px] font-semibold uppercase tracking-widest ${v.text} leading-tight`}>{label}</div>
-            <div className="text-3xl md:text-4xl font-extrabold tracking-tight tabular-nums">{value}</div>
+            <div
+              className={`text-[10px] font-semibold uppercase tracking-widest ${v.text} leading-tight`}
+            >
+              {label}
+            </div>
+            <div className="text-3xl md:text-4xl font-extrabold tracking-tight tabular-nums">
+              {value}
+            </div>
             {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
           </div>
-          <span className={`grid h-9 w-9 place-items-center rounded-xl ${v.iconBg} shadow-sm shrink-0`}>
+          <span
+            className={`grid h-9 w-9 place-items-center rounded-xl ${v.iconBg} shadow-sm shrink-0`}
+          >
             <Icon className="h-4 w-4" />
           </span>
         </div>
@@ -465,7 +684,14 @@ function ColorKpi({
                   <stop offset="100%" stopColor={v.stroke} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Area type="monotone" dataKey="y" stroke={v.stroke} strokeWidth={2} fill={`url(#${gid})`} dot={false} />
+              <Area
+                type="monotone"
+                dataKey="y"
+                stroke={v.stroke}
+                strokeWidth={2}
+                fill={`url(#${gid})`}
+                dot={false}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -494,10 +720,14 @@ function agregarPor(respostas: Resposta[], pickKey: (r: Resposta) => string): Li
   buckets.forEach((arr, chave) => {
     const porDim = DIMENSIONS.map((d) => {
       const scores = arr.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
-      const score = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+      const score = scores.length
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : 0;
       return { id: d.id, score };
     });
-    const media = porDim.length ? Math.round(porDim.reduce((a, b) => a + b.score, 0) / porDim.length) : 0;
+    const media = porDim.length
+      ? Math.round(porDim.reduce((a, b) => a + b.score, 0) / porDim.length)
+      : 0;
     const { label, color } = riskLabel(media);
     linhas.push({ chave, n: arr.length, media, label, color, porDim });
   });
@@ -520,7 +750,9 @@ function BreakdownCard({ titulo, dados }: { titulo: string; dados: LinhaAgregada
                   <TableHead className="text-center">N</TableHead>
                   <TableHead className="text-center">Média</TableHead>
                   {DIMENSIONS.map((d) => (
-                    <TableHead key={d.id} className="text-center text-xs">{d.title.split(" ")[0]}</TableHead>
+                    <TableHead key={d.id} className="text-center text-xs">
+                      {d.title.split(" ")[0]}
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -530,7 +762,10 @@ function BreakdownCard({ titulo, dados }: { titulo: string; dados: LinhaAgregada
                     <TableCell className="font-medium text-sm">{row.chave}</TableCell>
                     <TableCell className="text-center text-sm">{row.n}</TableCell>
                     <TableCell className="text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeMap[row.color]}`} title={row.label}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeMap[row.color]}`}
+                        title={row.label}
+                      >
                         {row.media}%
                       </span>
                     </TableCell>
@@ -538,7 +773,10 @@ function BreakdownCard({ titulo, dados }: { titulo: string; dados: LinhaAgregada
                       const { color, label } = riskLabel(p.score);
                       return (
                         <TableCell key={p.id} className="text-center">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${badgeMap[color]}`} title={label}>
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${badgeMap[color]}`}
+                            title={label}
+                          >
                             {p.score}
                           </span>
                         </TableCell>
@@ -555,7 +793,17 @@ function BreakdownCard({ titulo, dados }: { titulo: string; dados: LinhaAgregada
   );
 }
 
-function Kpi({ icon: Icon, label, value, sub }: { icon: any; label: string; value: React.ReactNode; sub?: string }) {
+function Kpi({
+  icon: Icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: any;
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+}) {
   return (
     <Card className="relative overflow-hidden border-border/60 hover:shadow-lg transition-all hover:-translate-y-0.5 group">
       <div
@@ -564,7 +812,9 @@ function Kpi({ icon: Icon, label, value, sub }: { icon: any; label: string; valu
       />
       <CardContent className="pt-6 relative">
         <div className="flex items-center justify-between">
-          <div className="text-xs uppercase tracking-wider font-medium text-muted-foreground">{label}</div>
+          <div className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
+            {label}
+          </div>
           <span
             className="grid h-9 w-9 place-items-center rounded-lg text-white shadow-md"
             style={{ background: "var(--gradient-primary)" }}
@@ -607,13 +857,22 @@ function exportarPDF(args: ExportArgs) {
 
     doc.setTextColor(20);
     doc.setFontSize(11);
-    doc.text(`Empresa: ${args.empresaNome}`, margin, y); y += 14;
-    doc.text(`GES / Setores: ${args.setor}`, margin, y); y += 14;
-    doc.text(`Função: ${args.funcao}`, margin, y); y += 14;
-    doc.text(`Respostas no recorte: ${args.totalRespostas}`, margin, y); y += 14;
-    doc.text(`Média geral de risco: ${args.mediaGeral}%`, margin, y); y += 14;
+    doc.text(`Empresa: ${args.empresaNome}`, margin, y);
+    y += 14;
+    doc.text(`GES / Setores: ${args.setor}`, margin, y);
+    y += 14;
+    doc.text(`Função: ${args.funcao}`, margin, y);
+    y += 14;
+    doc.text(`Respostas no recorte: ${args.totalRespostas}`, margin, y);
+    y += 14;
+    doc.text(`Média geral de risco: ${args.mediaGeral}%`, margin, y);
+    y += 14;
     if (args.piorDim?.score) {
-      doc.text(`Dimensão crítica: ${args.piorDim.name} (${args.piorDim.score}% • ${args.piorDim.label})`, margin, y);
+      doc.text(
+        `Dimensão crítica: ${args.piorDim.name} (${args.piorDim.score}% • ${args.piorDim.label})`,
+        margin,
+        y,
+      );
       y += 18;
     } else {
       y += 4;
@@ -632,7 +891,12 @@ function exportarPDF(args: ExportArgs) {
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
       head: [["Risco por GES / Setores", "N", "Média", ...dimHeaders]],
-      body: args.porSetor.map((r) => [r.chave, r.n, `${r.media}%`, ...r.porDim.map((p) => `${p.score}`)]),
+      body: args.porSetor.map((r) => [
+        r.chave,
+        r.n,
+        `${r.media}%`,
+        ...r.porDim.map((p) => `${p.score}`),
+      ]),
       headStyles: { fillColor: [30, 64, 175] },
       styles: { fontSize: 9 },
     });
@@ -640,7 +904,12 @@ function exportarPDF(args: ExportArgs) {
     autoTable(doc, {
       startY: (doc as any).lastAutoTable.finalY + 20,
       head: [["Risco por Função", "N", "Média", ...dimHeaders]],
-      body: args.porFuncao.map((r) => [r.chave, r.n, `${r.media}%`, ...r.porDim.map((p) => `${p.score}`)]),
+      body: args.porFuncao.map((r) => [
+        r.chave,
+        r.n,
+        `${r.media}%`,
+        ...r.porDim.map((p) => `${p.score}`),
+      ]),
       headStyles: { fillColor: [30, 64, 175] },
       styles: { fontSize: 9 },
     });
@@ -654,7 +923,7 @@ function exportarPDF(args: ExportArgs) {
         `PsicoSafe — Página ${i} de ${pageCount}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 20,
-        { align: "center" }
+        { align: "center" },
       );
     }
 

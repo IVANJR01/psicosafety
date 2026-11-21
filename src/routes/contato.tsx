@@ -50,17 +50,36 @@ function Contato() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} maxLength={100} />
+              <Input
+                id="nome"
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                maxLength={100}
+              />
             </div>
             <div>
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={255} />
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                maxLength={255}
+              />
             </div>
             <div>
               <Label htmlFor="mensagem">Mensagem</Label>
-              <Textarea id="mensagem" rows={5} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} maxLength={1000} />
+              <Textarea
+                id="mensagem"
+                rows={5}
+                value={form.mensagem}
+                onChange={(e) => setForm({ ...form, mensagem: e.target.value })}
+                maxLength={1000}
+              />
             </div>
-            <Button type="submit" className="w-full">Enviar</Button>
+            <Button type="submit" className="w-full">
+              Enviar
+            </Button>
           </form>
         </CardContent>
       </Card>

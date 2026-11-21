@@ -51,9 +51,17 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     title: "Demandas no trabalho",
     description: "Carga, ritmo e exigências emocionais.",
     questions: [
-      { id: "d1", text: "A sua carga de trabalho se acumula porque você não consegue dar conta?", scale: LIKERT_FREQ },
+      {
+        id: "d1",
+        text: "A sua carga de trabalho se acumula porque você não consegue dar conta?",
+        scale: LIKERT_FREQ,
+      },
       { id: "d2", text: "Você tem que trabalhar muito rapidamente?", scale: LIKERT_FREQ },
-      { id: "d3", text: "Seu trabalho exige que você esconda os seus sentimentos?", scale: LIKERT_FREQ },
+      {
+        id: "d3",
+        text: "Seu trabalho exige que você esconda os seus sentimentos?",
+        scale: LIKERT_FREQ,
+      },
       { id: "d4", text: "Seu trabalho é emocionalmente desgastante?", scale: LIKERT_FREQ },
     ],
   },
@@ -62,10 +70,30 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     title: "Organização e conteúdo do trabalho",
     description: "Autonomia, sentido e previsibilidade.",
     questions: [
-      { id: "o1", text: "Você tem influência sobre o que faz no seu trabalho?", scale: LIKERT_GRAU, reverse: true },
-      { id: "o2", text: "Seu trabalho tem um sentido para você?", scale: LIKERT_GRAU, reverse: true },
-      { id: "o3", text: "Você recebe com antecedência as informações necessárias para fazer bem o seu trabalho?", scale: LIKERT_FREQ, reverse: true },
-      { id: "o4", text: "Você pode decidir quando fazer uma pausa?", scale: LIKERT_FREQ, reverse: true },
+      {
+        id: "o1",
+        text: "Você tem influência sobre o que faz no seu trabalho?",
+        scale: LIKERT_GRAU,
+        reverse: true,
+      },
+      {
+        id: "o2",
+        text: "Seu trabalho tem um sentido para você?",
+        scale: LIKERT_GRAU,
+        reverse: true,
+      },
+      {
+        id: "o3",
+        text: "Você recebe com antecedência as informações necessárias para fazer bem o seu trabalho?",
+        scale: LIKERT_FREQ,
+        reverse: true,
+      },
+      {
+        id: "o4",
+        text: "Você pode decidir quando fazer uma pausa?",
+        scale: LIKERT_FREQ,
+        reverse: true,
+      },
     ],
   },
   {
@@ -73,10 +101,30 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     title: "Relações sociais e liderança",
     description: "Apoio de colegas, chefia e clareza de papéis.",
     questions: [
-      { id: "r1", text: "Você recebe ajuda e apoio dos seus colegas quando precisa?", scale: LIKERT_FREQ, reverse: true },
-      { id: "r2", text: "Sua chefia imediata dá prioridade ao bem-estar dos trabalhadores?", scale: LIKERT_GRAU, reverse: true },
-      { id: "r3", text: "Sua chefia é boa em planejar o trabalho?", scale: LIKERT_GRAU, reverse: true },
-      { id: "r4", text: "Você sabe exatamente o que se espera de você no trabalho?", scale: LIKERT_GRAU, reverse: true },
+      {
+        id: "r1",
+        text: "Você recebe ajuda e apoio dos seus colegas quando precisa?",
+        scale: LIKERT_FREQ,
+        reverse: true,
+      },
+      {
+        id: "r2",
+        text: "Sua chefia imediata dá prioridade ao bem-estar dos trabalhadores?",
+        scale: LIKERT_GRAU,
+        reverse: true,
+      },
+      {
+        id: "r3",
+        text: "Sua chefia é boa em planejar o trabalho?",
+        scale: LIKERT_GRAU,
+        reverse: true,
+      },
+      {
+        id: "r4",
+        text: "Você sabe exatamente o que se espera de você no trabalho?",
+        scale: LIKERT_GRAU,
+        reverse: true,
+      },
     ],
   },
   {
@@ -84,15 +132,28 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     title: "Interface trabalho-indivíduo",
     description: "Satisfação e conflito trabalho-vida.",
     questions: [
-      { id: "i1", text: "Quão satisfeito você está com o seu trabalho de uma forma geral?", scale: [
-        { value: 5, label: "Muito satisfeito" },
-        { value: 4, label: "Satisfeito" },
-        { value: 3, label: "Neutro" },
-        { value: 2, label: "Insatisfeito" },
-        { value: 1, label: "Muito insatisfeito" },
-      ], reverse: true },
-      { id: "i2", text: "Você sente que o trabalho consome energia que faria falta para a vida pessoal?", scale: LIKERT_FREQ },
-      { id: "i3", text: "Você sente que o trabalho exige tempo que faria falta para a vida pessoal?", scale: LIKERT_FREQ },
+      {
+        id: "i1",
+        text: "Quão satisfeito você está com o seu trabalho de uma forma geral?",
+        scale: [
+          { value: 5, label: "Muito satisfeito" },
+          { value: 4, label: "Satisfeito" },
+          { value: 3, label: "Neutro" },
+          { value: 2, label: "Insatisfeito" },
+          { value: 1, label: "Muito insatisfeito" },
+        ],
+        reverse: true,
+      },
+      {
+        id: "i2",
+        text: "Você sente que o trabalho consome energia que faria falta para a vida pessoal?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "i3",
+        text: "Você sente que o trabalho exige tempo que faria falta para a vida pessoal?",
+        scale: LIKERT_FREQ,
+      },
     ],
   },
   {
@@ -101,15 +162,28 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     description: "Estresse, esgotamento e sono.",
     questions: [
       { id: "s1", text: "Com que frequência você se sente estressado(a)?", scale: LIKERT_FREQ },
-      { id: "s2", text: "Com que frequência você se sente esgotado(a) emocionalmente?", scale: LIKERT_FREQ },
-      { id: "s3", text: "Com que frequência você dorme mal por causa do trabalho?", scale: LIKERT_FREQ },
-      { id: "s4", text: "De forma geral, como você considera sua saúde?", scale: [
-        { value: 5, label: "Excelente" },
-        { value: 4, label: "Muito boa" },
-        { value: 3, label: "Boa" },
-        { value: 2, label: "Razoável" },
-        { value: 1, label: "Ruim" },
-      ], reverse: true },
+      {
+        id: "s2",
+        text: "Com que frequência você se sente esgotado(a) emocionalmente?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "s3",
+        text: "Com que frequência você dorme mal por causa do trabalho?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "s4",
+        text: "De forma geral, como você considera sua saúde?",
+        scale: [
+          { value: 5, label: "Excelente" },
+          { value: 4, label: "Muito boa" },
+          { value: 3, label: "Boa" },
+          { value: 2, label: "Razoável" },
+          { value: 1, label: "Ruim" },
+        ],
+        reverse: true,
+      },
     ],
   },
   {
@@ -117,10 +191,26 @@ const DEFAULT_DIMENSIONS: Dimension[] = [
     title: "Comportamentos ofensivos",
     description: "Assédio moral, sexual e violência no trabalho.",
     questions: [
-      { id: "of1", text: "Você foi exposto(a) a humilhação ou ridicularização no trabalho nos últimos 12 meses?", scale: LIKERT_FREQ },
-      { id: "of2", text: "Você sofreu assédio moral (perseguição, ameaças) no trabalho nos últimos 12 meses?", scale: LIKERT_FREQ },
-      { id: "of3", text: "Você sofreu assédio sexual no trabalho nos últimos 12 meses?", scale: LIKERT_FREQ },
-      { id: "of4", text: "Você sofreu violência física no trabalho nos últimos 12 meses?", scale: LIKERT_FREQ },
+      {
+        id: "of1",
+        text: "Você foi exposto(a) a humilhação ou ridicularização no trabalho nos últimos 12 meses?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "of2",
+        text: "Você sofreu assédio moral (perseguição, ameaças) no trabalho nos últimos 12 meses?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "of3",
+        text: "Você sofreu assédio sexual no trabalho nos últimos 12 meses?",
+        scale: LIKERT_FREQ,
+      },
+      {
+        id: "of4",
+        text: "Você sofreu violência física no trabalho nos últimos 12 meses?",
+        scale: LIKERT_FREQ,
+      },
     ],
   },
 ];
@@ -193,9 +283,11 @@ async function buscarEstrutura(
       .filter((q) => q.dimensao_id === d.id)
       .map((q) => {
         const scale =
-          q.escala === "freq" ? LIKERT_FREQ :
-          q.escala === "grau" ? LIKERT_GRAU :
-          (opsByPergunta.get(q.id) ?? []).sort((a, b) => b.value - a.value);
+          q.escala === "freq"
+            ? LIKERT_FREQ
+            : q.escala === "grau"
+              ? LIKERT_GRAU
+              : (opsByPergunta.get(q.id) ?? []).sort((a, b) => b.value - a.value);
         return { id: q.codigo, text: q.texto, scale, reverse: q.reverse } satisfies Question;
       }),
   }));
@@ -259,7 +351,9 @@ export async function loadDimensions(force = false, versaoId?: string): Promise<
   return loadPromise;
 }
 
-export function dimensionsLoaded() { return loaded; }
+export function dimensionsLoaded() {
+  return loaded;
+}
 
 export type Answers = Record<string, number>;
 

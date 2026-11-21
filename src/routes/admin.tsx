@@ -1,8 +1,26 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Sparkles, LayoutDashboard, Building2, LogOut, Layers, Briefcase,
-  Users, MessageSquareWarning, ChevronRight, FileBarChart2, Megaphone, Upload, GitCompare, History, ShieldCheck, Clock, Menu, CreditCard, BadgeDollarSign, ClipboardList,
+  Sparkles,
+  LayoutDashboard,
+  Building2,
+  LogOut,
+  Layers,
+  Briefcase,
+  Users,
+  MessageSquareWarning,
+  ChevronRight,
+  FileBarChart2,
+  Megaphone,
+  Upload,
+  GitCompare,
+  History,
+  ShieldCheck,
+  Clock,
+  Menu,
+  CreditCard,
+  BadgeDollarSign,
+  ClipboardList,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -19,34 +37,130 @@ export const Route = createFileRoute("/admin")({
 
 const items = [
   // 1. PAINEL
-  { to: "/admin", label: "Visão Geral", icon: LayoutDashboard, exact: true as boolean, group: "Painel" },
+  {
+    to: "/admin",
+    label: "Visão Geral",
+    icon: LayoutDashboard,
+    exact: true as boolean,
+    group: "Painel",
+  },
 
   // 2. AVALIAÇÕES
-  { to: "/admin/campanhas", label: "Campanhas", icon: Megaphone, exact: false as boolean, group: "Avaliações" },
-  { to: "/admin/questionario", label: "Questionário Psicossocial", icon: ClipboardList, exact: false as boolean, group: "Avaliações" },
-  { to: "/admin/import-respostas", label: "Importar Respostas", icon: History, exact: false as boolean, group: "Avaliações" },
-  { to: "/admin/comparativo", label: "Comparativo", icon: GitCompare, exact: false as boolean, group: "Avaliações" },
+  {
+    to: "/admin/campanhas",
+    label: "Campanhas",
+    icon: Megaphone,
+    exact: false as boolean,
+    group: "Avaliações",
+  },
+  {
+    to: "/admin/questionario",
+    label: "Questionário Psicossocial",
+    icon: ClipboardList,
+    exact: false as boolean,
+    group: "Avaliações",
+  },
+  {
+    to: "/admin/import-respostas",
+    label: "Importar Respostas",
+    icon: History,
+    exact: false as boolean,
+    group: "Avaliações",
+  },
+  {
+    to: "/admin/comparativo",
+    label: "Comparativo",
+    icon: GitCompare,
+    exact: false as boolean,
+    group: "Avaliações",
+  },
 
   // 3. CADASTROS
-  { to: "/admin/empresas", label: "Empresas", icon: Building2, exact: false as boolean, group: "Cadastros" },
-  { to: "/admin/setores", label: "Setores / GES", icon: Layers, exact: false as boolean, group: "Cadastros" },
-  { to: "/admin/cargos", label: "Funções / Cargos", icon: Briefcase, exact: false as boolean, group: "Cadastros" },
-  { to: "/admin/usuarios", label: "Usuários", icon: Users, exact: false as boolean, group: "Cadastros" },
+  {
+    to: "/admin/empresas",
+    label: "Empresas",
+    icon: Building2,
+    exact: false as boolean,
+    group: "Cadastros",
+  },
+  {
+    to: "/admin/setores",
+    label: "Setores / GES",
+    icon: Layers,
+    exact: false as boolean,
+    group: "Cadastros",
+  },
+  {
+    to: "/admin/cargos",
+    label: "Funções / Cargos",
+    icon: Briefcase,
+    exact: false as boolean,
+    group: "Cadastros",
+  },
+  {
+    to: "/admin/usuarios",
+    label: "Usuários",
+    icon: Users,
+    exact: false as boolean,
+    group: "Cadastros",
+  },
 
   // 4. RELATÓRIOS
-  { to: "/admin/relatorio", label: "Relatórios", icon: FileBarChart2, exact: false as boolean, group: "Relatórios" },
-  { to: "/admin/medidas-controle", label: "Medidas de Controle", icon: ShieldCheck, exact: false as boolean, group: "Relatórios" },
+  {
+    to: "/admin/relatorio",
+    label: "Relatórios",
+    icon: FileBarChart2,
+    exact: false as boolean,
+    group: "Relatórios",
+  },
+  {
+    to: "/admin/medidas-controle",
+    label: "Medidas de Controle",
+    icon: ShieldCheck,
+    exact: false as boolean,
+    group: "Relatórios",
+  },
 
   // 5. COMPLIANCE
-  { to: "/admin/denuncias", label: "Canal de Denúncia", icon: MessageSquareWarning, exact: false as boolean, group: "Compliance" },
+  {
+    to: "/admin/denuncias",
+    label: "Canal de Denúncia",
+    icon: MessageSquareWarning,
+    exact: false as boolean,
+    group: "Compliance",
+  },
 
   // 6. ADMINISTRAÇÃO
-  { to: "/admin/assinar", label: "Assinatura", icon: CreditCard, exact: false as boolean, group: "Administração" },
-  { to: "/admin/planos", label: "Planos & Stripe", icon: BadgeDollarSign, exact: false as boolean, group: "Administração" },
-  { to: "/admin/clientes", label: "Liberações", icon: ShieldCheck, exact: false as boolean, group: "Administração" },
+  {
+    to: "/admin/assinar",
+    label: "Assinatura",
+    icon: CreditCard,
+    exact: false as boolean,
+    group: "Administração",
+  },
+  {
+    to: "/admin/planos",
+    label: "Planos & Stripe",
+    icon: BadgeDollarSign,
+    exact: false as boolean,
+    group: "Administração",
+  },
+  {
+    to: "/admin/clientes",
+    label: "Liberações",
+    icon: ShieldCheck,
+    exact: false as boolean,
+    group: "Administração",
+  },
 
   // 7. SISTEMA
-  { to: "/admin/import", label: "Importar CSV", icon: Upload, exact: false as boolean, group: "Sistema" },
+  {
+    to: "/admin/import",
+    label: "Importar CSV",
+    icon: Upload,
+    exact: false as boolean,
+    group: "Sistema",
+  },
 ] as const;
 
 function AdminLayout() {
@@ -58,15 +172,24 @@ function AdminLayout() {
   const [profileStatus, setProfileStatus] = useState<"pending" | "active" | null>(null);
 
   useEffect(() => {
-    if (path === "/admin/login") { setChecking(false); return; }
+    if (path === "/admin/login") {
+      setChecking(false);
+      return;
+    }
     let mounted = true;
     const verify = async () => {
       const user = await getCurrentUser();
-      if (!user) { navigate({ to: "/login" }); return; }
+      if (!user) {
+        navigate({ to: "/login" });
+        return;
+      }
       const info = await getCurrentAccountInfo();
       const status = await getCurrentProfileStatus();
       if (!mounted) return;
-      if (!info) { navigate({ to: "/login" }); return; }
+      if (!info) {
+        navigate({ to: "/login" });
+        return;
+      }
       setEmail(user.email ?? "");
       setAccount(info);
       setProfileStatus(status);
@@ -76,7 +199,10 @@ function AdminLayout() {
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session) navigate({ to: "/login" });
     });
-    return () => { mounted = false; data.subscription.unsubscribe(); };
+    return () => {
+      mounted = false;
+      data.subscription.unsubscribe();
+    };
   }, [path, navigate]);
 
   // Após retornar do Stripe Checkout (?checkout=success), aguarda o webhook
@@ -108,7 +234,9 @@ function AdminLayout() {
       }
     };
     poll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   if (path === "/admin/login") return <Outlet />;
@@ -120,7 +248,10 @@ function AdminLayout() {
 
   if (checking) {
     return (
-      <div className="min-h-screen grid place-items-center" style={{ background: "var(--gradient-hero)" }}>
+      <div
+        className="min-h-screen grid place-items-center"
+        style={{ background: "var(--gradient-hero)" }}
+      >
         <div className="text-white/80 flex items-center gap-3">
           <span className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
           Verificando acesso...
@@ -130,7 +261,11 @@ function AdminLayout() {
   }
 
   // Bloqueio: cadastros pendentes → oferece assinatura via Stripe (libera automaticamente após pagamento)
-  if (profileStatus === "pending" && account?.accountType !== "admin" && path !== "/admin/assinar") {
+  if (
+    profileStatus === "pending" &&
+    account?.accountType !== "admin" &&
+    path !== "/admin/assinar"
+  ) {
     return (
       <div className="min-h-screen grid place-items-center px-4 bg-secondary/40">
         <div className="max-w-md text-center space-y-4 bg-background p-8 rounded-xl border shadow-sm">
@@ -144,7 +279,11 @@ function AdminLayout() {
           <Button onClick={() => navigate({ to: "/admin/assinar" })} className="mt-2">
             <CreditCard className="h-4 w-4 mr-2" /> Ver planos e assinar
           </Button>
-          <div><Button variant="ghost" size="sm" onClick={logout}>Sair</Button></div>
+          <div>
+            <Button variant="ghost" size="sm" onClick={logout}>
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -152,7 +291,14 @@ function AdminLayout() {
 
   // Group nav items
   // Filtra menu por tipo de conta — só admin vê Liberações; empresa direta não vê Empresas/Imports/Usuários
-  const ADMIN_ONLY = ["/admin/clientes", "/admin/usuarios", "/admin/import", "/admin/import-respostas", "/admin/planos", "/admin/questionario"];
+  const ADMIN_ONLY = [
+    "/admin/clientes",
+    "/admin/usuarios",
+    "/admin/import",
+    "/admin/import-respostas",
+    "/admin/planos",
+    "/admin/questionario",
+  ];
   const visibleItems = items.filter((it) => {
     if (account?.accountType !== "admin" && ADMIN_ONLY.includes(it.to)) return false;
     if (account?.accountType === "empresa_direta") {
@@ -161,7 +307,7 @@ function AdminLayout() {
     return true;
   });
 
-  const grouped = visibleItems.reduce<Record<string, typeof items[number][]>>((acc, it) => {
+  const grouped = visibleItems.reduce<Record<string, (typeof items)[number][]>>((acc, it) => {
     (acc[it.group] = acc[it.group] || []).push(it);
     return acc;
   }, {});
@@ -169,8 +315,12 @@ function AdminLayout() {
   const current = visibleItems.find((it) => (it.exact ? path === it.to : path.startsWith(it.to)));
 
   const initials = (email || "AA").slice(0, 2).toUpperCase();
-  const tipoLabel = account?.accountType === "consultor" ? "Consultor"
-    : account?.accountType === "empresa_direta" ? "Empresa" : "Administrador";
+  const tipoLabel =
+    account?.accountType === "consultor"
+      ? "Consultor"
+      : account?.accountType === "empresa_direta"
+        ? "Empresa"
+        : "Administrador";
 
   return (
     <div className="min-h-screen flex relative" style={{ background: "var(--gradient-page)" }}>
@@ -180,13 +330,18 @@ function AdminLayout() {
         className="hidden md:flex w-64 flex-col text-white relative overflow-hidden"
         style={{ background: "var(--gradient-hero)" }}
       >
-        <div className="absolute inset-0 opacity-60 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+        <div
+          className="absolute inset-0 opacity-60 pointer-events-none"
+          style={{ background: "var(--gradient-mesh)" }}
+        />
         <div className="relative z-10 flex flex-col h-full">
           <Link to="/" className="flex flex-col items-center gap-1 p-4 border-b border-white/10">
             <span className="grid place-items-center w-full rounded-xl bg-white shadow-lg px-3 py-2">
               <img src={logoPsicosafety} alt="PSICOSAFETY" className="h-12 w-auto object-contain" />
             </span>
-            <div className="text-[10px] uppercase tracking-widest text-white/50 mt-1">{tipoLabel}</div>
+            <div className="text-[10px] uppercase tracking-widest text-white/50 mt-1">
+              {tipoLabel}
+            </div>
           </Link>
 
           {account?.plan && (
@@ -195,9 +350,17 @@ function AdminLayout() {
               <div className="text-sm font-semibold text-white truncate">{account.plan.nome}</div>
               <div className="mt-2 space-y-1.5">
                 {account.accountType !== "consultor" && (
-                  <UsageBar label="Empresas" used={account.empresasUsadas} max={account.plan.max_empresas} />
+                  <UsageBar
+                    label="Empresas"
+                    used={account.empresasUsadas}
+                    max={account.plan.max_empresas}
+                  />
                 )}
-                <UsageBar label="Avaliações" used={account.avaliacoesUsadas} max={account.plan.max_avaliacoes} />
+                <UsageBar
+                  label="Avaliações"
+                  used={account.avaliacoesUsadas}
+                  max={account.plan.max_avaliacoes}
+                />
               </div>
             </div>
           )}
@@ -223,10 +386,15 @@ function AdminLayout() {
                         {active && (
                           <span
                             className="absolute -left-3 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full"
-                            style={{ background: "var(--gradient-primary)", boxShadow: "0 0 12px oklch(0.62 0.2 245 / 0.8)" }}
+                            style={{
+                              background: "var(--gradient-primary)",
+                              boxShadow: "0 0 12px oklch(0.62 0.2 245 / 0.8)",
+                            }}
                           />
                         )}
-                        <it.icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${active ? "text-white" : "text-white/50 group-hover:text-white/90"}`} />
+                        <it.icon
+                          className={`h-4 w-4 transition-transform group-hover:scale-110 ${active ? "text-white" : "text-white/50 group-hover:text-white/90"}`}
+                        />
                         <span className="flex-1 font-medium tracking-tight">{it.label}</span>
                         {active && <ChevronRight className="h-3.5 w-3.5 opacity-80" />}
                       </Link>
@@ -276,7 +444,9 @@ function AdminLayout() {
               <span className="h-1.5 w-1.5 rounded-full bg-success" />
               Sistema operacional
             </span>
-            <span className="hidden xl:inline truncate max-w-[220px]" title={email}>{email}</span>
+            <span className="hidden xl:inline truncate max-w-[220px]" title={email}>
+              {email}
+            </span>
           </div>
         </header>
 
@@ -289,15 +459,28 @@ function AdminLayout() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="p-0 w-[280px] text-white border-0" style={{ background: "var(--gradient-hero)" }}>
-                <div className="absolute inset-0 opacity-60 pointer-events-none" style={{ background: "var(--gradient-mesh)" }} />
+              <SheetContent
+                side="left"
+                className="p-0 w-[280px] text-white border-0"
+                style={{ background: "var(--gradient-hero)" }}
+              >
+                <div
+                  className="absolute inset-0 opacity-60 pointer-events-none"
+                  style={{ background: "var(--gradient-mesh)" }}
+                />
                 <div className="relative z-10 flex flex-col h-full">
                   <SheetHeader className="p-4 border-b border-white/10">
                     <SheetTitle className="text-white flex items-center gap-2">
-                      <img src={logoPsicosafety} alt="PSICOSAFETY" className="h-8 w-8 object-contain bg-white rounded-md p-1" />
+                      <img
+                        src={logoPsicosafety}
+                        alt="PSICOSAFETY"
+                        className="h-8 w-8 object-contain bg-white rounded-md p-1"
+                      />
                       PSICOSAFETY
                     </SheetTitle>
-                    <div className="text-[10px] uppercase tracking-widest text-white/50 text-left">{tipoLabel}</div>
+                    <div className="text-[10px] uppercase tracking-widest text-white/50 text-left">
+                      {tipoLabel}
+                    </div>
                   </SheetHeader>
                   <nav className="flex-1 p-3 space-y-5 overflow-y-auto">
                     {Object.entries(grouped).map(([group, list]) => (
@@ -328,7 +511,11 @@ function AdminLayout() {
                     ))}
                   </nav>
                   <div className="p-3 border-t border-white/10">
-                    <Button variant="ghost" onClick={logout} className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10">
+                    <Button
+                      variant="ghost"
+                      onClick={logout}
+                      className="w-full justify-start text-white/80 hover:text-white hover:bg-white/10"
+                    >
                       <LogOut className="h-4 w-4 mr-2" /> Sair
                     </Button>
                   </div>
@@ -360,12 +547,17 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
     <div>
       <div className="flex justify-between text-[10px] text-white/70">
         <span>{label}</span>
-        <span className="tabular-nums font-medium">{used}/{max}</span>
+        <span className="tabular-nums font-medium">
+          {used}/{max}
+        </span>
       </div>
       <div className="h-1 rounded-full bg-white/10 overflow-hidden mt-0.5">
         <div
           className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: danger ? "var(--destructive)" : "var(--gradient-primary)" }}
+          style={{
+            width: `${pct}%`,
+            background: danger ? "var(--destructive)" : "var(--gradient-primary)",
+          }}
         />
       </div>
     </div>

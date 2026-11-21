@@ -6,19 +6,47 @@ export const Route = createFileRoute("/fatores-de-risco")({
   head: () => ({
     meta: [
       { title: "Fatores de Risco Psicossociais | PsicoSafe NR-01" },
-      { name: "description", content: "Conheça os fatores de riscos psicossociais relacionados ao trabalho avaliados na NR-01." },
+      {
+        name: "description",
+        content:
+          "Conheça os fatores de riscos psicossociais relacionados ao trabalho avaliados na NR-01.",
+      },
     ],
   }),
   component: Fatores,
 });
 
 const fatores = [
-  { icon: Clock, title: "Sobrecarga e ritmo de trabalho", desc: "Demandas quantitativas excessivas, prazos curtos e ritmo acelerado." },
-  { icon: Brain, title: "Demandas emocionais", desc: "Trabalho que exige esconder sentimentos ou lidar com situações emocionalmente desgastantes." },
-  { icon: Briefcase, title: "Baixa autonomia", desc: "Pouca influência sobre as próprias tarefas, métodos e ritmo." },
-  { icon: Users, title: "Falta de apoio social", desc: "Pouco apoio de colegas e da chefia, conflitos interpessoais." },
-  { icon: Shield, title: "Comportamentos ofensivos", desc: "Assédio moral, assédio sexual, discriminação e violência no trabalho." },
-  { icon: AlertTriangle, title: "Insegurança e mudanças", desc: "Insegurança quanto ao futuro do emprego e mudanças mal comunicadas." },
+  {
+    icon: Clock,
+    title: "Sobrecarga e ritmo de trabalho",
+    desc: "Demandas quantitativas excessivas, prazos curtos e ritmo acelerado.",
+  },
+  {
+    icon: Brain,
+    title: "Demandas emocionais",
+    desc: "Trabalho que exige esconder sentimentos ou lidar com situações emocionalmente desgastantes.",
+  },
+  {
+    icon: Briefcase,
+    title: "Baixa autonomia",
+    desc: "Pouca influência sobre as próprias tarefas, métodos e ritmo.",
+  },
+  {
+    icon: Users,
+    title: "Falta de apoio social",
+    desc: "Pouco apoio de colegas e da chefia, conflitos interpessoais.",
+  },
+  {
+    icon: Shield,
+    title: "Comportamentos ofensivos",
+    desc: "Assédio moral, assédio sexual, discriminação e violência no trabalho.",
+  },
+  {
+    icon: AlertTriangle,
+    title: "Insegurança e mudanças",
+    desc: "Insegurança quanto ao futuro do emprego e mudanças mal comunicadas.",
+  },
 ];
 
 function Fatores() {

@@ -119,7 +119,11 @@ export const cancelSubscription = createServerFn({ method: "POST" })
     }
 
     const sub = await stripe.subscriptions.update(subId, { cancel_at_period_end: true });
-    return { ok: true, immediately: false, cancelAt: sub.cancel_at ?? (sub as any).current_period_end ?? null };
+    return {
+      ok: true,
+      immediately: false,
+      cancelAt: sub.cancel_at ?? (sub as any).current_period_end ?? null,
+    };
   });
 
 export const resumeSubscription = createServerFn({ method: "POST" })

@@ -5,11 +5,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { bulkImportRespostas, type ImportRespostaRow, type ImportRespostasResult } from "@/lib/storage";
+import {
+  bulkImportRespostas,
+  type ImportRespostaRow,
+  type ImportRespostasResult,
+} from "@/lib/storage";
 import { PageHeader } from "@/components/admin/PageHeader";
 
 export const Route = createFileRoute("/admin/import-respostas")({
-  head: () => ({ meta: [{ title: "Importar Respostas | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [
+      { title: "Importar Respostas | PsicoSafe Admin" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ImportRespostasPage,
 });
 
@@ -58,7 +67,8 @@ function ImportRespostasPage() {
       }
       const data: ImportRespostaRow[] = parsed.map((r: any, i: number) => {
         if (!r.codigoEmpresa) throw new Error(`Linha ${i + 1}: campo codigoEmpresa ausente`);
-        if (!r.answers || typeof r.answers !== "object") throw new Error(`Linha ${i + 1}: answers ausente ou inválido`);
+        if (!r.answers || typeof r.answers !== "object")
+          throw new Error(`Linha ${i + 1}: answers ausente ou inválido`);
         return {
           codigoEmpresa: String(r.codigoEmpresa),
           setor: r.setor ?? undefined,
@@ -109,7 +119,10 @@ function ImportRespostasPage() {
             <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-muted-foreground mr-2 align-middle">
               <History className="h-3 w-3" /> Migração de dados históricos
             </span>
-            Importe respostas históricas (do APK ou outras fontes) preservando a data original. Formato: JSON com array de objetos contendo <code>codigoEmpresa</code>, <code>answers</code> e opcionalmente <code>setor</code>, <code>funcao</code>, <code>criadoEm</code>.
+            Importe respostas históricas (do APK ou outras fontes) preservando a data original.
+            Formato: JSON com array de objetos contendo <code>codigoEmpresa</code>,{" "}
+            <code>answers</code> e opcionalmente <code>setor</code>, <code>funcao</code>,{" "}
+            <code>criadoEm</code>.
           </>
         }
       />
@@ -140,7 +153,10 @@ function ImportRespostasPage() {
             </label>
             <Textarea
               value={text}
-              onChange={(e) => { setText(e.target.value); setResult(null); }}
+              onChange={(e) => {
+                setText(e.target.value);
+                setResult(null);
+              }}
               onBlur={() => text && doPreview(text)}
               rows={10}
               placeholder={TEMPLATE_JSON}
@@ -170,14 +186,20 @@ function ImportRespostasPage() {
                         <td className="pr-3 py-1">{r.codigoEmpresa}</td>
                         <td className="pr-3 py-1 text-muted-foreground">{r.setor || "—"}</td>
                         <td className="pr-3 py-1 text-muted-foreground">{r.funcao || "—"}</td>
-                        <td className="pr-3 py-1 text-muted-foreground">{r.criadoEm ? new Date(r.criadoEm).toLocaleDateString("pt-BR") : "—"}</td>
-                        <td className="py-1 text-muted-foreground">{Object.keys(r.answers).length} q.</td>
+                        <td className="pr-3 py-1 text-muted-foreground">
+                          {r.criadoEm ? new Date(r.criadoEm).toLocaleDateString("pt-BR") : "—"}
+                        </td>
+                        <td className="py-1 text-muted-foreground">
+                          {Object.keys(r.answers).length} q.
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {preview.length > 50 && (
-                  <div className="text-muted-foreground mt-2">… mais {preview.length - 50} linha(s)</div>
+                  <div className="text-muted-foreground mt-2">
+                    … mais {preview.length - 50} linha(s)
+                  </div>
                 )}
               </div>
               <Button className="mt-3" onClick={runImport} disabled={running}>
@@ -208,7 +230,9 @@ function ImportRespostasPage() {
                   </div>
                   <ul className="mt-1 text-xs space-y-0.5 max-h-40 overflow-auto">
                     {result.erros.map((e, i) => (
-                      <li key={i}>Linha {e.linha}: {e.mensagem}</li>
+                      <li key={i}>
+                        Linha {e.linha}: {e.mensagem}
+                      </li>
                     ))}
                   </ul>
                 </div>

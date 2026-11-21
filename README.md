@@ -31,13 +31,13 @@ Copie `.env.example` para `.env` e preencha. O mínimo para o app subir são as
 chaves do Supabase — todas estão no painel do Supabase em
 **Project Settings › Data API**.
 
-| Variável | Obrigatória | Para que serve |
-| --- | --- | --- |
-| `SUPABASE_URL` / `VITE_SUPABASE_URL` | sim | endereço do projeto Supabase |
-| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | sim | chave pública, respeita RLS |
-| `SUPABASE_SERVICE_ROLE_KEY` | para operações admin | ignora RLS, **só no servidor** |
-| `VITE_PUBLIC_APP_ORIGIN` ou `PUBLIC_APP_ORIGIN` | em produção, sim | domínio base dos links do questionário |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | só com assinatura | cobrança via Stripe |
+| Variável                                                     | Obrigatória          | Para que serve                         |
+| ------------------------------------------------------------ | -------------------- | -------------------------------------- |
+| `SUPABASE_URL` / `VITE_SUPABASE_URL`                         | sim                  | endereço do projeto Supabase           |
+| `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` | sim                  | chave pública, respeita RLS            |
+| `SUPABASE_SERVICE_ROLE_KEY`                                  | para operações admin | ignora RLS, **só no servidor**         |
+| `VITE_PUBLIC_APP_ORIGIN` ou `PUBLIC_APP_ORIGIN`              | em produção, sim     | domínio base dos links do questionário |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`                | só com assinatura    | cobrança via Stripe                    |
 
 Tudo que começa com `VITE_` **é embutido no bundle do navegador** e fica
 visível para qualquer visitante. Nunca coloque a `service_role` numa variável
@@ -64,15 +64,15 @@ execução, o que permite corrigir o domínio sem rebuildar.
 
 ## Comandos
 
-| Comando | O que faz |
-| --- | --- |
-| `npm run dev` | servidor de desenvolvimento com hot reload, porta 8080 |
-| `npm run build` | build de produção em `dist/` |
-| `npm start` | sobe o build de produção, porta 3000 (`PORT` e `HOST` mudam isso) |
-| `npm run preview` | build + start em sequência |
-| `npm run typecheck` | checagem de tipos do TypeScript |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier — reformata o projeto inteiro |
+| Comando             | O que faz                                                         |
+| ------------------- | ----------------------------------------------------------------- |
+| `npm run dev`       | servidor de desenvolvimento com hot reload, porta 8080            |
+| `npm run build`     | build de produção em `dist/`                                      |
+| `npm start`         | sobe o build de produção, porta 3000 (`PORT` e `HOST` mudam isso) |
+| `npm run preview`   | build + start em sequência                                        |
+| `npm run typecheck` | checagem de tipos do TypeScript                                   |
+| `npm run lint`      | ESLint                                                            |
+| `npm run format`    | Prettier — reformata o projeto inteiro                            |
 
 ## Como o projeto está montado
 

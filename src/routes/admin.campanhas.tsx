@@ -1,6 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Copy, Power, PowerOff, Pencil, ExternalLink, CalendarRange, Sparkles, Search, BarChart3, AlertTriangle, FileBarChart2, Layers } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Copy,
+  Power,
+  PowerOff,
+  Pencil,
+  ExternalLink,
+  CalendarRange,
+  Sparkles,
+  Search,
+  BarChart3,
+  AlertTriangle,
+  FileBarChart2,
+  Layers,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,27 +23,59 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { StatusBadge, type StatusKind } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { listEmpresas, type Empresa } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  listCampanhas, createCampanha, updateCampanha, deleteCampanha, statusVigencia,
-  listCampaignSectorIds, analisarSetoresDaCampanha, getReavaliacaoStats,
+  listCampanhas,
+  createCampanha,
+  updateCampanha,
+  deleteCampanha,
+  statusVigencia,
+  listCampaignSectorIds,
+  analisarSetoresDaCampanha,
+  getReavaliacaoStats,
   CAMPAIGN_TYPE_LABEL,
-  type CampanhaComEmpresa, type CampaignType, type ScopeMode, type SetorAnalise, type ReavaliacaoStats,
+  type CampanhaComEmpresa,
+  type CampaignType,
+  type ScopeMode,
+  type SetorAnalise,
+  type ReavaliacaoStats,
 } from "@/lib/campanhas";
 import { toast } from "sonner";
 import { buildQuestionarioUrl } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/admin/campanhas")({
-  head: () => ({ meta: [{ title: "Campanhas | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Campanhas | PsicoSafe Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: CampanhasPage,
 });
 
@@ -55,16 +102,18 @@ function CampanhasPage() {
   const refresh = async () => {
     const info = await import("@/lib/account").then((m) => m.getCurrentAccountInfo());
     const ownerOnly = info?.accountType === "consultor";
-    const [c, e] = await Promise.all([
-      listCampanhas({ ownerOnly }),
-      listEmpresas({ ownerOnly }),
-    ]);
+    const [c, e] = await Promise.all([listCampanhas({ ownerOnly }), listEmpresas({ ownerOnly })]);
     setCampanhas(c);
     setEmpresas(e);
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
-  const editing = useMemo(() => campanhas.find((c) => c.id === editId) ?? null, [editId, campanhas]);
+  const editing = useMemo(
+    () => campanhas.find((c) => c.id === editId) ?? null,
+    [editId, campanhas],
+  );
 
   const remove = async (id: string) => {
     if (!confirm("Excluir esta campanha? Respostas existentes serão mantidas.")) return;
@@ -104,7 +153,9 @@ function CampanhasPage() {
             <Button variant="outline" onClick={() => setOpenReaval(true)}>
               <Sparkles className="h-4 w-4 mr-1" /> Nova reavaliação setorial
             </Button>
-            <Button onClick={() => setOpenNew(true)}><Plus className="h-4 w-4 mr-1" /> Nova campanha</Button>
+            <Button onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Nova campanha
+            </Button>
           </div>
         }
       />
@@ -125,46 +176,70 @@ function CampanhasPage() {
             </TableHeader>
             <TableBody>
               {campanhas.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="py-2">
-                  <EmptyState
-                    icon={CalendarRange}
-                    title="Nenhuma campanha cadastrada"
-                    description="Crie uma campanha para abrir o período de coleta de respostas."
-                    action={<Button onClick={() => setOpenNew(true)}><Plus className="h-4 w-4 mr-1" /> Nova campanha</Button>}
-                  />
-                </TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={7} className="py-2">
+                    <EmptyState
+                      icon={CalendarRange}
+                      title="Nenhuma campanha cadastrada"
+                      description="Crie uma campanha para abrir o período de coleta de respostas."
+                      action={
+                        <Button onClick={() => setOpenNew(true)}>
+                          <Plus className="h-4 w-4 mr-1" /> Nova campanha
+                        </Button>
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
               )}
               {campanhas.map((c) => {
                 const st = statusVigencia(c);
-                const badgeKind: StatusKind = st === "ativa" ? "ativo" : st === "agendada" ? "em-analise" : "inativo";
-                const badgeLabel = st === "ativa" ? "Ativa" : st === "agendada" ? "Agendada" : "Encerrada";
-                const parent = c.parent_campaign_id ? campanhasPorId.get(c.parent_campaign_id) : null;
+                const badgeKind: StatusKind =
+                  st === "ativa" ? "ativo" : st === "agendada" ? "em-analise" : "inativo";
+                const badgeLabel =
+                  st === "ativa" ? "Ativa" : st === "agendada" ? "Agendada" : "Encerrada";
+                const parent = c.parent_campaign_id
+                  ? campanhasPorId.get(c.parent_campaign_id)
+                  : null;
                 return (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.empresa_nome}</TableCell>
                     <TableCell>
                       <div>{c.nome}</div>
-                      {parent && <div className="text-xs text-muted-foreground">↩ Reavaliação de: {parent.nome}</div>}
+                      {parent && (
+                        <div className="text-xs text-muted-foreground">
+                          ↩ Reavaliação de: {parent.nome}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <Badge variant="outline" className="w-fit">{CAMPAIGN_TYPE_LABEL[c.campaign_type]}</Badge>
+                        <Badge variant="outline" className="w-fit">
+                          {CAMPAIGN_TYPE_LABEL[c.campaign_type]}
+                        </Badge>
                         {c.scope_mode === "selected_sectors" ? (
                           <div className="text-xs text-muted-foreground max-w-[240px]">
                             {(c.setores_escopo ?? []).length === 0
                               ? "Sem setores selecionados"
-                              : (c.setores_escopo ?? []).map((s) => s.ges ? `${s.nome} (GES ${s.ges})` : s.nome).join(", ")}
+                              : (c.setores_escopo ?? [])
+                                  .map((s) => (s.ges ? `${s.nome} (GES ${s.ges})` : s.nome))
+                                  .join(", ")}
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">Todos os setores</span>
                         )}
                       </div>
                     </TableCell>
-                    <TableCell><code className="px-1.5 py-0.5 rounded bg-muted text-xs">{c.codigo}</code></TableCell>
+                    <TableCell>
+                      <code className="px-1.5 py-0.5 rounded bg-muted text-xs">{c.codigo}</code>
+                    </TableCell>
                     <TableCell className="text-sm">
                       {new Date(c.inicio).toLocaleDateString("pt-BR")}
                       {" → "}
-                      {c.fim ? new Date(c.fim).toLocaleDateString("pt-BR") : <span className="text-muted-foreground">sem fim</span>}
+                      {c.fim ? (
+                        new Date(c.fim).toLocaleDateString("pt-BR")
+                      ) : (
+                        <span className="text-muted-foreground">sem fim</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={badgeKind} label={badgeLabel} />
@@ -173,32 +248,88 @@ function CampanhasPage() {
                       <div className="inline-flex gap-1">
                         {c.campaign_type === "sector_reassessment" && (
                           <>
-                            <Button variant="ghost" size="sm" onClick={() => setStatsFor(c)} title="Ver respostas da reavaliação">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setStatsFor(c)}
+                              title="Ver respostas da reavaliação"
+                            >
                               <BarChart3 className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" asChild title="Gerar relatório da reavaliação (apenas GES reavaliados)">
-                              <Link to="/admin/relatorio" search={{ empresa: c.empresa_codigo, campanha: c.id } as any}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                              title="Gerar relatório da reavaliação (apenas GES reavaliados)"
+                            >
+                              <Link
+                                to="/admin/relatorio"
+                                search={{ empresa: c.empresa_codigo, campanha: c.id } as any}
+                              >
                                 <FileBarChart2 className="h-4 w-4" />
                               </Link>
                             </Button>
                             {c.parent_campaign_id && (
-                              <Button variant="ghost" size="sm" asChild title="Gerar consolidado atualizado (GES reavaliados usam respostas novas)">
-                                <Link to="/admin/relatorio" search={{ empresa: c.empresa_codigo, campanha: c.parent_campaign_id } as any}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                title="Gerar consolidado atualizado (GES reavaliados usam respostas novas)"
+                              >
+                                <Link
+                                  to="/admin/relatorio"
+                                  search={
+                                    {
+                                      empresa: c.empresa_codigo,
+                                      campanha: c.parent_campaign_id,
+                                    } as any
+                                  }
+                                >
                                   <Layers className="h-4 w-4" />
                                 </Link>
                               </Button>
                             )}
                           </>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => copy(c.codigo)} title="Copiar link"><Copy className="h-4 w-4" /></Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copy(c.codigo)}
+                          title="Copiar link"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" asChild title="Abrir">
-                          <a href={buildQuestionarioUrl(c.codigo)} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
+                          <a href={buildQuestionarioUrl(c.codigo)} target="_blank" rel="noreferrer">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => toggleAtiva(c.id, c.ativa)} title={c.ativa ? "Desativar" : "Ativar"}>
-                          {c.ativa ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleAtiva(c.id, c.ativa)}
+                          title={c.ativa ? "Desativar" : "Ativar"}
+                        >
+                          {c.ativa ? (
+                            <PowerOff className="h-4 w-4" />
+                          ) : (
+                            <Power className="h-4 w-4" />
+                          )}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setEditId(c.id)} title="Editar"><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => remove(c.id)} title="Excluir">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditId(c.id)}
+                          title="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(c.id)}
+                          title="Excluir"
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -242,7 +373,13 @@ function CampanhasPage() {
 type SetorOption = { id: string; nome: string; ges: string | null };
 
 function CampanhaDialog({
-  open, onOpenChange, empresas, campanhas, editing, presetReavaliacao, onSaved,
+  open,
+  onOpenChange,
+  empresas,
+  campanhas,
+  editing,
+  presetReavaliacao,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -294,7 +431,7 @@ function CampanhaDialog({
         setCampaignType("sector_reassessment");
         setScopeMode("selected_sectors");
         setNotes(
-          "Reavaliação solicitada para confirmar os resultados de maior criticidade psicossocial identificados na avaliação anterior, considerando os setores/GES selecionados."
+          "Reavaliação solicitada para confirmar os resultados de maior criticidade psicossocial identificados na avaliação anterior, considerando os setores/GES selecionados.",
         );
       } else {
         setNome("");
@@ -311,7 +448,10 @@ function CampanhaDialog({
 
   // Carrega setores da empresa selecionada
   useEffect(() => {
-    if (!open || !empresaId) { setSetores([]); return; }
+    if (!open || !empresaId) {
+      setSetores([]);
+      return;
+    }
     (async () => {
       setLoadingSetores(true);
       const { data } = await supabase
@@ -320,7 +460,9 @@ function CampanhaDialog({
         .eq("empresa_id", empresaId)
         .eq("status", "active")
         .order("nome");
-      setSetores(((data ?? []) as any[]).map((s) => ({ id: s.id, nome: s.nome, ges: s.ges ?? null })));
+      setSetores(
+        ((data ?? []) as any[]).map((s) => ({ id: s.id, nome: s.nome, ges: s.ges ?? null })),
+      );
       setLoadingSetores(false);
     })();
   }, [open, empresaId]);
@@ -337,14 +479,19 @@ function CampanhaDialog({
 
   // Carrega análise da campanha relacionada
   useEffect(() => {
-    if (!open || !parentId) { setAnalise(new Map()); return; }
+    if (!open || !parentId) {
+      setAnalise(new Map());
+      return;
+    }
     (async () => {
       try {
         const rows = await analisarSetoresDaCampanha(parentId);
         const m = new Map<string, SetorAnalise>();
         rows.forEach((r) => m.set(r.setor.toLowerCase(), r));
         setAnalise(m);
-      } catch { setAnalise(new Map()); }
+      } catch {
+        setAnalise(new Map());
+      }
     })();
   }, [open, parentId]);
 
@@ -356,28 +503,39 @@ function CampanhaDialog({
   const setoresFiltrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return setores;
-    return setores.filter((s) => s.nome.toLowerCase().includes(q) || (s.ges ?? "").toLowerCase().includes(q));
+    return setores.filter(
+      (s) => s.nome.toLowerCase().includes(q) || (s.ges ?? "").toLowerCase().includes(q),
+    );
   }, [setores, busca]);
 
   const toggleSetor = (id: string) => {
     setSelectedSetorIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
   const selecionarCriticos = () => {
     if (!parentId) return toast.error("Escolha a campanha relacionada primeiro");
-    if (analise.size === 0) return toast.info("A campanha relacionada não possui respostas para análise");
+    if (analise.size === 0)
+      return toast.info("A campanha relacionada não possui respostas para análise");
     const next = new Set(selectedSetorIds);
     let count = 0;
     setores.forEach((s) => {
       const a = analise.get(s.nome.toLowerCase());
-      if (a && a.critico) { next.add(s.id); count++; }
+      if (a && a.critico) {
+        next.add(s.id);
+        count++;
+      }
     });
     setSelectedSetorIds(next);
-    toast.success(count > 0 ? `${count} setor(es) crítico(s) selecionado(s)` : "Nenhum setor crítico encontrado na campanha anterior");
+    toast.success(
+      count > 0
+        ? `${count} setor(es) crítico(s) selecionado(s)`
+        : "Nenhum setor crítico encontrado na campanha anterior",
+    );
   };
 
   const limparSelecao = () => setSelectedSetorIds(new Set());
@@ -391,7 +549,8 @@ function CampanhaDialog({
     const inicioIso = fromLocalInput(inicio);
     const fimIso = fromLocalInput(fim);
     if (!inicioIso) return toast.error("Informe a data de início");
-    if (fimIso && new Date(fimIso) <= new Date(inicioIso)) return toast.error("Fim deve ser depois do início");
+    if (fimIso && new Date(fimIso) <= new Date(inicioIso))
+      return toast.error("Fim deve ser depois do início");
     if (scopeMode === "selected_sectors" && selectedSetorIds.size === 0) {
       return toast.error("Selecione pelo menos 1 setor/GES para o escopo da campanha");
     }
@@ -441,25 +600,40 @@ function CampanhaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Editar campanha" : presetReavaliacao ? "Nova Reavaliação Setorial Complementar" : "Nova campanha"}</DialogTitle>
+          <DialogTitle>
+            {editing
+              ? "Editar campanha"
+              : presetReavaliacao
+                ? "Nova Reavaliação Setorial Complementar"
+                : "Nova campanha"}
+          </DialogTitle>
           <DialogDescription>
-            Configure vigência, tipo e escopo. Para reavaliar só alguns setores/GES, escolha o escopo específico.
+            Configure vigência, tipo e escopo. Para reavaliar só alguns setores/GES, escolha o
+            escopo específico.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* 1. Dados básicos */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">1. Dados básicos</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              1. Dados básicos
+            </h3>
             <div>
               <Label>Empresa</Label>
               {editing ? (
                 <Input value={editing.empresa_nome} disabled className="bg-muted" />
               ) : (
                 <Select value={empresaId} onValueChange={setEmpresaId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a empresa..." /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa..." />
+                  </SelectTrigger>
                   <SelectContent>
-                    {empresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome} ({e.codigo})</SelectItem>)}
+                    {empresas.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.nome} ({e.codigo})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
@@ -467,34 +641,58 @@ function CampanhaDialog({
 
             <div>
               <Label>Nome da campanha</Label>
-              <Input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={200} placeholder="Ex.: Reavaliação 2026 — Setores críticos" />
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                maxLength={200}
+                placeholder="Ex.: Reavaliação 2026 — Setores críticos"
+              />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <Label>Tipo da campanha</Label>
-                <Select value={campaignType} onValueChange={(v) => setCampaignType(v as CampaignType)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={campaignType}
+                  onValueChange={(v) => setCampaignType(v as CampaignType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">Avaliação geral da empresa</SelectItem>
-                    <SelectItem value="sector_reassessment">Reavaliação de setores/GES específicos</SelectItem>
+                    <SelectItem value="sector_reassessment">
+                      Reavaliação de setores/GES específicos
+                    </SelectItem>
                     <SelectItem value="complementary">Avaliação complementar</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
                   {campaignType === "general" && "Todos os setores/GES ativos poderão responder."}
-                  {campaignType === "sector_reassessment" && "Apenas os setores/GES selecionados participarão."}
-                  {campaignType === "complementary" && "Usada para completar respostas em setores específicos."}
+                  {campaignType === "sector_reassessment" &&
+                    "Apenas os setores/GES selecionados participarão."}
+                  {campaignType === "complementary" &&
+                    "Usada para completar respostas em setores específicos."}
                 </p>
               </div>
               {showParent && (
                 <div>
                   <Label>Campanha relacionada</Label>
                   <Select value={parentId} onValueChange={setParentId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a campanha anterior..." /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a campanha anterior..." />
+                    </SelectTrigger>
                     <SelectContent>
-                      {parentOptions.length === 0 && <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhuma campanha anterior desta empresa</div>}
-                      {parentOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                      {parentOptions.length === 0 && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          Nenhuma campanha anterior desta empresa
+                        </div>
+                      )}
+                      {parentOptions.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -504,11 +702,17 @@ function CampanhaDialog({
 
           {/* 2. Vigência */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">2. Vigência</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              2. Vigência
+            </h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <Label>Início</Label>
-                <Input type="datetime-local" value={inicio} onChange={(e) => setInicio(e.target.value)} />
+                <Input
+                  type="datetime-local"
+                  value={inicio}
+                  onChange={(e) => setInicio(e.target.value)}
+                />
               </div>
               <div>
                 <Label>Fim (opcional)</Label>
@@ -516,28 +720,49 @@ function CampanhaDialog({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input id="ativa" type="checkbox" checked={ativa} onChange={(e) => setAtiva(e.target.checked)} />
-              <Label htmlFor="ativa" className="cursor-pointer">Campanha ativa</Label>
+              <input
+                id="ativa"
+                type="checkbox"
+                checked={ativa}
+                onChange={(e) => setAtiva(e.target.checked)}
+              />
+              <Label htmlFor="ativa" className="cursor-pointer">
+                Campanha ativa
+              </Label>
             </div>
           </section>
 
           {/* 3. Escopo */}
           {showScope && (
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">3. Escopo da campanha</h3>
-              <RadioGroup value={scopeMode} onValueChange={(v) => setScopeMode(v as ScopeMode)} className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                3. Escopo da campanha
+              </h3>
+              <RadioGroup
+                value={scopeMode}
+                onValueChange={(v) => setScopeMode(v as ScopeMode)}
+                className="space-y-2"
+              >
                 <div className="flex items-start gap-2">
                   <RadioGroupItem value="all_sectors" id="scope-all" className="mt-1" />
                   <div>
-                    <Label htmlFor="scope-all" className="cursor-pointer">Todos os setores/GES da empresa</Label>
-                    <p className="text-xs text-muted-foreground">Qualquer setor cadastrado poderá responder.</p>
+                    <Label htmlFor="scope-all" className="cursor-pointer">
+                      Todos os setores/GES da empresa
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Qualquer setor cadastrado poderá responder.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
                   <RadioGroupItem value="selected_sectors" id="scope-sel" className="mt-1" />
                   <div>
-                    <Label htmlFor="scope-sel" className="cursor-pointer">Setores/GES específicos</Label>
-                    <p className="text-xs text-muted-foreground">Somente os setores/GES abaixo participarão da campanha.</p>
+                    <Label htmlFor="scope-sel" className="cursor-pointer">
+                      Setores/GES específicos
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Somente os setores/GES abaixo participarão da campanha.
+                    </p>
                   </div>
                 </div>
               </RadioGroup>
@@ -547,45 +772,81 @@ function CampanhaDialog({
                   <div className="flex flex-wrap gap-2 items-center">
                     <div className="relative flex-1 min-w-[200px]">
                       <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                      <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar setor ou GES..." className="pl-8" />
+                      <Input
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        placeholder="Buscar setor ou GES..."
+                        className="pl-8"
+                      />
                     </div>
-                    <Button type="button" variant="outline" size="sm" onClick={selecionarCriticos} disabled={!parentId}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selecionarCriticos}
+                      disabled={!parentId}
+                    >
                       <Sparkles className="h-4 w-4 mr-1" /> Selecionar setores críticos
                     </Button>
-                    <Button type="button" variant="ghost" size="sm" onClick={limparSelecao}>Limpar</Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={limparSelecao}>
+                      Limpar
+                    </Button>
                   </div>
 
                   {!parentId && campaignType === "sector_reassessment" && (
                     <p className="text-xs text-muted-foreground">
-                      Escolha a <strong>campanha relacionada</strong> acima para habilitar a seleção automática de setores críticos.
+                      Escolha a <strong>campanha relacionada</strong> acima para habilitar a seleção
+                      automática de setores críticos.
                     </p>
                   )}
 
                   <div className="max-h-64 overflow-y-auto space-y-1">
-                    {loadingSetores && <p className="text-sm text-muted-foreground p-2">Carregando setores...</p>}
+                    {loadingSetores && (
+                      <p className="text-sm text-muted-foreground p-2">Carregando setores...</p>
+                    )}
                     {!loadingSetores && setoresFiltrados.length === 0 && (
                       <p className="text-sm text-muted-foreground p-2">
-                        {empresaId ? "Nenhum setor cadastrado para esta empresa." : "Selecione a empresa para listar setores."}
+                        {empresaId
+                          ? "Nenhum setor cadastrado para esta empresa."
+                          : "Selecione a empresa para listar setores."}
                       </p>
                     )}
                     {setoresFiltrados.map((s) => {
                       const a = analise.get(s.nome.toLowerCase());
                       const checked = selectedSetorIds.has(s.id);
                       return (
-                        <label key={s.id} className={`flex items-center gap-3 p-2 rounded hover:bg-background cursor-pointer ${checked ? "bg-background" : ""}`}>
+                        <label
+                          key={s.id}
+                          className={`flex items-center gap-3 p-2 rounded hover:bg-background cursor-pointer ${checked ? "bg-background" : ""}`}
+                        >
                           <Checkbox checked={checked} onCheckedChange={() => toggleSetor(s.id)} />
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium">
-                              {s.nome} {s.ges && <span className="text-muted-foreground">— GES {s.ges}</span>}
+                              {s.nome}{" "}
+                              {s.ges && (
+                                <span className="text-muted-foreground">— GES {s.ges}</span>
+                              )}
                             </div>
                             {a && (
                               <div className="text-xs text-muted-foreground">
                                 {a.respostas} resposta(s) na campanha anterior
-                                {a.label !== "—" && <> · <span className={
-                                  a.label === "Crítico" ? "text-destructive font-medium"
-                                  : a.label === "Alto" ? "text-orange-600 font-medium"
-                                  : ""
-                                }>{a.label}</span></>}
+                                {a.label !== "—" && (
+                                  <>
+                                    {" "}
+                                    ·{" "}
+                                    <span
+                                      className={
+                                        a.label === "Crítico"
+                                          ? "text-destructive font-medium"
+                                          : a.label === "Alto"
+                                            ? "text-orange-600 font-medium"
+                                            : ""
+                                      }
+                                    >
+                                      {a.label}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
@@ -604,7 +865,9 @@ function CampanhaDialog({
 
           {/* 4. Observações */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">4. Observações internas</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              4. Observações internas
+            </h3>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -616,7 +879,9 @@ function CampanhaDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
           <Button onClick={submit}>{editing ? "Salvar" : "Criar campanha"}</Button>
         </DialogFooter>
       </DialogContent>
@@ -624,12 +889,21 @@ function CampanhaDialog({
   );
 }
 
-function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEmpresa | null; onClose: () => void }) {
+function ReavaliacaoStatsDialog({
+  campanha,
+  onClose,
+}: {
+  campanha: CampanhaComEmpresa | null;
+  onClose: () => void;
+}) {
   const [stats, setStats] = useState<ReavaliacaoStats | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!campanha) { setStats(null); return; }
+    if (!campanha) {
+      setStats(null);
+      return;
+    }
     setLoading(true);
     getReavaliacaoStats(campanha)
       .then(setStats)
@@ -637,7 +911,7 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
       .finally(() => setLoading(false));
   }, [campanha]);
 
-  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleString("pt-BR") : "—";
+  const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("pt-BR") : "—");
 
   return (
     <Dialog open={!!campanha} onOpenChange={(o) => !o && onClose()}>
@@ -645,7 +919,8 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
         <DialogHeader>
           <DialogTitle>Respostas da reavaliação setorial</DialogTitle>
           <DialogDescription>
-            Contagem restrita a esta campanha, dentro do escopo de setores/GES e após o início da vigência.
+            Contagem restrita a esta campanha, dentro do escopo de setores/GES e após o início da
+            vigência.
           </DialogDescription>
         </DialogHeader>
 
@@ -653,13 +928,29 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
         {stats && (
           <div className="space-y-4">
             <div className="rounded-lg border p-3 text-sm space-y-1">
-              <div><strong>Empresa:</strong> {stats.empresaNome}</div>
-              <div><strong>Campanha:</strong> {stats.campanhaNome}</div>
-              <div><strong>Tipo:</strong> {CAMPAIGN_TYPE_LABEL[stats.campanhaTipo]}</div>
-              {stats.parentNome && <div><strong>Campanha original:</strong> {stats.parentNome}</div>}
-              <div><strong>Início da vigência:</strong> {fmt(stats.inicio)}</div>
-              <div><strong>Respostas válidas:</strong> {stats.totalValidas}</div>
-              <div><strong>Última resposta:</strong> {fmt(stats.ultimaResposta)}</div>
+              <div>
+                <strong>Empresa:</strong> {stats.empresaNome}
+              </div>
+              <div>
+                <strong>Campanha:</strong> {stats.campanhaNome}
+              </div>
+              <div>
+                <strong>Tipo:</strong> {CAMPAIGN_TYPE_LABEL[stats.campanhaTipo]}
+              </div>
+              {stats.parentNome && (
+                <div>
+                  <strong>Campanha original:</strong> {stats.parentNome}
+                </div>
+              )}
+              <div>
+                <strong>Início da vigência:</strong> {fmt(stats.inicio)}
+              </div>
+              <div>
+                <strong>Respostas válidas:</strong> {stats.totalValidas}
+              </div>
+              <div>
+                <strong>Última resposta:</strong> {fmt(stats.ultimaResposta)}
+              </div>
             </div>
 
             {stats.totalValidas === 0 && (
@@ -671,7 +962,8 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
             {stats.ignoradas.campanhaAntiga > 0 && (
               <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 flex gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                Atenção: existem {stats.ignoradas.campanhaAntiga} resposta(s) antiga(s) da empresa em outras campanhas — não fazem parte desta reavaliação e foram ignoradas.
+                Atenção: existem {stats.ignoradas.campanhaAntiga} resposta(s) antiga(s) da empresa
+                em outras campanhas — não fazem parte desta reavaliação e foram ignoradas.
               </div>
             )}
 
@@ -690,16 +982,26 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
                   </TableHeader>
                   <TableBody>
                     {stats.setores.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Sem setores no escopo.</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                          Sem setores no escopo.
+                        </TableCell>
+                      </TableRow>
                     )}
                     {stats.setores.map((s) => (
                       <TableRow key={s.setor_id}>
-                        <TableCell>{s.nome}{s.ges ? ` — GES ${s.ges}` : ""}</TableCell>
+                        <TableCell>
+                          {s.nome}
+                          {s.ges ? ` — GES ${s.ges}` : ""}
+                        </TableCell>
                         <TableCell className="text-right font-mono">{s.respostas}</TableCell>
                         <TableCell className="text-xs">{s.funcoes.join(", ") || "—"}</TableCell>
                         <TableCell className="text-xs">{fmt(s.ultimaResposta)}</TableCell>
                         <TableCell>
-                          <StatusBadge status={s.respostas > 0 ? "ativo" : "inativo"} label={s.respostas > 0 ? "Com resposta" : "Sem resposta"} />
+                          <StatusBadge
+                            status={s.respostas > 0 ? "ativo" : "inativo"}
+                            label={s.respostas > 0 ? "Com resposta" : "Sem resposta"}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -722,10 +1024,11 @@ function ReavaliacaoStatsDialog({ campanha, onClose }: { campanha: CampanhaComEm
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

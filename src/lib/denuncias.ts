@@ -53,7 +53,9 @@ function genProtocolo() {
   return `D-${y}-${r}`;
 }
 function genToken() {
-  return crypto.getRandomValues(new Uint8Array(12)).reduce((s, b) => s + b.toString(16).padStart(2, "0"), "");
+  return crypto
+    .getRandomValues(new Uint8Array(12))
+    .reduce((s, b) => s + b.toString(16).padStart(2, "0"), "");
 }
 
 export async function criarDenuncia(input: {
@@ -101,17 +103,26 @@ export async function criarDenuncia(input: {
 }
 
 export async function listarDenuncias(): Promise<Denuncia[]> {
-  const { data, error } = await supabase.from("denuncias" as any).select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("denuncias" as any)
+    .select("*")
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as unknown as Denuncia[];
 }
 
 export async function atualizarStatus(id: string, status: DenunciaStatus, parecer?: string) {
-  const { error } = await supabase.from("denuncias" as any).update({ status, parecer: parecer ?? null }).eq("id", id);
+  const { error } = await supabase
+    .from("denuncias" as any)
+    .update({ status, parecer: parecer ?? null })
+    .eq("id", id);
   if (error) throw error;
 }
 
-export async function consultarPorProtocolo(protocolo: string, token: string): Promise<Denuncia | null> {
+export async function consultarPorProtocolo(
+  protocolo: string,
+  token: string,
+): Promise<Denuncia | null> {
   // Usa RPC SECURITY DEFINER — anônimo não tem mais SELECT direto na tabela.
   const { data, error } = await supabase.rpc("consultar_denuncia_publica" as any, {
     p_protocolo: protocolo,

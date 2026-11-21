@@ -69,8 +69,12 @@ export async function getCurrentAccountInfo(): Promise<AccountUsage | null> {
       avaliacoesUsadas = count ?? 0;
     }
   } else if (accountType === "admin") {
-    const { count: ec } = await supabase.from("empresas").select("id", { count: "exact", head: true });
-    const { count: rc } = await supabase.from("respostas").select("id", { count: "exact", head: true });
+    const { count: ec } = await supabase
+      .from("empresas")
+      .select("id", { count: "exact", head: true });
+    const { count: rc } = await supabase
+      .from("respostas")
+      .select("id", { count: "exact", head: true });
     empresasUsadas = ec ?? 0;
     avaliacoesUsadas = rc ?? 0;
   } else {
@@ -94,7 +98,11 @@ export async function getCurrentAccountInfo(): Promise<AccountUsage | null> {
 }
 
 export async function listPlans(tipo?: AccountType) {
-  let q = supabase.from("plans" as any).select("*").eq("ativo", true).order("preco_mensal");
+  let q = supabase
+    .from("plans" as any)
+    .select("*")
+    .eq("ativo", true)
+    .order("preco_mensal");
   if (tipo) q = q.eq("tipo", tipo);
   const { data } = await q;
   return (data ?? []) as any[];

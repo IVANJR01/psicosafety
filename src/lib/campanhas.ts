@@ -126,7 +126,11 @@ export type CampanhaInput = {
 async function replaceCampaignSectors(campaignId: string, empresaId: string, setorIds: string[]) {
   await supabase.from("campaign_sectors").delete().eq("campaign_id", campaignId);
   if (setorIds.length === 0) return;
-  const rows = setorIds.map((sid) => ({ campaign_id: campaignId, empresa_id: empresaId, setor_id: sid }));
+  const rows = setorIds.map((sid) => ({
+    campaign_id: campaignId,
+    empresa_id: empresaId,
+    setor_id: sid,
+  }));
   const { error } = await supabase.from("campaign_sectors").insert(rows);
   if (error) throw error;
 }
@@ -166,7 +170,19 @@ export async function createCampanha(input: CampanhaInput): Promise<Campanha> {
 
 export async function updateCampanha(
   id: string,
-  patch: Partial<Pick<Campanha, "nome" | "inicio" | "fim" | "ativa" | "campaign_type" | "scope_mode" | "parent_campaign_id" | "notes">> & { setor_ids?: string[]; empresa_id?: string },
+  patch: Partial<
+    Pick<
+      Campanha,
+      | "nome"
+      | "inicio"
+      | "fim"
+      | "ativa"
+      | "campaign_type"
+      | "scope_mode"
+      | "parent_campaign_id"
+      | "notes"
+    >
+  > & { setor_ids?: string[]; empresa_id?: string },
 ) {
   const { setor_ids, empresa_id, ...rest } = patch as any;
   if (Object.keys(rest).length > 0) {
@@ -183,7 +199,9 @@ export async function deleteCampanha(id: string) {
   if (error) throw error;
 }
 
-export async function getCampanhaByCodigo(codigo: string): Promise<(Campanha & { empresa_nome: string; empresa_codigo: string }) | null> {
+export async function getCampanhaByCodigo(
+  codigo: string,
+): Promise<(Campanha & { empresa_nome: string; empresa_codigo: string }) | null> {
   const { data, error } = await supabase
     .from("campanhas")
     .select("*, empresas(nome, codigo)")
@@ -338,7 +356,10 @@ export function aplicarVigenciaReavaliacao<T extends RespostaLike>(
   respostas: T[],
   campanhas: CampanhaComEmpresa[],
 ): { respostas: T[]; substituicoes: VigenciaInfo[] } {
-  const norm = (s: string | null | undefined) => String(s ?? "").trim().toLowerCase();
+  const norm = (s: string | null | undefined) =>
+    String(s ?? "")
+      .trim()
+      .toLowerCase();
   const reavals = campanhas
     .filter((c) => c.campaign_type === "sector_reassessment")
     .slice()
@@ -356,7 +377,12 @@ export function aplicarVigenciaReavaliacao<T extends RespostaLike>(
       );
       if (hasResp) {
         vigente.set(key, c.id);
-        info.push({ empresaId: c.empresa_id, setorNome: s.nome, campanhaVigenteId: c.id, campanhaVigenteNome: c.nome });
+        info.push({
+          empresaId: c.empresa_id,
+          setorNome: s.nome,
+          campanhaVigenteId: c.id,
+          campanhaVigenteNome: c.nome,
+        });
       }
     });
   });
@@ -374,11 +400,13 @@ export function aplicarVigenciaReavaliacao<T extends RespostaLike>(
 }
 
 function normalizeSetor(s: string | null | undefined): string {
-  return String(s ?? "").trim().toLowerCase();
+  return String(s ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise<ReavaliacaoStats> {
-  const escopo = campanha.setores_escopo ?? await listCampaignSectors(campanha.id);
+  const escopo = campanha.setores_escopo ?? (await listCampaignSectors(campanha.id));
   const escopoByNome = new Map<string, CampanhaSetorEscopo>();
   escopo.forEach((s) => escopoByNome.set(normalizeSetor(s.nome), s));
 
@@ -394,24 +422,42 @@ export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise
   const byNome = new Map<string, { count: number; funcoes: Set<string>; ultima: string | null }>();
   let totalValidas = 0;
   let ultimaResposta: string | null = null;
-  const ig = { campanhaAntiga: 0, foraDoEscopo: 0, semSetor: 0, semFuncao: 0, anterioresAoInicio: 0 };
+  const ig = {
+    campanhaAntiga: 0,
+    foraDoEscopo: 0,
+    semSetor: 0,
+    semFuncao: 0,
+    anterioresAoInicio: 0,
+  };
 
   (campRows ?? []).forEach((r: any) => {
     const setorKey = normalizeSetor(r.setor);
-    if (!setorKey) { ig.semSetor++; return; }
-    if (new Date(r.created_at).getTime() < inicioMs) { ig.anterioresAoInicio++; return; }
+    if (!setorKey) {
+      ig.semSetor++;
+      return;
+    }
+    if (new Date(r.created_at).getTime() < inicioMs) {
+      ig.anterioresAoInicio++;
+      return;
+    }
     if (campanha.scope_mode === "selected_sectors" && !escopoByNome.has(setorKey)) {
-      ig.foraDoEscopo++; return;
+      ig.foraDoEscopo++;
+      return;
     }
     const funcao = String(r.funcao ?? "").trim();
-    if (!funcao) { ig.semFuncao++; return; }
+    if (!funcao) {
+      ig.semFuncao++;
+      return;
+    }
     const bucket = byNome.get(setorKey) ?? { count: 0, funcoes: new Set<string>(), ultima: null };
     bucket.count++;
     bucket.funcoes.add(funcao);
-    if (!bucket.ultima || new Date(r.created_at) > new Date(bucket.ultima)) bucket.ultima = r.created_at;
+    if (!bucket.ultima || new Date(r.created_at) > new Date(bucket.ultima))
+      bucket.ultima = r.created_at;
     byNome.set(setorKey, bucket);
     totalValidas++;
-    if (!ultimaResposta || new Date(r.created_at) > new Date(ultimaResposta)) ultimaResposta = r.created_at;
+    if (!ultimaResposta || new Date(r.created_at) > new Date(ultimaResposta))
+      ultimaResposta = r.created_at;
   });
 
   // Contagem de respostas antigas da empresa fora desta campanha (para alerta)
@@ -423,9 +469,13 @@ export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise
   ig.campanhaAntiga = outrasCampanhas ?? 0;
 
   const setores: ReavaliacaoSetorStat[] = (
-    campanha.scope_mode === "selected_sectors" ? escopo : Array.from(byNome.keys()).map((k) => ({
-      id: k, nome: k, ges: null,
-    }))
+    campanha.scope_mode === "selected_sectors"
+      ? escopo
+      : Array.from(byNome.keys()).map((k) => ({
+          id: k,
+          nome: k,
+          ges: null,
+        }))
   ).map((s) => {
     const b = byNome.get(normalizeSetor(s.nome));
     return {
@@ -440,7 +490,11 @@ export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise
 
   let parentNome: string | null = null;
   if (campanha.parent_campaign_id) {
-    const { data: p } = await supabase.from("campanhas").select("nome").eq("id", campanha.parent_campaign_id).maybeSingle();
+    const { data: p } = await supabase
+      .from("campanhas")
+      .select("nome")
+      .eq("id", campanha.parent_campaign_id)
+      .maybeSingle();
     parentNome = (p as any)?.nome ?? null;
   }
 
@@ -458,19 +512,28 @@ export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise
     ignoradas: ig,
   };
 
-  // eslint-disable-next-line no-console
-  console.log("[REAVALIACAO] campaign_id:", campanha.id,
-    "\n[REAVALIACAO] company_id:", campanha.empresa_id,
-    "\n[REAVALIACAO] setores permitidos:", escopo.map((s) => s.nome),
-    "\n[REAVALIACAO] respostas encontradas:", (campRows ?? []).length,
-    "\n[REAVALIACAO] respostas válidas:", totalValidas,
-    "\n[REAVALIACAO] ignoradas por campanha diferente (empresa):", ig.campanhaAntiga,
-    "\n[REAVALIACAO] ignoradas por setor fora do escopo:", ig.foraDoEscopo,
-    "\n[REAVALIACAO] ignoradas por data antiga:", ig.anterioresAoInicio,
-    "\n[REAVALIACAO] ignoradas sem setor:", ig.semSetor,
-    "\n[REAVALIACAO] ignoradas sem função:", ig.semFuncao,
+  console.log(
+    "[REAVALIACAO] campaign_id:",
+    campanha.id,
+    "\n[REAVALIACAO] company_id:",
+    campanha.empresa_id,
+    "\n[REAVALIACAO] setores permitidos:",
+    escopo.map((s) => s.nome),
+    "\n[REAVALIACAO] respostas encontradas:",
+    (campRows ?? []).length,
+    "\n[REAVALIACAO] respostas válidas:",
+    totalValidas,
+    "\n[REAVALIACAO] ignoradas por campanha diferente (empresa):",
+    ig.campanhaAntiga,
+    "\n[REAVALIACAO] ignoradas por setor fora do escopo:",
+    ig.foraDoEscopo,
+    "\n[REAVALIACAO] ignoradas por data antiga:",
+    ig.anterioresAoInicio,
+    "\n[REAVALIACAO] ignoradas sem setor:",
+    ig.semSetor,
+    "\n[REAVALIACAO] ignoradas sem função:",
+    ig.semFuncao,
   );
 
   return stats;
 }
-

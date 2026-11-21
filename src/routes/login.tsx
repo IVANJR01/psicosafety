@@ -12,10 +12,7 @@ import logoPsicosafety from "@/assets/psicosafety-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [
-      { title: "Acesso à plataforma | PSICOSAFETY" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Acesso à plataforma | PSICOSAFETY" }, { name: "robots", content: "noindex" }],
   }),
   component: LoginPage,
 });
@@ -95,7 +92,11 @@ function LoginPage() {
         <Card className="shadow-xl">
           <CardContent className="pt-8">
             <div className="flex justify-center">
-              <img src={logoPsicosafety} alt="PSICOSAFETY — Gestão de Riscos Psicossociais" className="h-28 w-auto object-contain" />
+              <img
+                src={logoPsicosafety}
+                alt="PSICOSAFETY — Gestão de Riscos Psicossociais"
+                className="h-28 w-auto object-contain"
+              />
             </div>
             <p className="text-center text-sm text-muted-foreground mt-2">
               Entre com suas credenciais para acessar os relatórios da sua empresa
@@ -111,17 +112,31 @@ function LoginPage() {
                 <form onSubmit={submitLogin} className="mt-4 space-y-4">
                   <div>
                     <Label htmlFor="email">E-mail</Label>
-                    <Input id="email" type="email" placeholder="seuemail@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seuemail@gmail.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="pass">Senha</Label>
-                    <Input id="pass" type="password" placeholder="Sua senha" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" required />
+                    <Input
+                      id="pass"
+                      type="password"
+                      placeholder="Sua senha"
+                      value={pass}
+                      onChange={(e) => setPass(e.target.value)}
+                      autoComplete="current-password"
+                      required
+                    />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Entrando..." : "Entrar"}
                   </Button>
-
-
                 </form>
               </TabsContent>
 
@@ -137,7 +152,9 @@ function LoginPage() {
                       >
                         <Briefcase className="h-4 w-4 mb-1.5 text-primary" />
                         <div className="text-sm font-semibold">Consultor</div>
-                        <div className="text-[11px] text-muted-foreground">Atendo várias empresas</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          Atendo várias empresas
+                        </div>
                       </button>
                       <button
                         type="button"
@@ -146,25 +163,48 @@ function LoginPage() {
                       >
                         <Building2 className="h-4 w-4 mb-1.5 text-primary" />
                         <div className="text-sm font-semibold">Empresa</div>
-                        <div className="text-[11px] text-muted-foreground">Avaliar minha equipe</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          Avaliar minha equipe
+                        </div>
                       </button>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-2 flex items-start gap-1">
                       <ShieldCheck className="h-3 w-3 mt-0.5 shrink-0" />
-                      Acesso de administrador é concedido manualmente — não está disponível no cadastro público.
+                      Acesso de administrador é concedido manualmente — não está disponível no
+                      cadastro público.
                     </p>
                   </div>
                   <div>
                     <Label htmlFor="name">Nome</Label>
-                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email2">E-mail</Label>
-                    <Input id="email2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+                    <Input
+                      id="email2"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="pass2">Senha</Label>
-                    <Input id="pass2" type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="new-password" minLength={6} required />
+                    <Input
+                      id="pass2"
+                      type="password"
+                      value={pass}
+                      onChange={(e) => setPass(e.target.value)}
+                      autoComplete="new-password"
+                      minLength={6}
+                      required
+                    />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? "Criando..." : "Criar conta"}
@@ -174,11 +214,21 @@ function LoginPage() {
             </Tabs>
 
             <p className="text-xs text-center text-muted-foreground mt-6">
-              Ainda não tem conta de empresa atribuída? <a href="https://wa.me/5588996349359?text=Ol%C3%A1!%20Gostaria%20de%20uma%20conta%20de%20empresa%20na%20PSICOSAFETY." target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Fale conosco</a>
+              Ainda não tem conta de empresa atribuída?{" "}
+              <a
+                href="https://wa.me/5588996349359?text=Ol%C3%A1!%20Gostaria%20de%20uma%20conta%20de%20empresa%20na%20PSICOSAFETY."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Fale conosco
+              </a>
             </p>
           </CardContent>
         </Card>
-        <p className="text-[11px] text-muted-foreground mt-4 text-center">© {new Date().getFullYear()} PSICOSAFETY</p>
+        <p className="text-[11px] text-muted-foreground mt-4 text-center">
+          © {new Date().getFullYear()} PSICOSAFETY
+        </p>
       </div>
     </div>
   );
