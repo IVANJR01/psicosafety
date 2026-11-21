@@ -2,7 +2,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { ShieldAlert, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import logoPsicosafety from "@/assets/psicosafety-logo.png";
+import logoPsicosafety from "@/assets/psicosafety-logo.webp";
 
 const nav = [
   { to: "/", label: "Início" },
