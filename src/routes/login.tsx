@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { adminLogin, adminSignup, getCurrentUser, isAdmin, isEmpresaUser } from "@/lib/storage";
 import { toast } from "sonner";
-import logoPsicosafety from "@/assets/psicosafety-logo.png";
+import logoPsicosafety from "@/assets/psicosafety-logo.webp";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
