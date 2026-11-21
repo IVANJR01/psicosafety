@@ -41,8 +41,7 @@ function origemDoServidor(): string | undefined {
   const doAmbiente = process.env.PUBLIC_APP_ORIGIN;
   if (doAmbiente) return doAmbiente;
 
-  const host =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   return host ? `https://${host}` : undefined;
 }
 

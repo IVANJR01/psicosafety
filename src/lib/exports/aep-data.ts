@@ -16,7 +16,8 @@ export function respostasSemFuncao(rs: Resposta[]): Resposta[] {
 // =====================================================================
 // GES (Grupo de Exposição Similar) — chaveamento, formatação e validação
 // =====================================================================
-export const MSG_RELATORIO_GES_BLOQUEADO = "Relatório bloqueado: o agrupamento por GES não foi aplicado corretamente.";
+export const MSG_RELATORIO_GES_BLOQUEADO =
+  "Relatório bloqueado: o agrupamento por GES não foi aplicado corretamente.";
 
 function normalizarChaveGes(v: string): string {
   return String(v ?? "")
@@ -80,7 +81,10 @@ export function validarSetorGes(respostas: Resposta[], gesMap?: GesMap): Validac
     const ges = lookupGes(codigo, setor, gesMap);
     if (!ges) {
       const k = gesMapKey(codigo, setor);
-      if (!semGesSeen.has(k)) { semGesSeen.add(k); semGes.push({ codigo, setor }); }
+      if (!semGesSeen.has(k)) {
+        semGesSeen.add(k);
+        semGes.push({ codigo, setor });
+      }
     } else {
       const k = `${codigo.toLowerCase()}|${formatGes(ges).toUpperCase()}`;
       if (!dupMap.has(k)) dupMap.set(k, new Set());
@@ -105,9 +109,7 @@ export function validarSetorGes(respostas: Resposta[], gesMap?: GesMap): Validac
  * e contaminar o intervalo.
  */
 export function periodoDeColeta(respostas: Resposta[]): { inicio?: string; fim?: string } {
-  const ts = respostas
-    .map((r) => new Date(r.criadoEm).getTime())
-    .filter((t) => Number.isFinite(t));
+  const ts = respostas.map((r) => new Date(r.criadoEm).getTime()).filter((t) => Number.isFinite(t));
   if (ts.length === 0) return {};
   const fmt = (t: number) => new Date(t).toLocaleDateString("pt-BR");
   return { inicio: fmt(Math.min(...ts)), fim: fmt(Math.max(...ts)) };
@@ -123,7 +125,11 @@ export function probabilidadeFromPct(pct: number): 1 | 2 | 3 | 4 | 5 {
 }
 
 export const PROB_LABEL: Record<number, string> = {
-  1: "Baixa", 2: "Moderada", 3: "Significativa", 4: "Alta", 5: "Muito alta",
+  1: "Baixa",
+  2: "Moderada",
+  3: "Significativa",
+  4: "Alta",
+  5: "Muito alta",
 };
 
 // ----- Severidade por fator (1..5) — assédio/violência/discriminação = 5 -----
@@ -133,7 +139,11 @@ export const PROB_LABEL: Record<number, string> = {
 export { SEVERIDADE_DIM as SEVERIDADE_FATOR } from "@/lib/risco-matriz";
 
 export const SEV_LABEL: Record<number, string> = {
-  1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica",
+  1: "Leve",
+  2: "Baixa",
+  3: "Moderada",
+  4: "Alta",
+  5: "Crítica",
 };
 
 // ----- Classificação Risco = P x S (Matriz 5x5 — NR-01 / AIHA / ISO 31000) -----
@@ -148,39 +158,39 @@ export type Nivel5 = "TRIVIAL" | "TOLERÁVEL" | "MODERADO" | "SUBSTANCIAL" | "IN
 
 export type ClassRisco = {
   valor: number;
-  nivel: NivelRisco;       // mantido p/ compatibilidade (interpretações por dimensão)
-  nivel5: Nivel5;          // classificação oficial 5-níveis exibida no sistema
+  nivel: NivelRisco; // mantido p/ compatibilidade (interpretações por dimensão)
+  nivel5: Nivel5; // classificação oficial 5-níveis exibida no sistema
   cor: [number, number, number]; // RGB (cor oficial do nível 5)
   acao: string;
 };
 
 export const NIVEL5_COR: Record<Nivel5, [number, number, number]> = {
-  TRIVIAL:     [134, 239, 172], // verde claro
-  TOLERÁVEL:   [34, 197, 94],   // verde
-  MODERADO:    [234, 179, 8],   // amarelo
-  SUBSTANCIAL: [249, 115, 22],  // laranja
-  INTOLERÁVEL: [220, 38, 38],   // vermelho
+  TRIVIAL: [134, 239, 172], // verde claro
+  TOLERÁVEL: [34, 197, 94], // verde
+  MODERADO: [234, 179, 8], // amarelo
+  SUBSTANCIAL: [249, 115, 22], // laranja
+  INTOLERÁVEL: [220, 38, 38], // vermelho
 };
 
 export const NIVEL5_FILL: Record<Nivel5, [number, number, number]> = {
-  TRIVIAL:     [220, 252, 231],
-  TOLERÁVEL:   [187, 247, 208],
-  MODERADO:    [254, 249, 195],
+  TRIVIAL: [220, 252, 231],
+  TOLERÁVEL: [187, 247, 208],
+  MODERADO: [254, 249, 195],
   SUBSTANCIAL: [255, 237, 213],
   INTOLERÁVEL: [254, 226, 226],
 };
 
 export const NIVEL5_FAIXA: Record<Nivel5, string> = {
-  TRIVIAL:     "1 - 3",
-  TOLERÁVEL:   "4 - 8",
-  MODERADO:    "9 - 12",
+  TRIVIAL: "1 - 3",
+  TOLERÁVEL: "4 - 8",
+  MODERADO: "9 - 12",
   SUBSTANCIAL: "13 - 15",
   INTOLERÁVEL: "16 - 25",
 };
 
 export function nivel5FromValor(v: number): Nivel5 {
-  if (v <= 3)  return "TRIVIAL";
-  if (v <= 8)  return "TOLERÁVEL";
+  if (v <= 3) return "TRIVIAL";
+  if (v <= 8) return "TOLERÁVEL";
   if (v <= 12) return "MODERADO";
   if (v <= 15) return "SUBSTANCIAL";
   return "INTOLERÁVEL";
@@ -190,7 +200,7 @@ export function nivel5FromValor(v: number): Nivel5 {
 export function nivel4From5(n5: Nivel5): NivelRisco {
   if (n5 === "INTOLERÁVEL") return "Crítico";
   if (n5 === "SUBSTANCIAL") return "Alto";
-  if (n5 === "MODERADO")    return "Médio";
+  if (n5 === "MODERADO") return "Médio";
   return "Baixo"; // TRIVIAL + TOLERÁVEL
 }
 
@@ -219,9 +229,9 @@ export function classificarRisco(p: number, s: number): ClassRisco {
   const n5 = nivel5FromValor(v);
   const nivel = nivel4From5(n5);
   const acaoMap: Record<Nivel5, string> = {
-    TRIVIAL:     "Nenhuma ação necessária",
-    TOLERÁVEL:   "Monitoramento",
-    MODERADO:    "Controle adicional, se viável",
+    TRIVIAL: "Nenhuma ação necessária",
+    TOLERÁVEL: "Monitoramento",
+    MODERADO: "Controle adicional, se viável",
     SUBSTANCIAL: "Controle necessário",
     INTOLERÁVEL: "Ação imediata ou interrupção da atividade",
   };
@@ -231,27 +241,26 @@ export function classificarRisco(p: number, s: number): ClassRisco {
 // ----- Linha consolidada por fator psicossocial -----
 export type LinhaFator = {
   dim: Dimension;
-  scorePct: number;       // % geral de criticidade
-  prob: number;           // 1..5
-  sev: number;            // 1..5
+  scorePct: number; // % geral de criticidade
+  prob: number; // 1..5
+  sev: number; // 1..5
   risco: ClassRisco;
   classifPsico: NivelRisco; // classificação psicossocial pelo percentual (independe da matriz P×S)
-  n: number;              // respondentes
+  n: number; // respondentes
 };
-
 
 // ----- Linha por GES / Setores -----
 export type FuncaoAgg = { funcao: string; n: number };
 export type LinhaSetorAep = {
   setor: string;
-  ges: string | null;            // GES vinculado (quando cadastrado)
-  label: string;                 // "GES 08 — ALMOXARIFADO" ou apenas o nome
-  codigoEmpresa: string;         // primeiro código de empresa do bucket
+  ges: string | null; // GES vinculado (quando cadastrado)
+  label: string; // "GES 08 — ALMOXARIFADO" ou apenas o nome
+  codigoEmpresa: string; // primeiro código de empresa do bucket
   n: number;
-  funcoes: FuncaoAgg[];          // funções/cargos do setor com contagem
+  funcoes: FuncaoAgg[]; // funções/cargos do setor com contagem
   fatores: LinhaFator[];
-  fatorPrincipal: LinhaFator;    // fator de maior risco no setor
-  riscoMaior: ClassRisco;        // maior risco do setor
+  fatorPrincipal: LinhaFator; // fator de maior risco no setor
+  riscoMaior: ClassRisco; // maior risco do setor
 };
 
 // ----- Texto interpretativo automático (genérico, por nível) -----
@@ -273,40 +282,58 @@ export function textoInterpretacao(nivel: NivelRisco): string {
 // um parágrafo técnico-executivo específico — não genérico.
 const INTERPRETACAO_FATOR: Record<string, Record<NivelRisco, string>> = {
   demandas: {
-    Baixo: "Os indicadores apontam carga de trabalho percebida como compatível com os recursos disponíveis. Recomenda-se preservar o equilíbrio entre demandas quantitativas, cognitivas e emocionais, monitorando picos sazonais e mudanças organizacionais.",
-    Médio: "Os resultados sinalizam percepção moderada de sobrecarga, com indícios de pressão temporal e acúmulo de tarefas em parte da população avaliada. Recomenda-se mapear gargalos por setor/função, revisar dimensionamento de equipe e definir critérios claros de priorização.",
+    Baixo:
+      "Os indicadores apontam carga de trabalho percebida como compatível com os recursos disponíveis. Recomenda-se preservar o equilíbrio entre demandas quantitativas, cognitivas e emocionais, monitorando picos sazonais e mudanças organizacionais.",
+    Médio:
+      "Os resultados sinalizam percepção moderada de sobrecarga, com indícios de pressão temporal e acúmulo de tarefas em parte da população avaliada. Recomenda-se mapear gargalos por setor/função, revisar dimensionamento de equipe e definir critérios claros de priorização.",
     Alto: "Os resultados indicam percepção elevada de sobrecarga ocupacional, associada a excesso de demandas, pressão temporal e incompatibilidade entre exigências e recursos disponíveis. O cenário pode contribuir para fadiga mental, estresse ocupacional e aumento da probabilidade de afastamentos. Recomenda-se intervenção prioritária com redesenho de processos, redistribuição de carga e pactuação de metas realistas.",
-    Crítico: "Os indicadores revelam sobrecarga ocupacional crítica, com forte risco de adoecimento mental, queda de produtividade e aumento expressivo de afastamentos. Recomenda-se ação imediata: revisão emergencial do dimensionamento, suspensão temporária de demandas não essenciais, avaliação clínica/ocupacional dos trabalhadores expostos e registro do fator com prioridade máxima no inventário do PGR.",
+    Crítico:
+      "Os indicadores revelam sobrecarga ocupacional crítica, com forte risco de adoecimento mental, queda de produtividade e aumento expressivo de afastamentos. Recomenda-se ação imediata: revisão emergencial do dimensionamento, suspensão temporária de demandas não essenciais, avaliação clínica/ocupacional dos trabalhadores expostos e registro do fator com prioridade máxima no inventário do PGR.",
   },
   organizacao: {
-    Baixo: "A organização do trabalho é percebida como clara, com autonomia adequada e papéis bem definidos. Manter práticas de comunicação, governança e participação dos trabalhadores nas decisões.",
-    Médio: "Foram identificados sinais moderados de baixa autonomia, ambiguidade de papéis ou comunicação organizacional insuficiente. Recomenda-se revisar fluxos decisórios, clarificar responsabilidades e ampliar canais de escuta.",
+    Baixo:
+      "A organização do trabalho é percebida como clara, com autonomia adequada e papéis bem definidos. Manter práticas de comunicação, governança e participação dos trabalhadores nas decisões.",
+    Médio:
+      "Foram identificados sinais moderados de baixa autonomia, ambiguidade de papéis ou comunicação organizacional insuficiente. Recomenda-se revisar fluxos decisórios, clarificar responsabilidades e ampliar canais de escuta.",
     Alto: "Os resultados indicam fragilidade significativa na organização do trabalho, com percepção de baixa autonomia, falta de previsibilidade e ambiguidade de papéis. Esse cenário favorece estresse, ansiedade e desengajamento. Recomenda-se intervenção prioritária junto à liderança, com revisão de processos decisórios, descrições de cargo e governança.",
-    Crítico: "A organização do trabalho apresenta-se crítica, com possível desorganização sistêmica, baixa autonomia e ausência de clareza de papéis em parcela relevante da população. Risco elevado de adoecimento coletivo e perda de talentos. Recomenda-se ação imediata da alta direção com plano de reestruturação organizacional acompanhado pelo SESMT/RH.",
+    Crítico:
+      "A organização do trabalho apresenta-se crítica, com possível desorganização sistêmica, baixa autonomia e ausência de clareza de papéis em parcela relevante da população. Risco elevado de adoecimento coletivo e perda de talentos. Recomenda-se ação imediata da alta direção com plano de reestruturação organizacional acompanhado pelo SESMT/RH.",
   },
   relacoes: {
-    Baixo: "As relações no ambiente de trabalho são percebidas como cooperativas e respeitosas, com bom suporte entre colegas e lideranças. Manter práticas de feedback, integração e desenvolvimento de liderança.",
-    Médio: "Indícios moderados de fragilidade no suporte social, atritos pontuais ou falta de reconhecimento. Recomenda-se programas de desenvolvimento de liderança humanizada, mediação de conflitos e fortalecimento de cultura colaborativa.",
+    Baixo:
+      "As relações no ambiente de trabalho são percebidas como cooperativas e respeitosas, com bom suporte entre colegas e lideranças. Manter práticas de feedback, integração e desenvolvimento de liderança.",
+    Médio:
+      "Indícios moderados de fragilidade no suporte social, atritos pontuais ou falta de reconhecimento. Recomenda-se programas de desenvolvimento de liderança humanizada, mediação de conflitos e fortalecimento de cultura colaborativa.",
     Alto: "Os resultados apontam déficit relevante de apoio social no trabalho, com fragilidade no suporte de colegas e/ou lideranças, conflitos interpessoais e baixo reconhecimento. Esse cenário potencializa estresse, adoecimento mental e turnover. Recomenda-se intervenção prioritária com capacitação de lideranças, programas de reconhecimento e mediação estruturada de conflitos.",
-    Crítico: "Cenário crítico de relações no trabalho, com forte percepção de ausência de apoio, conflitos não resolvidos e possível normalização de práticas inadequadas de liderança. Recomenda-se ação imediata: diagnóstico aprofundado por escuta qualificada, avaliação de denúncias e plano emergencial de desenvolvimento de lideranças.",
+    Crítico:
+      "Cenário crítico de relações no trabalho, com forte percepção de ausência de apoio, conflitos não resolvidos e possível normalização de práticas inadequadas de liderança. Recomenda-se ação imediata: diagnóstico aprofundado por escuta qualificada, avaliação de denúncias e plano emergencial de desenvolvimento de lideranças.",
   },
   interface: {
-    Baixo: "A interface trabalho-vida é percebida como saudável, com fronteiras respeitadas e baixa interferência do trabalho na vida pessoal. Manter políticas de desconexão e respeito a jornada.",
-    Médio: "Sinais moderados de invasão do trabalho na vida pessoal (mensagens fora do expediente, dificuldade de desconectar). Recomenda-se formalizar política de desconexão e revisar práticas de comunicação assíncrona.",
+    Baixo:
+      "A interface trabalho-vida é percebida como saudável, com fronteiras respeitadas e baixa interferência do trabalho na vida pessoal. Manter políticas de desconexão e respeito a jornada.",
+    Médio:
+      "Sinais moderados de invasão do trabalho na vida pessoal (mensagens fora do expediente, dificuldade de desconectar). Recomenda-se formalizar política de desconexão e revisar práticas de comunicação assíncrona.",
     Alto: "Identificada percepção elevada de conflito trabalho-vida, com sobrecarga fora do expediente, dificuldade de desconexão e impacto sobre descanso e vida familiar. Risco aumentado de insônia, esgotamento e adoecimento. Recomenda-se intervenção prioritária com política formal de direito à desconexão, governança de jornada e revisão de práticas de liderança.",
-    Crítico: "Conflito trabalho-vida em nível crítico, com forte invasão da vida pessoal pelo trabalho e potencial de adoecimento severo. Recomenda-se ação imediata: auditoria de jornada, suspensão de práticas de comunicação fora do expediente e plano de recuperação do equilíbrio trabalho-vida.",
+    Crítico:
+      "Conflito trabalho-vida em nível crítico, com forte invasão da vida pessoal pelo trabalho e potencial de adoecimento severo. Recomenda-se ação imediata: auditoria de jornada, suspensão de práticas de comunicação fora do expediente e plano de recuperação do equilíbrio trabalho-vida.",
   },
   saude: {
-    Baixo: "Os indicadores de saúde, energia e sono apresentam-se estáveis. Manter ações de promoção da saúde mental, qualidade de vida e prevenção do esgotamento.",
-    Médio: "Sinais moderados de fadiga, estresse persistente ou prejuízo no sono em parte da população. Recomenda-se ampliar ações de promoção da saúde mental, oferta de apoio psicológico e revisão de fatores organizacionais associados.",
+    Baixo:
+      "Os indicadores de saúde, energia e sono apresentam-se estáveis. Manter ações de promoção da saúde mental, qualidade de vida e prevenção do esgotamento.",
+    Médio:
+      "Sinais moderados de fadiga, estresse persistente ou prejuízo no sono em parte da população. Recomenda-se ampliar ações de promoção da saúde mental, oferta de apoio psicológico e revisão de fatores organizacionais associados.",
     Alto: "Os resultados indicam comprometimento elevado da saúde mental e do bem-estar, com sinais de esgotamento, estresse persistente e prejuízo do sono. O cenário é compatível com risco aumentado de burnout, depressão e doenças psicossomáticas. Recomenda-se intervenção prioritária com programa de saúde mental, acesso facilitado a apoio psicológico e revisão das causas organizacionais.",
-    Crítico: "Indicadores críticos de adoecimento mental coletivo, compatíveis com quadro de burnout instalado em parcela relevante dos trabalhadores. Recomenda-se ação imediata: avaliação clínica/ocupacional dos expostos, plano emergencial de saúde mental, revisão organizacional das causas e acompanhamento por equipe multiprofissional especializada.",
+    Crítico:
+      "Indicadores críticos de adoecimento mental coletivo, compatíveis com quadro de burnout instalado em parcela relevante dos trabalhadores. Recomenda-se ação imediata: avaliação clínica/ocupacional dos expostos, plano emergencial de saúde mental, revisão organizacional das causas e acompanhamento por equipe multiprofissional especializada.",
   },
   ofensivos: {
-    Baixo: "Não foram identificados indícios relevantes de comportamentos ofensivos no recorte avaliado. Manter políticas de prevenção, canal de denúncias ativo e capacitação periódica conforme Lei 14.457/2022.",
-    Médio: "Foram identificados indícios moderados de comportamentos ofensivos. Recomenda-se reforço imediato do canal de denúncias, comunicação institucional sobre tolerância zero e capacitação de lideranças.",
+    Baixo:
+      "Não foram identificados indícios relevantes de comportamentos ofensivos no recorte avaliado. Manter políticas de prevenção, canal de denúncias ativo e capacitação periódica conforme Lei 14.457/2022.",
+    Médio:
+      "Foram identificados indícios moderados de comportamentos ofensivos. Recomenda-se reforço imediato do canal de denúncias, comunicação institucional sobre tolerância zero e capacitação de lideranças.",
     Alto: "Os resultados indicam presença significativa de comportamentos ofensivos no ambiente de trabalho — possível assédio moral, sexual, violência e/ou discriminação. Cenário de alto impacto sobre saúde, dignidade e clima organizacional. Recomenda-se intervenção prioritária: apuração formal, proteção das pessoas envolvidas, comunicação institucional firme e plano estruturado de prevenção.",
-    Crítico: "Cenário crítico com forte indicação de comportamentos ofensivos (assédio moral, assédio sexual, violência e/ou discriminação). Risco grave de adoecimento, judicialização e dano reputacional. Recomenda-se ação imediata da alta direção: apuração com sigilo e proteção das vítimas, medidas administrativas cabíveis, acionamento do Comitê/CIPA conforme Lei 14.457/2022 e plano corporativo de tolerância zero.",
+    Crítico:
+      "Cenário crítico com forte indicação de comportamentos ofensivos (assédio moral, assédio sexual, violência e/ou discriminação). Risco grave de adoecimento, judicialização e dano reputacional. Recomenda-se ação imediata da alta direção: apuração com sigilo e proteção das vítimas, medidas administrativas cabíveis, acionamento do Comitê/CIPA conforme Lei 14.457/2022 e plano corporativo de tolerância zero.",
   },
 };
 
@@ -325,18 +352,31 @@ export function caracterizarExposicao(f: LinhaFator): {
   grupo: string;
 } {
   const duracao =
-    f.prob >= 4 ? "Contínua / habitual" :
-    f.prob >= 3 ? "Prolongada"          :
-    f.prob >= 2 ? "Intermitente"        : "Esporádica";
+    f.prob >= 4
+      ? "Contínua / habitual"
+      : f.prob >= 3
+        ? "Prolongada"
+        : f.prob >= 2
+          ? "Intermitente"
+          : "Esporádica";
   const frequencia =
-    f.prob >= 4 ? "Diária"                     :
-    f.prob >= 3 ? "Várias vezes por semana"    :
-    f.prob >= 2 ? "Semanal / mensal"           : "Eventual";
+    f.prob >= 4
+      ? "Diária"
+      : f.prob >= 3
+        ? "Várias vezes por semana"
+        : f.prob >= 2
+          ? "Semanal / mensal"
+          : "Eventual";
   const intensidade =
-    f.sev >= 5 ? "Crítica"   :
-    f.sev >= 4 ? "Alta"      :
-    f.sev >= 3 ? "Moderada"  :
-    f.sev >= 2 ? "Baixa"     : "Leve";
+    f.sev >= 5
+      ? "Crítica"
+      : f.sev >= 4
+        ? "Alta"
+        : f.sev >= 3
+          ? "Moderada"
+          : f.sev >= 2
+            ? "Baixa"
+            : "Leve";
   const grupo = f.n > 0 ? `${f.n} trabalhador(es) avaliado(s)` : "—";
   return { duracao, frequencia, intensidade, grupo };
 }
@@ -347,10 +387,14 @@ export function caracterizarExposicao(f: LinhaFator): {
 // em operação. Coluna obrigatória no inventário segundo o Manual GRO/PGR.
 export function medidasExistentesPadrao(nivel: NivelRisco): string {
   switch (nivel) {
-    case "Baixo":   return "Existentes / eficazes";
-    case "Médio":   return "Parciais — a fortalecer";
-    case "Alto":    return "Insuficientes — a implementar";
-    case "Crítico": return "Inexistentes / ineficazes";
+    case "Baixo":
+      return "Existentes / eficazes";
+    case "Médio":
+      return "Parciais — a fortalecer";
+    case "Alto":
+      return "Insuficientes — a implementar";
+    case "Crítico":
+      return "Inexistentes / ineficazes";
   }
 }
 
@@ -407,8 +451,6 @@ export function caracterizarAtividadesAmbiente(setor: string): {
 // nomenclatura específica esperada em auditoria — derivada de cada categoria.
 export type FatorEspecifico = { nome: string; dano: string };
 
-
-
 // FATORES_ESPECIFICOS, AGRAVOS_FIXOS, DESCRICAO_DOMINIO, agravosPara() e
 // resultadoIdentificado() foram removidos daqui.
 //
@@ -454,26 +496,91 @@ export type FatorEspecifico = { nome: string; dano: string };
 // é artefato tipográfico da fonte e, reproduzido aqui, pareceria texto cortado.
 // =====================================================================
 export type MteFator = {
-  dominio: string;        // COPSOQBR — nosso
-  agente: string;         // situação observada — nosso
-  perigo: string;         // Guia MTE — literal
-  consequencia: string;   // Guia MTE — literal
+  dominio: string; // COPSOQBR — nosso
+  agente: string; // situação observada — nosso
+  perigo: string; // Guia MTE — literal
+  consequencia: string; // Guia MTE — literal
 };
 
 export const MTE_MAPA: MteFator[] = [
-  { dominio: "Comportamentos Ofensivos", agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação", perigo: "Assédio de qualquer natureza no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho e Conteúdo", agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças", perigo: "Má gestão de mudanças organizacionais", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Organização do Trabalho e Conteúdo", agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades", perigo: "Baixa clareza de papel/função", consequencia: "Transtorno mental" },
-  { dominio: "Valores / Capital Social", agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas", perigo: "Baixas recompensas e reconhecimento", consequencia: "Transtorno mental" },
-  { dominio: "Relações Interpessoais e Liderança", agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento", perigo: "Falta de suporte/apoio no trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho e Conteúdo", agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa", perigo: "Baixo controle no trabalho/Falta de autonomia", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Valores / Capital Social", agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes", perigo: "Baixa justiça organizacional", consequencia: "Transtorno mental" },
-  { dominio: "Comportamentos Ofensivos", agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos", perigo: "Eventos violentos ou traumáticos", consequencia: "Transtorno mental" },
-  { dominio: "Exigências no Trabalho", agente: "Monotonia, baixa atividade, subutilização", perigo: "Baixa demanda no trabalho (subcarga)", consequencia: "Transtorno mental" },
-  { dominio: "Exigências no Trabalho", agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso, invasão do tempo pessoal", perigo: "Excesso de demandas no trabalho (sobrecarga)", consequencia: "Transtorno mental; DORT" },
-  { dominio: "Relações Interpessoais e Liderança", agente: "Conflitos, ambiente hostil, relações deterioradas", perigo: "Más relacionamentos no local de trabalho", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho e Conteúdo", agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional", perigo: "Trabalho em condições de difícil comunicação", consequencia: "Transtorno mental" },
-  { dominio: "Organização do Trabalho e Conteúdo", agente: "Trabalho à distância ou em posto isolado, com contato reduzido com colegas e chefia", perigo: "Trabalho remoto e isolado", consequencia: "Transtorno mental; Fadiga" },
+  {
+    dominio: "Comportamentos Ofensivos",
+    agente: "Assédio moral, assédio sexual, humilhações, intimidação, discriminação",
+    perigo: "Assédio de qualquer natureza no trabalho",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Organização do Trabalho e Conteúdo",
+    agente: "Mudanças sem planejamento, comunicação inadequada sobre mudanças",
+    perigo: "Má gestão de mudanças organizacionais",
+    consequencia: "Transtorno mental; DORT",
+  },
+  {
+    dominio: "Organização do Trabalho e Conteúdo",
+    agente: "Funções mal definidas, conflito de papéis, ambiguidade de responsabilidades",
+    perigo: "Baixa clareza de papel/função",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Valores / Capital Social",
+    agente: "Falta de valorização, ausência de reconhecimento, recompensas inadequadas",
+    perigo: "Baixas recompensas e reconhecimento",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Relações Interpessoais e Liderança",
+    agente: "Falta de suporte da liderança, falta de apoio dos colegas, ausência de acolhimento",
+    perigo: "Falta de suporte/apoio no trabalho",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Organização do Trabalho e Conteúdo",
+    agente: "Pouca autonomia, baixo poder de decisão, baixo controle da tarefa",
+    perigo: "Baixo controle no trabalho/Falta de autonomia",
+    consequencia: "Transtorno mental; DORT",
+  },
+  {
+    dominio: "Valores / Capital Social",
+    agente: "Percepção de injustiça, tratamento desigual, decisões não transparentes",
+    perigo: "Baixa justiça organizacional",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Comportamentos Ofensivos",
+    agente: "Agressões, ameaças, exposição a eventos críticos ou traumáticos",
+    perigo: "Eventos violentos ou traumáticos",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Exigências no Trabalho",
+    agente: "Monotonia, baixa atividade, subutilização",
+    perigo: "Baixa demanda no trabalho (subcarga)",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Exigências no Trabalho",
+    agente: "Sobrecarga, pressão, múltiplas tarefas, ritmo intenso, invasão do tempo pessoal",
+    perigo: "Excesso de demandas no trabalho (sobrecarga)",
+    consequencia: "Transtorno mental; DORT",
+  },
+  {
+    dominio: "Relações Interpessoais e Liderança",
+    agente: "Conflitos, ambiente hostil, relações deterioradas",
+    perigo: "Más relacionamentos no local de trabalho",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Organização do Trabalho e Conteúdo",
+    agente: "Comunicação deficiente, falhas no fluxo de informação, ruído organizacional",
+    perigo: "Trabalho em condições de difícil comunicação",
+    consequencia: "Transtorno mental",
+  },
+  {
+    dominio: "Organização do Trabalho e Conteúdo",
+    agente: "Trabalho à distância ou em posto isolado, com contato reduzido com colegas e chefia",
+    perigo: "Trabalho remoto e isolado",
+    consequencia: "Transtorno mental; Fadiga",
+  },
 ];
 
 /**
@@ -491,26 +598,27 @@ export const MTE_MAPA: MteFator[] = [
  */
 export const INDICADOR_COMPLEMENTAR: MteFator = {
   dominio: "Saúde e Bem-estar",
-  agente: "Estresse, esgotamento, prejuízo ao sono, fadiga persistente relatados pelos trabalhadores",
+  agente:
+    "Estresse, esgotamento, prejuízo ao sono, fadiga persistente relatados pelos trabalhadores",
   perigo: "Indicador complementar — perigo a identificar em campo",
   consequencia: "A definir após identificação do perigo",
 };
 
 // Para domínios amplos o índice principal é o primeiro da lista.
 export const MTE_POR_DIM: Record<string, MteFator[]> = {
-  demandas:    [MTE_MAPA[9], MTE_MAPA[8]],
+  demandas: [MTE_MAPA[9], MTE_MAPA[8]],
   organizacao: [MTE_MAPA[5], MTE_MAPA[11], MTE_MAPA[2], MTE_MAPA[1]],
-  relacoes:    [MTE_MAPA[10], MTE_MAPA[4], MTE_MAPA[3]],
+  relacoes: [MTE_MAPA[10], MTE_MAPA[4], MTE_MAPA[3]],
   // Interface trabalho-indivíduo: o trabalho invadindo o tempo pessoal É
   // excesso de demanda. O Guia não tem perigo de "conflito trabalho-vida", e
   // criar um seria inventar.
-  interface:   [MTE_MAPA[9]],
-  saude:       [INDICADOR_COMPLEMENTAR],
-  ofensivos:   [MTE_MAPA[0], MTE_MAPA[7]],
-  "segurança":    [MTE_MAPA[11]],
-  seguranca:      [MTE_MAPA[11]],
+  interface: [MTE_MAPA[9]],
+  saude: [INDICADOR_COMPLEMENTAR],
+  ofensivos: [MTE_MAPA[0], MTE_MAPA[7]],
+  segurança: [MTE_MAPA[11]],
+  seguranca: [MTE_MAPA[11]],
   reconhecimento: [MTE_MAPA[3], MTE_MAPA[6]],
-  justica:        [MTE_MAPA[6]],
+  justica: [MTE_MAPA[6]],
 };
 // Item MTE principal por domínio + nível (escolhe o mais grave em risco alto)
 export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
@@ -520,11 +628,13 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   // Índices conferidos contra MTE_MAPA acima — a ordem é a do Guia.
   const key = (dimId || "").toLowerCase();
   if (key.includes("saud") || key.includes("bem")) return INDICADOR_COMPLEMENTAR;
-  if (key.includes("segur")) return MTE_MAPA[11];   // difícil comunicação
+  if (key.includes("segur")) return MTE_MAPA[11]; // difícil comunicação
   if (key.includes("reconhec")) return MTE_MAPA[3]; // baixas recompensas
-  if (key.includes("justi")) return MTE_MAPA[6];    // baixa justiça
-  if (key.includes("demand") || key.includes("interface") || key.includes("vida")) return MTE_MAPA[9]; // sobrecarga
-  if (key.includes("organiz") || key.includes("control") || key.includes("autonom")) return MTE_MAPA[5];
+  if (key.includes("justi")) return MTE_MAPA[6]; // baixa justiça
+  if (key.includes("demand") || key.includes("interface") || key.includes("vida"))
+    return MTE_MAPA[9]; // sobrecarga
+  if (key.includes("organiz") || key.includes("control") || key.includes("autonom"))
+    return MTE_MAPA[5];
   if (key.includes("rela") || key.includes("lideran") || key.includes("apoio")) return MTE_MAPA[10];
   if (key.includes("ofens") || key.includes("ass") || key.includes("viol")) return MTE_MAPA[0];
   // Domínio desconhecido: não se atribui perigo nem agravo por dedução.
@@ -536,25 +646,32 @@ export function mteParaDim(dimId: string, _nivel?: NivelRisco): MteFator {
   };
 }
 
-
 // ----- Classificação das medidas existentes (NR-01 / GRO-PGR) -----
 export type EfetividadeMedida = "Inexistente" | "Insuficiente" | "Parcial" | "Adequada" | "Eficaz";
 
 export function efetividadeMedidas(nivel: NivelRisco): EfetividadeMedida {
   switch (nivel) {
-    case "Crítico": return "Inexistente";
-    case "Alto":    return "Insuficiente";
-    case "Médio":   return "Parcial";
-    case "Baixo":   return "Eficaz";
+    case "Crítico":
+      return "Inexistente";
+    case "Alto":
+      return "Insuficiente";
+    case "Médio":
+      return "Parcial";
+    case "Baixo":
+      return "Eficaz";
   }
 }
 
 export function necessidadeMelhoria(nivel: NivelRisco): string {
   switch (nivel) {
-    case "Crítico": return "Implementação imediata";
-    case "Alto":    return "Implementação prioritária";
-    case "Médio":   return "Aprimoramento programado";
-    case "Baixo":   return "Manutenção / monitoramento";
+    case "Crítico":
+      return "Implementação imediata";
+    case "Alto":
+      return "Implementação prioritária";
+    case "Médio":
+      return "Aprimoramento programado";
+    case "Baixo":
+      return "Manutenção / monitoramento";
   }
 }
 
@@ -565,13 +682,13 @@ export function alertaEspecial(nomeFator: string): string {
 // ----- GES cadastrados (todos os GES registrados, com ou sem avaliação) -----
 export type GesCadastradoSetor = { setor: string; avaliado: boolean };
 export type GesCadastrado = {
-  ges: string;                      // valor cru, ex.: "01"
-  gesFormatado: string;             // "GES 01"
-  label: string;                    // "GES 01 — FINANCEIRO / PCP / RH"
-  setores: GesCadastradoSetor[];    // todos os setores vinculados ao GES
-  avaliado: boolean;                // true se ≥ 1 setor teve resposta
-  totalRespostas: number;           // soma das respostas dos setores do GES
-  justificativa?: string;           // justificativa preenchida pelo técnico (quando sem avaliação)
+  ges: string; // valor cru, ex.: "01"
+  gesFormatado: string; // "GES 01"
+  label: string; // "GES 01 — FINANCEIRO / PCP / RH"
+  setores: GesCadastradoSetor[]; // todos os setores vinculados ao GES
+  avaliado: boolean; // true se ≥ 1 setor teve resposta
+  totalRespostas: number; // soma das respostas dos setores do GES
+  justificativa?: string; // justificativa preenchida pelo técnico (quando sem avaliação)
 };
 
 // ----- Responsável Técnico (obrigatório para o relatório final) -----
@@ -587,8 +704,8 @@ export type ResponsavelTecnico = {
 export type AepDataset = {
   empresa: Empresa | null;
   empresaNome: string;
-  setorFiltro: string;        // "Todos" ou nome
-  campanhaNome: string;       // "Todas" ou nome
+  setorFiltro: string; // "Todos" ou nome
+  campanhaNome: string; // "Todas" ou nome
   periodo: { inicio?: string; fim?: string };
   /**
    * Quando as respostas do recorte foram efetivamente coletadas — menor e
@@ -607,19 +724,24 @@ export type AepDataset = {
   /** Data/hora em que o PDF foi gerado. Não confundir com `coleta`. */
   emitidoEm: string;
   totalRespostas: number;
-  totalConvidados?: number;   // para taxa de participação
-  taxaParticipacao?: number;  // 0-100
+  totalConvidados?: number; // para taxa de participação
+  taxaParticipacao?: number; // 0-100
   // Totais de trabalhadores para o relatório técnico (anti-fiscalização)
   totaisTrabalhadores?: {
-    cadastrados?: number;     // total cadastrado na empresa
-    abrangidos?: number;      // total nos GES avaliados
+    cadastrados?: number; // total cadastrado na empresa
+    abrangidos?: number; // total nos GES avaliados
   };
   fatoresGerais: LinhaFator[];
   setores: LinhaSetorAep[];
   top10: LinhaFator[];
   setorMaisCritico?: LinhaSetorAep;
   contagemNiveis: Record<NivelRisco, number>;
-  imp: { score: number; nivel: "Saudável" | "Atenção" | "Vulnerável" | "Crítico"; cor: [number, number, number]; emoji: string };
+  imp: {
+    score: number;
+    nivel: "Saudável" | "Atenção" | "Vulnerável" | "Crítico";
+    cor: [number, number, number];
+    emoji: string;
+  };
   // GES cadastrados — incluem todos os GES do sistema, mesmo sem avaliação
   gesCadastrados: GesCadastrado[];
   gesAvaliados: GesCadastrado[];
@@ -654,10 +776,10 @@ export function calcularIMP(fatores: LinhaFator[]): AepDataset["imp"] {
   const media = validos.reduce((a, f) => a + f.risco.valor, 0) / validos.length;
   // 1 = melhor, 25 = pior → score 100..0
   const score = Math.max(0, Math.min(100, Math.round(100 - ((media - 1) / 24) * 100)));
-  if (score >= 80) return { score, nivel: "Saudável",   cor: [0, 184, 148],   emoji: "🟢" };
-  if (score >= 60) return { score, nivel: "Atenção",    cor: [253, 203, 110], emoji: "🟡" };
-  if (score >= 40) return { score, nivel: "Vulnerável", cor: [225, 112, 85],  emoji: "🟠" };
-  return            { score, nivel: "Crítico",    cor: [214, 48, 49],   emoji: "🔴" };
+  if (score >= 80) return { score, nivel: "Saudável", cor: [0, 184, 148], emoji: "🟢" };
+  if (score >= 60) return { score, nivel: "Atenção", cor: [253, 203, 110], emoji: "🟡" };
+  if (score >= 40) return { score, nivel: "Vulnerável", cor: [225, 112, 85], emoji: "🟠" };
+  return { score, nivel: "Crítico", cor: [214, 48, 49], emoji: "🔴" };
 }
 
 export function buildAepDataset(opts: {
@@ -710,12 +832,17 @@ export function buildAepDataset(opts: {
       const setor = r.setor?.trim() ?? "";
       const setorOk = nomesPermitidos.size > 0 && nomesPermitidos.has(normalizarChaveGes(setor));
       const ges = lookupGes(r.codigoEmpresa, setor, opts.gesPorSetor);
-      const gesOk = nomesPermitidos.size === 0 && !!ges && gesPermitidos.has(formatGes(ges).toUpperCase());
+      const gesOk =
+        nomesPermitidos.size === 0 && !!ges && gesPermitidos.has(formatGes(ges).toUpperCase());
       return !(setorOk || gesOk);
     });
     if (foraEscopo.length > 0) {
-      const setores = [...new Set(foraEscopo.map((r) => r.setor?.trim()).filter(Boolean))].join(", ");
-      const err: any = new Error("O relatório de reavaliação está tentando incluir setores fora do escopo da campanha.");
+      const setores = [...new Set(foraEscopo.map((r) => r.setor?.trim()).filter(Boolean))].join(
+        ", ",
+      );
+      const err: any = new Error(
+        "O relatório de reavaliação está tentando incluir setores fora do escopo da campanha.",
+      );
       err.code = "ESCOPO_REAVALIACAO_INVALIDO";
       err.setoresForaEscopo = setores;
       throw err;
@@ -726,11 +853,14 @@ export function buildAepDataset(opts: {
   const pendentes = respostasSemFuncao(respostas);
   if (pendentes.length > 0) {
     const setoresAfetados = [...new Set(pendentes.map((r) => r.setor.trim()))].join(", ");
-    const amostraIds = pendentes.slice(0, 5).map((r) => r.id).join(", ");
+    const amostraIds = pendentes
+      .slice(0, 5)
+      .map((r) => r.id)
+      .join(", ");
     const err: any = new Error(
       `${pendentes.length} resposta(s) do setor "${setoresAfetados}" estão sem função vinculada. ` +
-      `Abra Admin → Respostas, filtre por esse setor e edite cada resposta para informar a função/cargo. ` +
-      `IDs de exemplo: ${amostraIds}${pendentes.length > 5 ? "…" : ""}.`,
+        `Abra Admin → Respostas, filtre por esse setor e edite cada resposta para informar a função/cargo. ` +
+        `IDs de exemplo: ${amostraIds}${pendentes.length > 5 ? "…" : ""}.`,
     );
     err.code = "FUNCAO_OBRIGATORIA";
     err.pendentes = pendentes;
@@ -739,13 +869,16 @@ export function buildAepDataset(opts: {
 
   // Respostas sem setor preenchido não podem ser agrupadas por GES.
   if (agruparPorGes) {
-    const semSetor = respostas.filter((r) => !(r.setor?.trim()));
+    const semSetor = respostas.filter((r) => !r.setor?.trim());
     if (semSetor.length > 0) {
-      const amostraIds = semSetor.slice(0, 5).map((r) => r.id).join(", ");
+      const amostraIds = semSetor
+        .slice(0, 5)
+        .map((r) => r.id)
+        .join(", ");
       const err: any = new Error(
         `${semSetor.length} resposta(s) estão sem setor preenchido e não podem ser agrupadas por GES. ` +
-        `Abra Admin → Respostas, filtre por "sem setor" e edite cada resposta informando o setor (e a função). ` +
-        `IDs de exemplo: ${amostraIds}${semSetor.length > 5 ? "…" : ""}.`,
+          `Abra Admin → Respostas, filtre por "sem setor" e edite cada resposta informando o setor (e a função). ` +
+          `IDs de exemplo: ${amostraIds}${semSetor.length > 5 ? "…" : ""}.`,
       );
       err.code = "SETOR_OBRIGATORIO";
       err.pendentes = semSetor;
@@ -761,22 +894,31 @@ export function buildAepDataset(opts: {
       .join(", ");
     const err: any = new Error(
       `${validacaoGes.semGes.length} setor(es) sem GES cadastrado: ${setoresLista}` +
-      `${validacaoGes.semGes.length > 5 ? "…" : ""}. ` +
-      `Abra Admin → Setores e vincule cada setor acima a um GES antes de exportar o AEP.`,
+        `${validacaoGes.semGes.length > 5 ? "…" : ""}. ` +
+        `Abra Admin → Setores e vincule cada setor acima a um GES antes de exportar o AEP.`,
     );
     err.code = "AGRUPAMENTO_GES_INVALIDO";
     err.semGes = validacaoGes.semGes;
     throw err;
   }
 
-
   // Fatores gerais
   const fatoresGerais: LinhaFator[] = dims.map((d) => {
     const scores = respostas.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
-    const scorePct = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+    const scorePct = scores.length
+      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      : 0;
     const prob = probabilidadeFromPct(scorePct);
     const sev = severidadeDaDimensao(d.id);
-    return { dim: d, scorePct, prob, sev, n: scores.length, risco: classificarRisco(prob, sev), classifPsico: classifPsicoFromPct(scorePct) };
+    return {
+      dim: d,
+      scorePct,
+      prob,
+      sev,
+      n: scores.length,
+      risco: classificarRisco(prob, sev),
+      classifPsico: classifPsicoFromPct(scorePct),
+    };
   });
 
   // Mapa de setores cadastrados por GES formatado (exibir o GES com TODOS os
@@ -793,18 +935,27 @@ export function buildAepDataset(opts: {
   });
 
   // Setores — agrupados por (empresa + setor) ou (empresa + GES) quando solicitado
-  type Bucket = { setoresNomes: Set<string>; ges: string | null; codigoEmpresa: string; items: Resposta[] };
+  type Bucket = {
+    setoresNomes: Set<string>;
+    ges: string | null;
+    codigoEmpresa: string;
+    items: Resposta[];
+  };
   const buckets = new Map<string, Bucket>();
   respostas.forEach((r) => {
     const setor = r.setor?.trim() || "(Sem setor)";
     const codigo = (r.codigoEmpresa ?? "").trim();
     const ges = lookupGes(codigo, setor, opts.gesPorSetor);
     const gesKey = formatGes(ges).toUpperCase();
-    const key = agruparPorGes && gesKey
-      ? `${codigo.toLowerCase()}|GES|${gesKey}`
-      : `${codigo.toLowerCase()}|S|${setor.toUpperCase()}`;
+    const key =
+      agruparPorGes && gesKey
+        ? `${codigo.toLowerCase()}|GES|${gesKey}`
+        : `${codigo.toLowerCase()}|S|${setor.toUpperCase()}`;
     let b = buckets.get(key);
-    if (!b) { b = { setoresNomes: new Set(), ges, codigoEmpresa: codigo, items: [] }; buckets.set(key, b); }
+    if (!b) {
+      b = { setoresNomes: new Set(), ges, codigoEmpresa: codigo, items: [] };
+      buckets.set(key, b);
+    }
     b.setoresNomes.add(setor);
     b.items.push(r);
   });
@@ -813,14 +964,25 @@ export function buildAepDataset(opts: {
     const arr = b.items;
     const fatores: LinhaFator[] = dims.map((d) => {
       const scores = arr.map((r) => dimensionRiskScore(d, r.answers)).filter((v) => v > 0);
-      const scorePct = scores.length ? Math.round(scores.reduce((a, b2) => a + b2, 0) / scores.length) : 0;
+      const scorePct = scores.length
+        ? Math.round(scores.reduce((a, b2) => a + b2, 0) / scores.length)
+        : 0;
       const prob = probabilidadeFromPct(scorePct);
       const sev = severidadeDaDimensao(d.id);
-      return { dim: d, scorePct, prob, sev, n: scores.length, risco: classificarRisco(prob, sev), classifPsico: classifPsicoFromPct(scorePct) };
+      return {
+        dim: d,
+        scorePct,
+        prob,
+        sev,
+        n: scores.length,
+        risco: classificarRisco(prob, sev),
+        classifPsico: classifPsicoFromPct(scorePct),
+      };
     });
     const fatoresValidos = fatores.filter((f) => f.n > 0);
-    const fatorPrincipal = (fatoresValidos.length ? fatoresValidos : fatores)
-      .reduce((a, b2) => (b2.risco.valor > a.risco.valor ? b2 : a));
+    const fatorPrincipal = (fatoresValidos.length ? fatoresValidos : fatores).reduce((a, b2) =>
+      b2.risco.valor > a.risco.valor ? b2 : a,
+    );
     const riscoMaior = fatorPrincipal.risco;
     const funcMap = new Map<string, number>();
     arr.forEach((r) => {
@@ -834,9 +996,10 @@ export function buildAepDataset(opts: {
     // Quando agrupado por GES, exibir TODOS os setores cadastrados naquele GES,
     // mesmo os sem resposta neste ciclo. O GES é avaliado como um todo.
     const gesFmt = formatGes(b.ges);
-    const setoresCadastrados = agruparPorGes && gesFmt
-      ? (setoresPorGesFormatado.get(gesFmt) ?? [...b.setoresNomes])
-      : [...b.setoresNomes];
+    const setoresCadastrados =
+      agruparPorGes && gesFmt
+        ? (setoresPorGesFormatado.get(gesFmt) ?? [...b.setoresNomes])
+        : [...b.setoresNomes];
     const setorJoin = [...new Set([...setoresCadastrados, ...b.setoresNomes])]
       .sort((x, y) => x.localeCompare(y, "pt-BR"))
       .join(" / ");
@@ -845,7 +1008,11 @@ export function buildAepDataset(opts: {
       ges: b.ges,
       label: formatSetorLabel(setorJoin, b.ges),
       codigoEmpresa: b.codigoEmpresa,
-      n: arr.length, funcoes, fatores, fatorPrincipal, riscoMaior,
+      n: arr.length,
+      funcoes,
+      fatores,
+      fatorPrincipal,
+      riscoMaior,
     });
   });
   setores.sort((a, b) => {
@@ -858,17 +1025,28 @@ export function buildAepDataset(opts: {
   // Top 10 fatores (combina geral + por setor para obter mais críticos)
   const todos: LinhaFator[] = [
     ...fatoresGerais,
-    ...setores.flatMap((s) => s.fatores.map((f) => ({ ...f, dim: { ...f.dim, title: `${f.dim.title} — ${s.label}` } }))),
+    ...setores.flatMap((s) =>
+      s.fatores.map((f) => ({ ...f, dim: { ...f.dim, title: `${f.dim.title} — ${s.label}` } })),
+    ),
   ].filter((f) => f.n > 0);
-  const top10 = [...todos].sort((a, b) => b.risco.valor - a.risco.valor || b.scorePct - a.scorePct).slice(0, 10);
+  const top10 = [...todos]
+    .sort((a, b) => b.risco.valor - a.risco.valor || b.scorePct - a.scorePct)
+    .slice(0, 10);
 
   const contagem: Record<NivelRisco, number> = { Baixo: 0, Médio: 0, Alto: 0, Crítico: 0 };
-  fatoresGerais.forEach((f) => { if (f.n > 0) contagem[f.risco.nivel] += 1; });
-  setores.forEach((s) => s.fatores.forEach((f) => { if (f.n > 0) contagem[f.risco.nivel] += 1; }));
+  fatoresGerais.forEach((f) => {
+    if (f.n > 0) contagem[f.risco.nivel] += 1;
+  });
+  setores.forEach((s) =>
+    s.fatores.forEach((f) => {
+      if (f.n > 0) contagem[f.risco.nivel] += 1;
+    }),
+  );
 
-  const taxa = opts.totalConvidados && opts.totalConvidados > 0
-    ? Math.min(100, Math.round((respostas.length / opts.totalConvidados) * 100))
-    : undefined;
+  const taxa =
+    opts.totalConvidados && opts.totalConvidados > 0
+      ? Math.min(100, Math.round((respostas.length / opts.totalConvidados) * 100))
+      : undefined;
 
   // -------- GES cadastrados (todos os GES do sistema) --------
   // Conjunto de chaves "<codigoEmpresa lower>|<setor normalizado>" com pelo menos uma resposta.
@@ -887,7 +1065,14 @@ export function buildAepDataset(opts: {
     const gesFormatado = formatGes(ges);
     let g = gesAgg.get(gesFormatado);
     if (!g) {
-      g = { ges, gesFormatado, label: gesFormatado, setores: [], avaliado: false, totalRespostas: 0 };
+      g = {
+        ges,
+        gesFormatado,
+        label: gesFormatado,
+        setores: [],
+        avaliado: false,
+        totalRespostas: 0,
+      };
       gesAgg.set(gesFormatado, g);
     }
     const avaliado = setoresAvaliadosSet.has(gesMapKey((row.codigoEmpresa ?? "").trim(), setor));
@@ -902,28 +1087,42 @@ export function buildAepDataset(opts: {
     const k = gesMapKey((r.codigoEmpresa ?? "").trim(), setor);
     respostasPorChave.set(k, (respostasPorChave.get(k) ?? 0) + 1);
   });
-  const gesCadastrados: GesCadastrado[] = [...gesAgg.values()].map((g) => {
-    const setoresOrd = [...g.setores].sort((a, b) => a.setor.localeCompare(b.setor, "pt-BR"));
-    const avaliado = setoresOrd.some((s) => s.avaliado);
-    const total = setoresOrd.reduce((acc, s) => {
-      // soma respostas dos setores; precisa código de empresa - tenta usar primeiro código disponível
-      return acc + (opts.gesCadastrados ?? [])
-        .filter((r) => normalizarChaveGes(r.setor) === normalizarChaveGes(s.setor) && formatGes(r.ges) === g.gesFormatado)
-        .reduce((a, r) => a + (respostasPorChave.get(gesMapKey((r.codigoEmpresa ?? "").trim(), s.setor)) ?? 0), 0);
-    }, 0);
-    return {
-      ...g,
-      setores: setoresOrd,
-      avaliado,
-      totalRespostas: total,
-      label: `${g.gesFormatado} — ${setoresOrd.map((s) => s.setor).join(" / ")}`,
-    };
-  }).sort((a, b) => {
-    const na = Number(String(a.ges).replace(/\D/g, ""));
-    const nb = Number(String(b.ges).replace(/\D/g, ""));
-    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
-    return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
-  });
+  const gesCadastrados: GesCadastrado[] = [...gesAgg.values()]
+    .map((g) => {
+      const setoresOrd = [...g.setores].sort((a, b) => a.setor.localeCompare(b.setor, "pt-BR"));
+      const avaliado = setoresOrd.some((s) => s.avaliado);
+      const total = setoresOrd.reduce((acc, s) => {
+        // soma respostas dos setores; precisa código de empresa - tenta usar primeiro código disponível
+        return (
+          acc +
+          (opts.gesCadastrados ?? [])
+            .filter(
+              (r) =>
+                normalizarChaveGes(r.setor) === normalizarChaveGes(s.setor) &&
+                formatGes(r.ges) === g.gesFormatado,
+            )
+            .reduce(
+              (a, r) =>
+                a +
+                (respostasPorChave.get(gesMapKey((r.codigoEmpresa ?? "").trim(), s.setor)) ?? 0),
+              0,
+            )
+        );
+      }, 0);
+      return {
+        ...g,
+        setores: setoresOrd,
+        avaliado,
+        totalRespostas: total,
+        label: `${g.gesFormatado} — ${setoresOrd.map((s) => s.setor).join(" / ")}`,
+      };
+    })
+    .sort((a, b) => {
+      const na = Number(String(a.ges).replace(/\D/g, ""));
+      const nb = Number(String(b.ges).replace(/\D/g, ""));
+      if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return a.label.localeCompare(b.label, "pt-BR", { numeric: true });
+    });
   // Aplica justificativas informadas pelo técnico (chave = gesFormatado)
   const justMap = opts.justificativasSemAvaliacao ?? {};
   gesCadastrados.forEach((g) => {
@@ -935,7 +1134,9 @@ export function buildAepDataset(opts: {
 
   const dataset: AepDataset = {
     empresa: opts.empresa,
-    empresaNome: /todas as empresas/i.test(opts.empresaNome) ? "Consolidado Geral" : opts.empresaNome,
+    empresaNome: /todas as empresas/i.test(opts.empresaNome)
+      ? "Consolidado Geral"
+      : opts.empresaNome,
     setorFiltro: opts.setorFiltro,
     campanhaNome: opts.campanhaNome,
     periodo: opts.periodo ?? {},

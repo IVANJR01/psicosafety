@@ -6,18 +6,42 @@ export const Route = createFileRoute("/como-funciona")({
   head: () => ({
     meta: [
       { title: "Como funciona | PsicoSafe NR-01" },
-      { name: "description", content: "Passo a passo para aplicar o questionário de riscos psicossociais na sua empresa." },
+      {
+        name: "description",
+        content:
+          "Passo a passo para aplicar o questionário de riscos psicossociais na sua empresa.",
+      },
     ],
   }),
   component: ComoFunciona,
 });
 
 const passos = [
-  { n: 1, t: "Cadastre sua empresa", d: "Pelo painel administrativo, gere um código único da sua empresa." },
-  { n: 2, t: "Compartilhe o link", d: "Envie o link /q/CODIGO aos funcionários por e-mail, intranet ou QR code." },
-  { n: 3, t: "Funcionário responde sem login", d: "Resposta totalmente anônima. Apenas setor e cargo (opcional) são informados." },
-  { n: 4, t: "Análise no painel", d: "Acompanhe os níveis de risco por dimensão (demandas, organização, liderança, saúde, etc)." },
-  { n: 5, t: "Plano de ação", d: "Use os resultados para o inventário de riscos e o plano de ação do GRO." },
+  {
+    n: 1,
+    t: "Cadastre sua empresa",
+    d: "Pelo painel administrativo, gere um código único da sua empresa.",
+  },
+  {
+    n: 2,
+    t: "Compartilhe o link",
+    d: "Envie o link /q/CODIGO aos funcionários por e-mail, intranet ou QR code.",
+  },
+  {
+    n: 3,
+    t: "Funcionário responde sem login",
+    d: "Resposta totalmente anônima. Apenas setor e cargo (opcional) são informados.",
+  },
+  {
+    n: 4,
+    t: "Análise no painel",
+    d: "Acompanhe os níveis de risco por dimensão (demandas, organização, liderança, saúde, etc).",
+  },
+  {
+    n: 5,
+    t: "Plano de ação",
+    d: "Use os resultados para o inventário de riscos e o plano de ação do GRO.",
+  },
 ];
 
 function ComoFunciona() {

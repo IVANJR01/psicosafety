@@ -128,10 +128,7 @@ export async function setUserRole(
 }
 
 export async function listUserRoles(userId: string): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw error;
   return (data ?? []).map((r) => r.role as string);
 }

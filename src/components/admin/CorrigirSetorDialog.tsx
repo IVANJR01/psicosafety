@@ -1,9 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles, AlertTriangle, Calendar, Building2, Tag, Hash, User2, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  AlertTriangle,
+  Calendar,
+  Building2,
+  Tag,
+  Hash,
+  User2,
+  Trash2,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Resposta } from "@/lib/storage";
@@ -37,17 +60,23 @@ type Sugestao = {
 
 const confLabel: Record<Sugestao["confianca"], string> = {
   alta: "Confiança alta",
-  "média": "Confiança média",
+  média: "Confiança média",
   baixa: "Confiança baixa",
 };
 const confColor: Record<Sugestao["confianca"], string> = {
   alta: "bg-success/15 text-success border-success/30",
-  "média": "bg-primary/15 text-primary border-primary/30",
+  média: "bg-primary/15 text-primary border-primary/30",
   baixa: "bg-warning/20 text-warning-foreground border-warning/30",
 };
 
 export function CorrigirSetorDialog({
-  open, onOpenChange, pendentes, todasRespostas, gesMap, campanhas, onCorrigido,
+  open,
+  onOpenChange,
+  pendentes,
+  todasRespostas,
+  gesMap,
+  campanhas,
+  onCorrigido,
 }: Props) {
   const [empresasInfo, setEmpresasInfo] = useState<Record<string, EmpresaInfo>>({});
   const [decisoes, setDecisoes] = useState<Record<string, Decisao>>({});
@@ -69,7 +98,11 @@ export function CorrigirSetorDialog({
         acc[c] = {
           nome: emp.nome,
           setores: (emp.setoresFull ?? []).map((s) => ({ id: s.id, nome: s.nome })),
-          funcoes: (emp.funcoesFull ?? []).map((f) => ({ id: f.id, nome: f.nome, setor_id: f.setor_id })),
+          funcoes: (emp.funcoesFull ?? []).map((f) => ({
+            id: f.id,
+            nome: f.nome,
+            setor_id: f.setor_id,
+          })),
         };
       }
       setEmpresasInfo(acc);
@@ -85,18 +118,27 @@ export function CorrigirSetorDialog({
       const fn = emp.funcoes.find((f) => f.nome.toLowerCase() === funcaoNorm && f.setor_id);
       if (fn?.setor_id) {
         const s = emp.setores.find((x) => x.id === fn.setor_id);
-        if (s) return { setor: s.nome, motivo: `função "${r.cargo}" está cadastrada neste setor`, confianca: "alta" };
+        if (s)
+          return {
+            setor: s.nome,
+            motivo: `função "${r.cargo}" está cadastrada neste setor`,
+            confianca: "alta",
+          };
       }
     }
     // 2) Padrão por campanha+empresa
     const escopo = todasRespostas.filter(
-      (x) => x.codigoEmpresa === r.codigoEmpresa &&
-             (r.campanhaId ? x.campanhaId === r.campanhaId : true) &&
-             x.id !== r.id && !!(x.setor?.trim()),
+      (x) =>
+        x.codigoEmpresa === r.codigoEmpresa &&
+        (r.campanhaId ? x.campanhaId === r.campanhaId : true) &&
+        x.id !== r.id &&
+        !!x.setor?.trim(),
     );
     if (escopo.length > 0) {
       const cont: Record<string, number> = {};
-      escopo.forEach((x) => { cont[x.setor] = (cont[x.setor] || 0) + 1; });
+      escopo.forEach((x) => {
+        cont[x.setor] = (cont[x.setor] || 0) + 1;
+      });
       const [top, qtd] = Object.entries(cont).sort((a, b) => b[1] - a[1])[0];
       const total = escopo.length;
       const pct = qtd / total;
@@ -140,9 +182,13 @@ export function CorrigirSetorDialog({
       if (vinculados === 1 && excluidos === 0) {
         const d = decisoes[pendentes[0].id] as { tipo: "vincular"; setor: string };
         const ges = lookupGes(pendentes[0].codigoEmpresa, d.setor, gesMap);
-        toast.success(`Resposta vinculada ao setor ${d.setor}${ges ? ` (GES ${ges})` : ""} com sucesso.`);
+        toast.success(
+          `Resposta vinculada ao setor ${d.setor}${ges ? ` (GES ${ges})` : ""} com sucesso.`,
+        );
       } else {
-        toast.success(`Saneamento concluído: ${vinculados} vinculada(s), ${excluidos} excluída(s).`);
+        toast.success(
+          `Saneamento concluído: ${vinculados} vinculada(s), ${excluidos} excluída(s).`,
+        );
       }
       onCorrigido();
       onOpenChange(false);
@@ -162,7 +208,8 @@ export function CorrigirSetorDialog({
             Saneamento — respostas sem setor/GES
           </DialogTitle>
           <DialogDescription>
-            Decida o destino de cada resposta órfã antes de gerar o AEP. Cada item exige uma escolha.
+            Decida o destino de cada resposta órfã antes de gerar o AEP. Cada item exige uma
+            escolha.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,23 +220,52 @@ export function CorrigirSetorDialog({
             const sug = sugerir(r);
             const d = decisoes[r.id];
             const data = new Date(r.criadoEm).toLocaleString("pt-BR");
-            const origem = r.campanhaId ? "Campanha (link público)" : "Manual / link assinado / importação";
+            const origem = r.campanhaId
+              ? "Campanha (link público)"
+              : "Manual / link assinado / importação";
             return (
               <div key={r.id} className="rounded-lg border bg-card p-4 space-y-3">
                 {/* Detalhes */}
                 <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                  <Info icon={<Building2 className="h-3.5 w-3.5" />} label="Empresa" value={r.nomeEmpresa} />
-                  <Info icon={<Calendar className="h-3.5 w-3.5" />} label="Data da resposta" value={data} />
-                  <Info icon={<Tag className="h-3.5 w-3.5" />} label="Campanha" value={camp?.nome ?? "—"} />
-                  <Info icon={<User2 className="h-3.5 w-3.5" />} label="Função/cargo" value={r.cargo?.trim() || "(não informado)"} />
-                  <Info icon={<AlertTriangle className="h-3.5 w-3.5 text-warning" />} label="Setor/GES atual" value="vazio" valueClass="text-warning font-semibold" />
-                  <Info icon={<Hash className="h-3.5 w-3.5" />} label="ID" value={<code className="text-[10px]">{r.id}</code>} />
+                  <Info
+                    icon={<Building2 className="h-3.5 w-3.5" />}
+                    label="Empresa"
+                    value={r.nomeEmpresa}
+                  />
+                  <Info
+                    icon={<Calendar className="h-3.5 w-3.5" />}
+                    label="Data da resposta"
+                    value={data}
+                  />
+                  <Info
+                    icon={<Tag className="h-3.5 w-3.5" />}
+                    label="Campanha"
+                    value={camp?.nome ?? "—"}
+                  />
+                  <Info
+                    icon={<User2 className="h-3.5 w-3.5" />}
+                    label="Função/cargo"
+                    value={r.cargo?.trim() || "(não informado)"}
+                  />
+                  <Info
+                    icon={<AlertTriangle className="h-3.5 w-3.5 text-warning" />}
+                    label="Setor/GES atual"
+                    value="vazio"
+                    valueClass="text-warning font-semibold"
+                  />
+                  <Info
+                    icon={<Hash className="h-3.5 w-3.5" />}
+                    label="ID"
+                    value={<code className="text-[10px]">{r.id}</code>}
+                  />
                   <Info icon={<Tag className="h-3.5 w-3.5" />} label="Origem" value={origem} />
                 </div>
 
                 {/* Sugestão */}
                 {sug && (
-                  <div className={`flex items-start gap-2 rounded-md border p-2.5 ${confColor[sug.confianca]}`}>
+                  <div
+                    className={`flex items-start gap-2 rounded-md border p-2.5 ${confColor[sug.confianca]}`}
+                  >
                     <Sparkles className="h-4 w-4 mt-0.5 shrink-0" />
                     <div className="text-xs leading-snug">
                       <div className="font-semibold">
@@ -204,7 +280,12 @@ export function CorrigirSetorDialog({
                       <button
                         type="button"
                         className="mt-1 underline font-medium"
-                        onClick={() => setDecisoes((p) => ({ ...p, [r.id]: { tipo: "vincular", setor: sug.setor } }))}
+                        onClick={() =>
+                          setDecisoes((p) => ({
+                            ...p,
+                            [r.id]: { tipo: "vincular", setor: sug.setor },
+                          }))
+                        }
                       >
                         Aceitar sugestão
                       </button>
@@ -218,15 +299,20 @@ export function CorrigirSetorDialog({
                     <Label className="text-xs">Vincular ao setor</Label>
                     <Select
                       value={d?.tipo === "vincular" ? d.setor : ""}
-                      onValueChange={(v) => setDecisoes((p) => ({ ...p, [r.id]: { tipo: "vincular", setor: v } }))}
+                      onValueChange={(v) =>
+                        setDecisoes((p) => ({ ...p, [r.id]: { tipo: "vincular", setor: v } }))
+                      }
                     >
-                      <SelectTrigger><SelectValue placeholder="Selecione o setor/GES" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o setor/GES" />
+                      </SelectTrigger>
                       <SelectContent>
                         {(emp?.setores ?? []).map((s) => {
                           const g = lookupGes(r.codigoEmpresa, s.nome, gesMap);
                           return (
                             <SelectItem key={s.id} value={s.nome}>
-                              {s.nome}{g ? ` — GES ${g}` : ""}
+                              {s.nome}
+                              {g ? ` — GES ${g}` : ""}
                             </SelectItem>
                           );
                         })}
@@ -255,7 +341,9 @@ export function CorrigirSetorDialog({
                 <div className="text-xs">
                   {!d && <span className="text-warning">⚠ Aguardando decisão</span>}
                   {d?.tipo === "vincular" && (
-                    <span className="text-success">✓ Vincular ao setor: <strong>{d.setor}</strong></span>
+                    <span className="text-success">
+                      ✓ Vincular ao setor: <strong>{d.setor}</strong>
+                    </span>
                   )}
                   {d?.tipo === "excluir" && (
                     <span className="text-destructive">✓ Marcada para exclusão</span>
@@ -267,7 +355,9 @@ export function CorrigirSetorDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+            Cancelar
+          </Button>
           <Button
             variant="primary"
             onClick={aplicar}
@@ -286,11 +376,14 @@ export function CorrigirSetorDialog({
           <DialogHeader>
             <DialogTitle>Excluir resposta?</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja descartar esta resposta do relatório? Essa ação pode alterar os percentuais da avaliação.
+              Tem certeza que deseja descartar esta resposta do relatório? Essa ação pode alterar os
+              percentuais da avaliação.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmaExclusao(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setConfirmaExclusao(null)}>
+              Cancelar
+            </Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -309,7 +402,17 @@ export function CorrigirSetorDialog({
   );
 }
 
-function Info({ icon, label, value, valueClass = "" }: { icon: React.ReactNode; label: string; value: React.ReactNode; valueClass?: string }) {
+function Info({
+  icon,
+  label,
+  value,
+  valueClass = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  valueClass?: string;
+}) {
   return (
     <div className="flex items-start gap-1.5">
       <span className="text-muted-foreground mt-0.5">{icon}</span>

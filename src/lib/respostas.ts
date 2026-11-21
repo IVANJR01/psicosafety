@@ -82,7 +82,8 @@ export async function saveResposta(r: {
       if (msg.includes("campanha_inativa")) throw new Error("Campanha inativa");
       if (msg.includes("campanha_nao_iniciada")) throw new Error("Campanha ainda não iniciada");
       if (msg.includes("campanha_encerrada")) throw new Error("Campanha encerrada");
-      if (msg.includes("setor_fora_do_escopo")) throw new Error("Este setor/GES não faz parte do escopo desta campanha.");
+      if (msg.includes("setor_fora_do_escopo"))
+        throw new Error("Este setor/GES não faz parte do escopo desta campanha.");
       throw error;
     }
     return;
@@ -118,7 +119,8 @@ export async function saveResposta(r: {
   });
   if (error) {
     if (String(error.message).includes("link_expirado")) throw new Error("Link expirado");
-    if (String(error.message).includes("empresa_nao_encontrada")) throw new Error("Empresa não encontrada");
+    if (String(error.message).includes("empresa_nao_encontrada"))
+      throw new Error("Empresa não encontrada");
     throw error;
   }
 }
@@ -136,7 +138,9 @@ export type ImportRespostasResult = {
   erros: { linha: number; mensagem: string }[];
 };
 
-export async function bulkImportRespostas(rows: ImportRespostaRow[]): Promise<ImportRespostasResult> {
+export async function bulkImportRespostas(
+  rows: ImportRespostaRow[],
+): Promise<ImportRespostasResult> {
   const out: ImportRespostasResult = { inseridas: 0, erros: [] };
   for (let i = 0; i < rows.length; i++) {
     const linha = i + 2;
@@ -154,8 +158,10 @@ export async function bulkImportRespostas(rows: ImportRespostaRow[]): Promise<Im
     });
     if (error) {
       const msg = String(error.message);
-      if (msg.includes("empresa_nao_encontrada")) out.erros.push({ linha, mensagem: "empresa não encontrada" });
-      else if (msg.includes("permissao_negada")) out.erros.push({ linha, mensagem: "sem permissão (admin)" });
+      if (msg.includes("empresa_nao_encontrada"))
+        out.erros.push({ linha, mensagem: "empresa não encontrada" });
+      else if (msg.includes("permissao_negada"))
+        out.erros.push({ linha, mensagem: "sem permissão (admin)" });
       else out.erros.push({ linha, mensagem: msg });
     } else {
       out.inseridas++;

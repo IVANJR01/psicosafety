@@ -5,10 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/q/$codigo/obrigado")({
   head: () => ({
-    meta: [
-      { title: "Obrigado pela participação" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Obrigado pela participação" }, { name: "robots", content: "noindex" }],
   }),
   component: Obrigado,
 });
@@ -23,8 +20,8 @@ function Obrigado() {
           </div>
           <h1 className="mt-4 text-2xl font-bold">Obrigado pela sua participação!</h1>
           <p className="mt-2 text-muted-foreground">
-            Suas respostas foram enviadas de forma anônima e ajudarão sua empresa a melhorar
-            o ambiente de trabalho conforme a NR-01.
+            Suas respostas foram enviadas de forma anônima e ajudarão sua empresa a melhorar o
+            ambiente de trabalho conforme a NR-01.
           </p>
           <Button asChild className="mt-6">
             <Link to="/">Voltar ao início</Link>

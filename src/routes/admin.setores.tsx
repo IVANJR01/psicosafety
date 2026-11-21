@@ -5,10 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,7 +83,11 @@ function SetoresPage() {
     }
     const [e, s] = await Promise.all([
       empQ,
-      supabase.from("empresa_setores").select("id, empresa_id, nome, ges, status").eq("status", "active").order("nome"),
+      supabase
+        .from("empresa_setores")
+        .select("id, empresa_id, nome, ges, status")
+        .eq("status", "active")
+        .order("nome"),
     ]);
     const empList = e.data ?? [];
     setEmpresas(empList);
@@ -82,18 +97,23 @@ function SetoresPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const adicionar = async () => {
     if (!empresaId || !novo.trim()) return;
     const nomeLimpo = novo.trim().replace(/\s+/g, " ");
     const gesLimpo = ges.trim() || null;
-    const existenteParecido = setores.find((s) =>
-      s.empresa_id === empresaId &&
-      (setorPareceDuplicado(s.nome, nomeLimpo) || (!!gesLimpo && s.ges === gesLimpo))
+    const existenteParecido = setores.find(
+      (s) =>
+        s.empresa_id === empresaId &&
+        (setorPareceDuplicado(s.nome, nomeLimpo) || (!!gesLimpo && s.ges === gesLimpo)),
     );
     if (existenteParecido) {
-      toast.warning(`Já existe setor ativo parecido: ${existenteParecido.nome}${existenteParecido.ges ? ` — GES ${existenteParecido.ges}` : ""}. Revise ou use “Unificar setor”.`);
+      toast.warning(
+        `Já existe setor ativo parecido: ${existenteParecido.nome}${existenteParecido.ges ? ` — GES ${existenteParecido.ges}` : ""}. Revise ou use “Unificar setor”.`,
+      );
       return;
     }
     const { error } = await supabase
@@ -117,7 +137,9 @@ function SetoresPage() {
     if (error) {
       const msg = String(error.message || "");
       if ((error as any).code === "23503" || /foreign key|referenc/i.test(msg)) {
-        toast.error("Este setor possui dados vinculados. Para evitar perda de informações, use “Unificar setor” ou “Arquivar setor”.");
+        toast.error(
+          "Este setor possui dados vinculados. Para evitar perda de informações, use “Unificar setor” ou “Arquivar setor”.",
+        );
         setArchiveTarget(id);
         return;
       }
@@ -142,7 +164,15 @@ function SetoresPage() {
     [setores, unifyOrigem],
   );
   const destinosDisponiveis = useMemo(
-    () => (origemSetor ? setores.filter((s) => s.empresa_id === origemSetor.empresa_id && s.id !== origemSetor.id && (s.status ?? "active") === "active") : []),
+    () =>
+      origemSetor
+        ? setores.filter(
+            (s) =>
+              s.empresa_id === origemSetor.empresa_id &&
+              s.id !== origemSetor.id &&
+              (s.status ?? "active") === "active",
+          )
+        : [],
     [setores, origemSetor],
   );
 
@@ -152,10 +182,14 @@ function SetoresPage() {
   }, [unifyOrigem]);
 
   useEffect(() => {
-    if (!unifyOrigem || !unifyDestino) { setUnifyPreview(null); return; }
+    if (!unifyOrigem || !unifyDestino) {
+      setUnifyPreview(null);
+      return;
+    }
     (async () => {
       const { data, error } = await supabase.rpc("preview_unificar_setores" as any, {
-        p_origem: unifyOrigem, p_destino: unifyDestino,
+        p_origem: unifyOrigem,
+        p_destino: unifyDestino,
       });
       if (!error) setUnifyPreview(data);
     })();
@@ -165,7 +199,8 @@ function SetoresPage() {
     if (!unifyOrigem || !unifyDestino) return;
     setUnifyBusy(true);
     const { error } = await supabase.rpc("unificar_setores" as any, {
-      p_origem: unifyOrigem, p_destino: unifyDestino,
+      p_origem: unifyOrigem,
+      p_destino: unifyDestino,
     });
     setUnifyBusy(false);
     if (error) return toast.error(error.message);
@@ -173,7 +208,6 @@ function SetoresPage() {
     setUnifyOrigem(null);
     load();
   };
-
 
   const [editId, setEditId] = useState<string | null>(null);
   const [editGes, setEditGes] = useState("");
@@ -198,19 +232,13 @@ function SetoresPage() {
     load();
   };
 
-  const empresaNome = (id: string) =>
-    empresas.find((x) => x.id === id)?.nome ?? "—";
+  const empresaNome = (id: string) => empresas.find((x) => x.id === id)?.nome ?? "—";
 
-  const setoresFiltrados = empresaId
-    ? setores.filter((s) => s.empresa_id === empresaId)
-    : setores;
+  const setoresFiltrados = empresaId ? setores.filter((s) => s.empresa_id === empresaId) : setores;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Setores"
-        description="Cadastre e gerencie os setores de cada empresa."
-      />
+      <PageHeader title="Setores" description="Cadastre e gerencie os setores de cada empresa." />
 
       <Card>
         <CardHeader>
@@ -223,7 +251,9 @@ function SetoresPage() {
             </SelectTrigger>
             <SelectContent>
               {empresas.map((e) => (
-                <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                <SelectItem key={e.id} value={e.id}>
+                  {e.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -295,10 +325,20 @@ function SetoresPage() {
                             placeholder="GES"
                             className="h-7 text-xs w-24"
                           />
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => salvarEdicao(s.id)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => salvarEdicao(s.id)}
+                          >
                             <Check className="h-4 w-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditId(null)}>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            onClick={() => setEditId(null)}
+                          >
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
@@ -308,7 +348,9 @@ function SetoresPage() {
                         <div className="font-medium truncate flex items-center gap-2">
                           {s.nome}
                           {s.ges ? (
-                            <Badge variant="secondary" className="text-[10px]">GES {s.ges}</Badge>
+                            <Badge variant="secondary" className="text-[10px]">
+                              GES {s.ges}
+                            </Badge>
                           ) : null}
                         </div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -363,26 +405,34 @@ function SetoresPage() {
               <GitMerge className="h-5 w-5" /> Unificar setores
             </DialogTitle>
             <DialogDescription>
-              Migre os vínculos do setor de origem para o destino sem perder dados. O setor de origem será arquivado e ocultado ao final.
+              Migre os vínculos do setor de origem para o destino sem perder dados. O setor de
+              origem será arquivado e ocultado ao final.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 text-sm">
             <div className="rounded-md border bg-muted/40 p-3">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Origem (será arquivado)</div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Origem (será arquivado)
+              </div>
               <div className="font-medium">
                 {origemSetor?.nome}
                 {origemSetor?.ges ? ` — GES ${origemSetor.ges}` : ""}
               </div>
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Setor de destino</label>
+              <label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Setor de destino
+              </label>
               <Select value={unifyDestino} onValueChange={setUnifyDestino}>
-                <SelectTrigger><SelectValue placeholder="Selecione o setor correto" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o setor correto" />
+                </SelectTrigger>
                 <SelectContent>
                   {destinosDisponiveis.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.nome}{s.ges ? ` — GES ${s.ges}` : ""}
+                      {s.nome}
+                      {s.ges ? ` — GES ${s.ges}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -391,21 +441,39 @@ function SetoresPage() {
             {unifyPreview && !unifyPreview.erro && (
               <div className="rounded-md border p-3 text-xs space-y-1">
                 <div className="font-medium mb-1">Resumo da migração</div>
-                <div>Respostas vinculadas: <strong>{unifyPreview.respostas}</strong></div>
-                <div>Funções/cargos vinculados: <strong>{unifyPreview.funcoes}</strong></div>
-                <div>Funções duplicadas que serão deduplicadas: <strong>{unifyPreview.funcoes_duplicadas ?? 0}</strong></div>
-                <div>Campanhas vinculadas: <strong>{unifyPreview.campanhas}</strong></div>
-                <div>campaign_sectors vinculados: <strong>{unifyPreview.campaign_sectors ?? unifyPreview.campanhas}</strong></div>
-                <div>Avaliações/relatórios vinculados: <strong>{unifyPreview.avaliacoes ?? unifyPreview.respostas}</strong></div>
+                <div>
+                  Respostas vinculadas: <strong>{unifyPreview.respostas}</strong>
+                </div>
+                <div>
+                  Funções/cargos vinculados: <strong>{unifyPreview.funcoes}</strong>
+                </div>
+                <div>
+                  Funções duplicadas que serão deduplicadas:{" "}
+                  <strong>{unifyPreview.funcoes_duplicadas ?? 0}</strong>
+                </div>
+                <div>
+                  Campanhas vinculadas: <strong>{unifyPreview.campanhas}</strong>
+                </div>
+                <div>
+                  campaign_sectors vinculados:{" "}
+                  <strong>{unifyPreview.campaign_sectors ?? unifyPreview.campanhas}</strong>
+                </div>
+                <div>
+                  Avaliações/relatórios vinculados:{" "}
+                  <strong>{unifyPreview.avaliacoes ?? unifyPreview.respostas}</strong>
+                </div>
                 <div className="text-muted-foreground mt-1">
-                  Cargos com nome idêntico já existentes no destino serão deduplicados, mantendo o cargo do setor correto.
+                  Cargos com nome idêntico já existentes no destino serão deduplicados, mantendo o
+                  cargo do setor correto.
                 </div>
               </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUnifyOrigem(null)} disabled={unifyBusy}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setUnifyOrigem(null)} disabled={unifyBusy}>
+              Cancelar
+            </Button>
             <Button
               onClick={executarUnificacao}
               disabled={!unifyDestino || unifyBusy}
@@ -423,11 +491,14 @@ function SetoresPage() {
           <DialogHeader>
             <DialogTitle>Setor com dados vinculados</DialogTitle>
             <DialogDescription>
-              Este setor possui dados vinculados. Para evitar perda de informações, use “Unificar setor” ou “Arquivar setor”.
+              Este setor possui dados vinculados. Para evitar perda de informações, use “Unificar
+              setor” ou “Arquivar setor”.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:justify-between">
-            <Button variant="outline" onClick={() => setArchiveTarget(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setArchiveTarget(null)}>
+              Cancelar
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {

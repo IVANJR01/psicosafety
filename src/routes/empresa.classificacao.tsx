@@ -1,22 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getCurrentEmpresa, listRespostasEmpresa, type Resposta } from "@/lib/storage";
-import { aggregateBySetor, aggregateDimensions, classifyRisco, probFromScore } from "@/lib/empresa-stats";
+import {
+  aggregateBySetor,
+  aggregateDimensions,
+  classifyRisco,
+  probFromScore,
+} from "@/lib/empresa-stats";
 import { severidadeDaDimensao, type Nivel } from "@/lib/risco-matriz";
 import { DIMENSIONS } from "@/lib/copsoq";
 
 export const Route = createFileRoute("/empresa/classificacao")({
-  head: () => ({ meta: [{ title: "Classificação de Risco | Portal" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Classificação de Risco | Portal" }, { name: "robots", content: "noindex" }],
+  }),
   component: ClassificacaoEmpresa,
 });
 
-const SEV_LABEL: Record<Nivel, string> = { 1: "Leve", 2: "Baixa", 3: "Moderada", 4: "Alta", 5: "Crítica" };
+const SEV_LABEL: Record<Nivel, string> = {
+  1: "Leve",
+  2: "Baixa",
+  3: "Moderada",
+  4: "Alta",
+  5: "Crítica",
+};
 // Mesmo vocabulário do eixo da matriz e da Escala de Probabilidade do AEP.
 // Probabilidade é CHANCE de ocorrência, não magnitude — "Moderada" e "Alta"
 // aqui descreviam intensidade e colidiam com os rótulos de severidade acima.
-const PROB_LABEL: Record<Nivel, string> = { 1: "Rara", 2: "Pouco provável", 3: "Possível", 4: "Provável", 5: "Muito provável" };
+const PROB_LABEL: Record<Nivel, string> = {
+  1: "Rara",
+  2: "Pouco provável",
+  3: "Possível",
+  4: "Provável",
+  5: "Muito provável",
+};
 
 function ClassificacaoEmpresa() {
   const [respostas, setRespostas] = useState<Resposta[]>([]);
@@ -58,15 +84,26 @@ function ClassificacaoEmpresa() {
                 {aggGeral.map((a) => (
                   <TableRow key={a.dim.id}>
                     <TableCell className="font-medium">{a.dim.title}</TableCell>
-                    <TableCell className="text-right font-mono">{a.n > 0 ? `${a.score}%` : "—"}</TableCell>
-                    <TableCell className="text-xs">{a.n > 0 ? `${a.prob} — ${PROB_LABEL[a.prob]}` : "—"}</TableCell>
-                    <TableCell className="text-xs">{a.sev} — {SEV_LABEL[a.sev]}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {a.n > 0 ? `${a.score}%` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {a.n > 0 ? `${a.prob} — ${PROB_LABEL[a.prob]}` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {a.sev} — {SEV_LABEL[a.sev]}
+                    </TableCell>
                     <TableCell>
                       {a.n > 0 ? (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ background: a.risco.color }}>
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                          style={{ background: a.risco.color }}
+                        >
                           {a.risco.nivel} — {a.risco.label}
                         </span>
-                      ) : <span className="text-xs text-muted-foreground">Sem dados</span>}
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sem dados</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -107,7 +144,10 @@ function ClassificacaoEmpresa() {
                               <TableCell className="font-medium">{dim.title}</TableCell>
                               <TableCell className="text-right font-mono">{d.score}%</TableCell>
                               <TableCell>
-                                <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ background: risco.color }}>
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                                  style={{ background: risco.color }}
+                                >
                                   {risco.nivel} — {risco.label}
                                 </span>
                               </TableCell>

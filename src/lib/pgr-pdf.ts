@@ -18,11 +18,11 @@ const SEV_LABEL: Record<string, string> = {
 };
 
 const RISCO_COLOR: Record<string, [number, number, number]> = {
-  "TRIVIAL":     [134, 239, 172],
-  "TOLERÁVEL":   [34, 197, 94],
-  "MODERADO":    [234, 179, 8],
-  "SUBSTANCIAL": [249, 115, 22],
-  "INTOLERÁVEL": [220, 38, 38],
+  TRIVIAL: [134, 239, 172],
+  TOLERÁVEL: [34, 197, 94],
+  MODERADO: [234, 179, 8],
+  SUBSTANCIAL: [249, 115, 22],
+  INTOLERÁVEL: [220, 38, 38],
 };
 
 export function gerarPgrPdf(empresa: Empresa, respostas: Resposta[]) {
@@ -118,11 +118,7 @@ export function gerarPgrPdf(empresa: Empresa, respostas: Resposta[]) {
     autoTable(doc, {
       startY: 26,
       head: [["Setor", "n", ...dimTitles]],
-      body: setores.map((s) => [
-        s.setor,
-        String(s.n),
-        ...s.porDim.map((d) => `${d.score}%`),
-      ]),
+      body: setores.map((s) => [s.setor, String(s.n), ...s.porDim.map((d) => `${d.score}%`)]),
       headStyles: { fillColor: [15, 23, 42], textColor: 255, fontSize: 7 },
       bodyStyles: { fontSize: 8 },
       columnStyles: { 0: { cellWidth: 35, fontStyle: "bold" } },
@@ -130,7 +126,14 @@ export function gerarPgrPdf(empresa: Empresa, respostas: Resposta[]) {
         if (data.section === "body" && data.column.index >= 2) {
           const v = parseInt(String(data.cell.raw).replace("%", ""), 10);
           if (!Number.isNaN(v)) {
-            const c: [number, number, number] = v >= 70 ? [239, 68, 68] : v >= 50 ? [245, 158, 11] : v >= 30 ? [59, 130, 246] : [16, 185, 129];
+            const c: [number, number, number] =
+              v >= 70
+                ? [239, 68, 68]
+                : v >= 50
+                  ? [245, 158, 11]
+                  : v >= 30
+                    ? [59, 130, 246]
+                    : [16, 185, 129];
             data.cell.styles.fillColor = c;
             data.cell.styles.textColor = 255;
             data.cell.styles.fontStyle = "bold";
@@ -175,12 +178,9 @@ export function gerarPgrPdf(empresa: Empresa, respostas: Resposta[]) {
       15,
       doc.internal.pageSize.getHeight() - 8,
     );
-    doc.text(
-      `Página ${i} de ${total}`,
-      pageW - 15,
-      doc.internal.pageSize.getHeight() - 8,
-      { align: "right" },
-    );
+    doc.text(`Página ${i} de ${total}`, pageW - 15, doc.internal.pageSize.getHeight() - 8, {
+      align: "right",
+    });
   }
 
   doc.save(`PGR-Psicossocial-${empresa.codigo}-${today.replaceAll("/", "-")}.pdf`);

@@ -61,44 +61,43 @@ function createProbabilityAxisPng(widthPt: number, heightPt: number): string | n
 }
 
 // ---- Paleta executiva ----
-const PRIMARY: [number, number, number] = [15, 23, 42];   // #0F172A
-const ACCENT:  [number, number, number] = [37, 99, 235];  // #2563EB
+const PRIMARY: [number, number, number] = [15, 23, 42]; // #0F172A
+const ACCENT: [number, number, number] = [37, 99, 235]; // #2563EB
 const SOFT_BG: [number, number, number] = [243, 244, 246];
 
 const NIVEL_COR: Record<NivelRisco, [number, number, number]> = {
-  Baixo:   [22, 163, 74],
-  Médio:   [202, 138, 4],
-  Alto:    [234, 88, 12],
+  Baixo: [22, 163, 74],
+  Médio: [202, 138, 4],
+  Alto: [234, 88, 12],
   Crítico: [220, 38, 38],
 };
 const NIVEL_FILL: Record<NivelRisco, [number, number, number]> = {
-  Baixo:   [220, 252, 231],
-  Médio:   [254, 249, 195],
-  Alto:    [255, 237, 213],
+  Baixo: [220, 252, 231],
+  Médio: [254, 249, 195],
+  Alto: [255, 237, 213],
   Crítico: [254, 226, 226],
 };
 
 const NIVEL_PRIORIDADE: Record<NivelRisco, string> = {
   Crítico: "1ª — Imediata",
-  Alto:    "2ª — Alta",
-  Médio:   "3ª — Média",
-  Baixo:   "4ª — Monitorar",
+  Alto: "2ª — Alta",
+  Médio: "3ª — Média",
+  Baixo: "4ª — Monitorar",
 };
 
 const NIVEL_CONTROLE: Record<NivelRisco, string> = {
   Crítico: "Intolerável — ações imediatas",
-  Alto:    "Substancial — controle necessário",
-  Médio:   "Moderado — controle adicional",
-  Baixo:   "Tolerável — monitoramento",
+  Alto: "Substancial — controle necessário",
+  Médio: "Moderado — controle adicional",
+  Baixo: "Tolerável — monitoramento",
 };
 
 const NIVEL_PRAZO: Record<NivelRisco, string> = {
   Crítico: "Imediato (até 30 dias)",
-  Alto:    "Curto prazo (até 90 dias)",
-  Médio:   "Médio prazo (até 180 dias)",
-  Baixo:   "Monitoramento (até 12 meses)",
+  Alto: "Curto prazo (até 90 dias)",
+  Médio: "Médio prazo (até 180 dias)",
+  Baixo: "Monitoramento (até 12 meses)",
 };
-
 
 export type AepPdfOptions = {
   incluirGraficos?: boolean;
@@ -119,18 +118,25 @@ export type AepPdfOptions = {
     respostasValidas: number;
   };
   /** Controles cadastrados por chave "setorId|dominio" (tipo 'existente'). */
-  controlesMap?: Map<string, Array<{
-    description: string;
-    validated: boolean;
-    validated_at: string | null;
-    status: string;
-  }>>;
+  controlesMap?: Map<
+    string,
+    Array<{
+      description: string;
+      validated: boolean;
+      validated_at: string | null;
+      status: string;
+    }>
+  >;
 };
 
 export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions = {}) {
   const step = (s: string) => {
-    try { opts.onStep?.(s); } catch {}
-    try { console.log("[AEP-PDF] etapa:", s); } catch {}
+    try {
+      opts.onStep?.(s);
+    } catch {}
+    try {
+      console.log("[AEP-PDF] etapa:", s);
+    } catch {}
   };
   try {
     step("init: validar dataset");
@@ -138,7 +144,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const incluirPlanoAcao = opts.incluirPlanoAcao ?? true;
     const incluirAnexos = opts.incluirAnexos ?? true;
     const somenteAvaliados = opts.somenteAvaliados ?? true;
-
 
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const margin = 40;
@@ -148,7 +153,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     const rgb = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
     const fillRgb = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
-    const ensure = (h: number) => { if (y + h > pageH - 60) { doc.addPage(); y = margin + 30; } };
+    const ensure = (h: number) => {
+      if (y + h > pageH - 60) {
+        doc.addPage();
+        y = margin + 30;
+      }
+    };
 
     let secCount = 0;
     const sectionTitle = (titulo: string, opts?: { samePageIfFits?: number }) => {
@@ -157,33 +167,49 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // Por padrão cada capítulo principal inicia em nova página.
       // Se samePageIfFits for informado e couber na página atual, mantém na mesma página.
       if (secCount > 0) {
-        const fits = opts?.samePageIfFits && (y + opts.samePageIfFits <= pageH - 60);
-        if (!fits) { doc.addPage(); y = margin + 30; }
+        const fits = opts?.samePageIfFits && y + opts.samePageIfFits <= pageH - 60;
+        if (!fits) {
+          doc.addPage();
+          y = margin + 30;
+        }
       }
       secCount += 1;
       const num = String(secCount).padStart(2, "0");
-      fillRgb(ACCENT); doc.roundedRect(margin, y, 38, 28, 4, 4, "F");
-      rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      fillRgb(ACCENT);
+      doc.roundedRect(margin, y, 38, 28, 4, 4, "F");
+      rgb([255, 255, 255]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
       doc.text(num, margin + 19, y + 19, { align: "center" });
-      rgb(PRIMARY); doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      rgb(PRIMARY);
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
       doc.text(titulo.toUpperCase(), margin + 48, y + 19);
-      doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]); doc.setLineWidth(0.6);
+      doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+      doc.setLineWidth(0.6);
       doc.line(margin, y + 32, pageW - margin, y + 32);
       doc.setLineWidth(0.2);
-      rgb([30, 30, 30]); doc.setFont("helvetica", "normal");
+      rgb([30, 30, 30]);
+      doc.setFont("helvetica", "normal");
       y += 46;
     };
 
     const subTitle = (txt: string) => {
       ensure(24);
-      rgb(PRIMARY); doc.setFont("helvetica", "bold"); doc.setFontSize(10.5);
-      doc.text(txt, margin, y); y += 14;
-      rgb([40, 40, 40]); doc.setFont("helvetica", "normal");
+      rgb(PRIMARY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.text(txt, margin, y);
+      y += 14;
+      rgb([40, 40, 40]);
+      doc.setFont("helvetica", "normal");
     };
 
     const paragraph = (text: string, size = 10) => {
       ensure(20);
-      doc.setFontSize(size); rgb([40, 40, 40]); doc.setFont("helvetica", "normal");
+      doc.setFontSize(size);
+      rgb([40, 40, 40]);
+      doc.setFont("helvetica", "normal");
       const lines = doc.splitTextToSize(text, pageW - margin * 2);
       lines.forEach((ln: string) => {
         ensure(size + 4);
@@ -204,10 +230,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
       doc.rect(margin, y, pageW - margin * 2, h, "F");
       doc.setGState(new (doc as any).GState({ opacity: 1 }));
-      doc.setDrawColor(color[0], color[1], color[2]); doc.setLineWidth(2.5);
+      doc.setDrawColor(color[0], color[1], color[2]);
+      doc.setLineWidth(2.5);
       doc.line(margin, y, margin, y + h);
       doc.setLineWidth(0.2);
-      rgb([40, 40, 40]); doc.setFont("helvetica", "normal");
+      rgb([40, 40, 40]);
+      doc.setFont("helvetica", "normal");
       doc.text(lines, margin + 12, y + 16);
       y += h + 10;
     };
@@ -230,16 +258,24 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       const centro = pageW / 2;
 
       // Empresa, no alto.
-      rgb(PRETO); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-      doc.text(razao.toUpperCase(), centro, 118, { align: "center", maxWidth: pageW - margin * 2 } as any);
+      rgb(PRETO);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(razao.toUpperCase(), centro, 118, {
+        align: "center",
+        maxWidth: pageW - margin * 2,
+      } as any);
 
       // O que é o documento, no centro óptico da página.
       doc.setFontSize(46);
       doc.text("AEP", centro, 372, { align: "center" });
       doc.setFontSize(14);
       doc.text("AVALIAÇÃO ERGONÔMICA PRELIMINAR", centro, 404, { align: "center" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-      doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", centro, 424, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text("Fatores de Riscos Psicossociais Relacionados ao Trabalho", centro, 424, {
+        align: "center",
+      });
 
       // Sem bloco de identificação no pé. CNPJ, responsável técnico, formação,
       // registro, cargo e as datas são a seção 01 (Dados da Empresa), na página
@@ -249,19 +285,28 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     }
 
     // ============== 01. DADOS DA EMPRESA ==============
-    doc.addPage(); y = margin + 10;
-    fillRgb(PRIMARY); doc.roundedRect(margin, y, pageW - margin * 2, 56, 8, 8, "F");
-    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.addPage();
+    y = margin + 10;
+    fillRgb(PRIMARY);
+    doc.roundedRect(margin, y, pageW - margin * 2, 56, 8, 8, "F");
+    rgb([255, 255, 255]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
     doc.text("RELATÓRIO TÉCNICO AEP — RISCOS PSICOSSOCIAIS", margin + 16, y + 22);
-    doc.setFontSize(10); doc.setFont("helvetica", "normal"); rgb([191, 219, 254]);
-    doc.text("Avaliação Ergonômica Preliminar  •  Conforme NR-01, NR-17 e Guia MTE", margin + 16, y + 40);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    rgb([191, 219, 254]);
+    doc.text(
+      "Avaliação Ergonômica Preliminar  •  Conforme NR-01, NR-17 e Guia MTE",
+      margin + 16,
+      y + 40,
+    );
     y += 70;
 
     sectionTitle("Dados da Empresa");
     const e = data.empresa;
-    const setoresLista = data.setores.length > 0
-      ? data.setores.map((s) => s.label).join(", ")
-      : "—";
+    const setoresLista =
+      data.setores.length > 0 ? data.setores.map((s) => s.label).join(", ") : "—";
     // DUAS datas distintas, e elas quase nunca coincidem:
     //
     //   coleta  — quando os trabalhadores responderam (fato, vindo das
@@ -277,14 +322,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     //
     // A campanha, quando existe, continua tendo precedência: ela é o período
     // oficialmente pactuado. Sem ela, vale o intervalo real das respostas.
-    const perColeta = (data.periodo.inicio || data.periodo.fim)
-      ? { inicio: data.periodo.inicio, fim: data.periodo.fim }
-      : data.coleta;
-    const dataColeta = perColeta.inicio || perColeta.fim
-      ? (perColeta.inicio === perColeta.fim
+    const perColeta =
+      data.periodo.inicio || data.periodo.fim
+        ? { inicio: data.periodo.inicio, fim: data.periodo.fim }
+        : data.coleta;
+    const dataColeta =
+      perColeta.inicio || perColeta.fim
+        ? perColeta.inicio === perColeta.fim
           ? (perColeta.inicio ?? "—")
-          : `${perColeta.inicio ?? "—"} a ${perColeta.fim ?? "—"}`)
-      : "Não informado";
+          : `${perColeta.inicio ?? "—"} a ${perColeta.fim ?? "—"}`
+        : "Não informado";
 
     const gesCadStr = data.gesCadastrados.length
       ? data.gesCadastrados.map((g) => `• ${g.label}`).join("\n")
@@ -299,10 +346,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const rt = data.responsavelTec;
     const respNome = (rt?.nome || data.responsavelTecnico || "").trim() || "—";
     const respForm = (rt?.formacao || (e as any)?.resp_formacao || "").trim() || "—";
-    const respReg  = (rt?.registro || (e as any)?.resp_registro || "").trim() || "—";
-    const fixTypos = (s: string) => s
-      .replace(/Segurnça/gi, "Segurança")
-      .replace(/Seguranca/g, "Segurança");
+    const respReg = (rt?.registro || (e as any)?.resp_registro || "").trim() || "—";
+    const fixTypos = (s: string) =>
+      s.replace(/Segurnça/gi, "Segurança").replace(/Seguranca/g, "Segurança");
     const respCargo = fixTypos((rt?.cargo || (e as any)?.responsavel_cargo || "").trim()) || "—";
 
     const totCad = data.gesCadastrados.length;
@@ -324,7 +370,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     if (trabCad !== "—" && trabCad != null && String(trabCad).trim() !== "") {
       linhasEmpresa.push(["Trabalhadores cadastrados na empresa", String(trabCad)]);
     }
-    linhasEmpresa.push(["Trabalhadores participantes / respondentes válidos", String(data.totalRespostas)]);
+    linhasEmpresa.push([
+      "Trabalhadores participantes / respondentes válidos",
+      String(data.totalRespostas),
+    ]);
     if (!somenteAvaliados) {
       linhasEmpresa.push(["Trabalhadores abrangidos pelos GES avaliados", String(trabAbr)]);
       linhasEmpresa.push([`GES cadastrados no sistema (${totCad})`, gesCadStr]);
@@ -390,21 +439,21 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     sectionTitle("Introdução");
     paragraph(
       "A Avaliação Ergonômica Preliminar (AEP) integra as ações de identificação, reconhecimento e " +
-      "avaliação dos riscos ocupacionais da empresa, conforme determinam a NR-01 (Gerenciamento de " +
-      "Riscos Ocupacionais — GRO/PGR) e a NR-17 (Ergonomia). Esta avaliação fornece subsídios técnicos " +
-      "para a composição do Inventário de Riscos do PGR e, quando indicado, para a realização da " +
-      "Análise Ergonômica do Trabalho (AET) aprofundada."
+        "avaliação dos riscos ocupacionais da empresa, conforme determinam a NR-01 (Gerenciamento de " +
+        "Riscos Ocupacionais — GRO/PGR) e a NR-17 (Ergonomia). Esta avaliação fornece subsídios técnicos " +
+        "para a composição do Inventário de Riscos do PGR e, quando indicado, para a realização da " +
+        "Análise Ergonômica do Trabalho (AET) aprofundada.",
     );
     paragraph(
       "Os fatores psicossociais aqui avaliados são tratados como riscos ocupacionais relacionados à " +
-      "organização do trabalho, à gestão e às relações no ambiente laboral. NÃO se trata de diagnóstico " +
-      "clínico individual: o foco é ocupacional, organizacional e preventivo, com linguagem alinhada ao " +
-      "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
+        "organização do trabalho, à gestão e às relações no ambiente laboral. NÃO se trata de diagnóstico " +
+        "clínico individual: o foco é ocupacional, organizacional e preventivo, com linguagem alinhada ao " +
+        "Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE.",
     );
     callout(
       "Este relatório não substitui avaliação clínica individual. Os resultados refletem a percepção " +
-      "coletiva dos trabalhadores no momento da aplicação e devem subsidiar decisões de prevenção, " +
-      "controle e mitigação de riscos ocupacionais conforme NR-01.",
+        "coletiva dos trabalhadores no momento da aplicação e devem subsidiar decisões de prevenção, " +
+        "controle e mitigação de riscos ocupacionais conforme NR-01.",
       ACCENT,
     );
 
@@ -417,9 +466,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       subTitle("Tipo de avaliação: Reavaliação Setorial Complementar");
       paragraph(
         "A presente avaliação representa uma reavaliação setorial complementar, realizada apenas " +
-        "nos setores/GES selecionados, com o objetivo de confirmar ou revisar os achados " +
-        "psicossociais identificados na avaliação anterior. Os resultados não representam a " +
-        "totalidade da empresa, mas sim o recorte específico da nova coleta."
+          "nos setores/GES selecionados, com o objetivo de confirmar ou revisar os achados " +
+          "psicossociais identificados na avaliação anterior. Os resultados não representam a " +
+          "totalidade da empresa, mas sim o recorte específico da nova coleta.",
       );
       paragraph(`Campanha original: ${ctx.campanhaOriginal}`);
       if (ctx.motivo) paragraph(`Motivo da reavaliação: ${ctx.motivo}`);
@@ -429,71 +478,70 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       paragraph(`Respostas válidas da reavaliação: ${ctx.respostasValidas}`);
       callout(
         "Diferenças entre a avaliação original e a reavaliação podem ocorrer em razão do recorte " +
-        "de respondentes, do período da coleta, de mudanças organizacionais, da adesão dos " +
-        "trabalhadores e da percepção coletiva no momento da aplicação.",
+          "de respondentes, do período da coleta, de mudanças organizacionais, da adesão dos " +
+          "trabalhadores e da percepção coletiva no momento da aplicação.",
         ACCENT,
       );
     }
 
     paragraph(
       "A metodologia está organizada em duas camadas complementares, para evitar sobreposição " +
-      "de conceitos: (1) avaliação psicossocial pelo COPSOQBR, que gera a Classificação " +
-      "Psicossocial em percentual de criticidade; e (2) integração ocupacional ao GRO/PGR, que " +
-      "aplica a matriz Probabilidade × Severidade e gera o Nível de Risco PGR, o Inventário de " +
-      "Riscos e o Plano de Ação."
+        "de conceitos: (1) avaliação psicossocial pelo COPSOQBR, que gera a Classificação " +
+        "Psicossocial em percentual de criticidade; e (2) integração ocupacional ao GRO/PGR, que " +
+        "aplica a matriz Probabilidade × Severidade e gera o Nível de Risco PGR, o Inventário de " +
+        "Riscos e o Plano de Ação.",
     );
 
     subTitle("4.1 Coleta dos dados");
     paragraph(
       "Aplicação do questionário COPSOQBR (versão brasileira do COPSOQ III) aos trabalhadores " +
-      "participantes, com respostas anônimas e tratamento coletivo. A finalidade é ocupacional " +
-      "e preventiva — o relatório não possui finalidade diagnóstica clínica individual."
+        "participantes, com respostas anônimas e tratamento coletivo. A finalidade é ocupacional " +
+        "e preventiva — o relatório não possui finalidade diagnóstica clínica individual.",
     );
 
     subTitle("4.2 Tratamento dos resultados psicossociais");
     paragraph(
       "As respostas são consolidadas por domínio do COPSOQBR e convertidas em percentual de " +
-      "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
-      "Psicossocial segue as faixas: 0–49% = BAIXO · 50–79% = MÉDIO · 80–100% = ALTO."
+        "criticidade, representando a percepção coletiva dos trabalhadores. A Classificação " +
+        "Psicossocial segue as faixas: 0–49% = BAIXO · 50–79% = MÉDIO · 80–100% = ALTO.",
     );
 
     subTitle("4.3 Mapeamento técnico ocupacional");
     paragraph(
       "Cada domínio do COPSOQBR é relacionado a um agente / situação, a um perigo (fator de " +
-      "risco) e a uma possível consequência, utilizando nomenclatura alinhada ao Guia de " +
-      "Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE."
+        "risco) e a uma possível consequência, utilizando nomenclatura alinhada ao Guia de " +
+        "Fatores de Riscos Psicossociais Relacionados ao Trabalho do MTE.",
     );
 
     subTitle("4.4 Integração ao GRO/PGR");
     paragraph(
       "Após a Classificação Psicossocial, os achados são integrados ao Inventário de Riscos do " +
-      "PGR por meio da matriz Probabilidade × Severidade (5×5), gerando o Nível de Risco PGR. " +
-      "A matriz 5×5 foi adotada como critério técnico interno para integração dos achados " +
-      "psicossociais ao Inventário de Riscos do PGR — ela não representa o resultado direto do " +
-      "COPSOQBR, mas sim a etapa de integração ocupacional."
+        "PGR por meio da matriz Probabilidade × Severidade (5×5), gerando o Nível de Risco PGR. " +
+        "A matriz 5×5 foi adotada como critério técnico interno para integração dos achados " +
+        "psicossociais ao Inventário de Riscos do PGR — ela não representa o resultado direto do " +
+        "COPSOQBR, mas sim a etapa de integração ocupacional.",
     );
 
     subTitle("4.5 Inventário de Riscos e Plano de Ação");
     paragraph(
       "O Inventário de Riscos apresenta os perigos psicossociais reconhecidos, controles " +
-      "existentes, probabilidade, severidade e Nível de Risco PGR. O Plano de Ação é derivado " +
-      "do Inventário, com prazos e prioridades definidos a partir do Nível de Risco PGR."
+        "existentes, probabilidade, severidade e Nível de Risco PGR. O Plano de Ação é derivado " +
+        "do Inventário, com prazos e prioridades definidos a partir do Nível de Risco PGR.",
     );
 
     callout(
       "COPSOQBR = percentual e Classificação Psicossocial. " +
-      "PGR = matriz P × S, Nível de Risco, Inventário e Plano de Ação. " +
-      "Os dois conceitos são complementares e não devem ser confundidos.",
+        "PGR = matriz P × S, Nível de Risco, Inventário e Plano de Ação. " +
+        "Os dois conceitos são complementares e não devem ser confundidos.",
       ACCENT,
     );
-
 
     // ============== 05. GES / SETORES / FUNÇÕES ==============
     sectionTitle("Caracterização dos GES / Setores / Funções Avaliadas");
     paragraph(
       "Identificação dos Grupos de Exposição Similar (GES) avaliados, suas funções, número de " +
-      "trabalhadores e a representatividade na amostra. Esta seção é apenas de caracterização — " +
-      "a análise de risco psicossocial é apresentada nas seções 06 a 09."
+        "trabalhadores e a representatividade na amostra. Esta seção é apenas de caracterização — " +
+        "a análise de risco psicossocial é apresentada nas seções 06 a 09.",
     );
 
     if (data.setores.length === 0) {
@@ -501,7 +549,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     } else {
       const totalConv = data.totalConvidados ?? data.totalRespostas;
       const cleanFuncNome = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
-      const dedupFuncoes = (fs: typeof data.setores[number]["funcoes"]) => {
+      const dedupFuncoes = (fs: (typeof data.setores)[number]["funcoes"]) => {
         const map = new Map<string, number>();
         fs.forEach((f) => {
           const k = cleanFuncNome(f.funcao);
@@ -523,9 +571,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Funções avaliadas", "Nº\nTrab.", "Resp.\nválidas", "% da\namostra"]],
+        head: [
+          ["GES / Setores", "Funções avaliadas", "Nº\nTrab.", "Resp.\nválidas", "% da\namostra"],
+        ],
         body: gheBody,
-        headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle", cellPadding: 4 },
+        headStyles: {
+          fillColor: ACCENT,
+          textColor: 255,
+          fontSize: 8,
+          halign: "center",
+          valign: "middle",
+          cellPadding: 4,
+        },
         styles: { fontSize: 8, cellPadding: 3.5, valign: "middle", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
@@ -541,29 +598,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
       // Observação técnica: GES com baixa amostra + diferenciação trabalhadores × respostas
       paragraph(
-        "Observação: a coluna \"Nº Trab.\" refere-se ao total de trabalhadores existentes no GES/Setor conforme cadastro da empresa; " +
-        "\"Resp. válidas\" indica quantos participaram efetivamente da avaliação; e \"% da amostra\" representa a taxa de participação " +
-        "do GES em relação ao total de respondentes. Quando o cadastro de trabalhadores por GES não estiver disponível, os valores " +
-        "podem coincidir e devem ser validados pela empresa. GES com baixa quantidade de respostas devem ser interpretados como " +
-        "recorte preliminar, recomendando validação complementar quando houver maior número de trabalhadores no setor.",
+        'Observação: a coluna "Nº Trab." refere-se ao total de trabalhadores existentes no GES/Setor conforme cadastro da empresa; ' +
+          '"Resp. válidas" indica quantos participaram efetivamente da avaliação; e "% da amostra" representa a taxa de participação ' +
+          "do GES em relação ao total de respondentes. Quando o cadastro de trabalhadores por GES não estiver disponível, os valores " +
+          "podem coincidir e devem ser validados pela empresa. GES com baixa quantidade de respostas devem ser interpretados como " +
+          "recorte preliminar, recomendando validação complementar quando houver maior número de trabalhadores no setor.",
         9,
       );
-
     }
-
 
     // (Removido: tabela "Setores cadastrados sem avaliação dentro dos GES avaliados".
     //  O relatório é por GES — se o GES teve resposta em qualquer setor vinculado,
     //  o GES inteiro é considerado avaliado e exibido com todos os seus setores.)
-
 
     // ---- GES cadastrados sem avaliação neste ciclo ----
     if (!somenteAvaliados && data.gesSemAvaliacao.length > 0) {
       subTitle("GES cadastrados sem avaliação neste ciclo");
       paragraph(
         `Os GES abaixo estão cadastrados no sistema, porém não receberam respostas válidas ` +
-        `nesta avaliação. Permanecem listados para fins de rastreabilidade do PGR, mas NÃO ` +
-        `compõem o cálculo de risco psicossocial deste ciclo.`,
+          `nesta avaliação. Permanecem listados para fins de rastreabilidade do PGR, mas NÃO ` +
+          `compõem o cálculo de risco psicossocial deste ciclo.`,
         9,
       );
       autoTable(doc, {
@@ -591,27 +645,34 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y = (doc as any).lastAutoTable.finalY + 18;
     }
 
-
     // ============== 06. RESULTADO DA AVALIAÇÃO COPSOQBR ==============
     sectionTitle("Resultado da Avaliação do Questionário COPSOQBR");
     paragraph(
       "Os resultados abaixo representam exclusivamente a consolidação dos domínios avaliados pelo " +
-      "COPSOQBR, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
-      "perigo, possível consequência, controles e nível de risco PGR é apresentada posteriormente no " +
-      "Inventário de Riscos Ocupacionais (seções 08 e 09). Faixas: 0–49% = BAIXO · 50–79% = MÉDIO · 80–100% = ALTO."
+        "COPSOQBR, com percentual de criticidade e Classificação Psicossocial. A conversão técnica em " +
+        "perigo, possível consequência, controles e nível de risco PGR é apresentada posteriormente no " +
+        "Inventário de Riscos Ocupacionais (seções 08 e 09). Faixas: 0–49% = BAIXO · 50–79% = MÉDIO · 80–100% = ALTO.",
     );
 
     const fatoresValidos = data.fatoresGerais.filter((f) => f.n > 0);
 
     const leituraPreventivaPorDim: Record<string, string> = {
-      demandas: "Indica atenção para sobrecarga, pressão, múltiplas tarefas e ritmo intenso de trabalho.",
-      organizacao: "Indica atenção para autonomia, controle da tarefa, clareza de papéis e organização do trabalho.",
-      relacoes: "Indica atenção para relações interpessoais, comunicação, apoio da liderança e clima da equipe.",
-      interface: "Indica atenção para o equilíbrio entre trabalho e vida pessoal e a interferência do trabalho no tempo pessoal.",
-      saude: "Indica atenção para sinais de estresse, esgotamento, sono e bem-estar geral relacionados ao trabalho.",
-      ofensivos: "Indica atenção para situações de assédio moral, sexual, humilhação, intimidação ou discriminação.",
-      seguranca: "Indica atenção para percepção de insegurança ocupacional, falhas de comunicação preventiva e confiança nas condições de trabalho.",
-      reconhecimento: "Indica atenção para reconhecimento profissional, justiça organizacional, valorização e feedback.",
+      demandas:
+        "Indica atenção para sobrecarga, pressão, múltiplas tarefas e ritmo intenso de trabalho.",
+      organizacao:
+        "Indica atenção para autonomia, controle da tarefa, clareza de papéis e organização do trabalho.",
+      relacoes:
+        "Indica atenção para relações interpessoais, comunicação, apoio da liderança e clima da equipe.",
+      interface:
+        "Indica atenção para o equilíbrio entre trabalho e vida pessoal e a interferência do trabalho no tempo pessoal.",
+      saude:
+        "Indica atenção para sinais de estresse, esgotamento, sono e bem-estar geral relacionados ao trabalho.",
+      ofensivos:
+        "Indica atenção para situações de assédio moral, sexual, humilhação, intimidação ou discriminação.",
+      seguranca:
+        "Indica atenção para percepção de insegurança ocupacional, falhas de comunicação preventiva e confiança nas condições de trabalho.",
+      reconhecimento:
+        "Indica atenção para reconhecimento profissional, justiça organizacional, valorização e feedback.",
     };
 
     const resultadoBody = fatoresValidos.length
@@ -637,7 +698,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       startY: y,
       head: [["Domínio COPSOQBR", "%", "Classif.\nPsicoss.", "Leitura técnica preventiva"]],
       body: resultadoBody,
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center", valign: "middle" },
+      headStyles: {
+        fillColor: ACCENT,
+        textColor: 255,
+        fontSize: 8,
+        halign: "center",
+        valign: "middle",
+      },
       styles: { fontSize: 8, cellPadding: 3.5, valign: "top" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
@@ -648,14 +715,21 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       },
       didParseCell: (h) => {
         if (h.section === "body" && h.column.index === 2) {
-          const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
+          const map: Record<string, NivelRisco> = {
+            BAIXO: "Baixo",
+            MÉDIO: "Médio",
+            ALTO: "Alto",
+            CRÍTICO: "Crítico",
+          };
           const lvl = map[String(h.cell.raw)];
-          if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
+          if (lvl) {
+            h.cell.styles.fillColor = NIVEL_FILL[lvl];
+            h.cell.styles.textColor = NIVEL_COR[lvl];
+          }
         }
       },
       margin: { left: margin, right: margin },
     });
-
 
     y = (doc as any).lastAutoTable.finalY + 18;
 
@@ -691,7 +765,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       startY: y,
       head: [["#", "Domínio COPSOQBR", "%", "Classif.\nPsicoss."]],
       body: topDominios.length
-        ? topDominios.map((f, i) => [String(i + 1), f.dim.title, `${f.scorePct}%`, f.classifPsico.toUpperCase()])
+        ? topDominios.map((f, i) => [
+            String(i + 1),
+            f.dim.title,
+            `${f.scorePct}%`,
+            f.classifPsico.toUpperCase(),
+          ])
         : [["—", "Sem dados no recorte", "—", "—"]],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9, halign: "center" },
       styles: { fontSize: 9, cellPadding: 4 },
@@ -705,7 +784,6 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       margin: { left: margin, right: margin },
     });
     y = (doc as any).lastAutoTable.finalY + 14;
-
 
     subTitle("Priorização dos GES mais críticos");
     autoTable(doc, {
@@ -733,36 +811,40 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       didParseCell: (h) => {
         if (h.section === "body" && h.column.index === 4) {
           const raw = String(h.cell.raw ?? "").toUpperCase();
-          const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
+          const map: Record<string, NivelRisco> = {
+            BAIXO: "Baixo",
+            MÉDIO: "Médio",
+            ALTO: "Alto",
+            CRÍTICO: "Crítico",
+          };
           const lvl = map[raw];
-          if (lvl) { h.cell.styles.fillColor = NIVEL_FILL[lvl]; h.cell.styles.textColor = NIVEL_COR[lvl]; }
+          if (lvl) {
+            h.cell.styles.fillColor = NIVEL_FILL[lvl];
+            h.cell.styles.textColor = NIVEL_COR[lvl];
+          }
         }
       },
       margin: { left: margin, right: margin },
     });
     y = (doc as any).lastAutoTable.finalY + 14;
 
-
     paragraph(
-      "As recomendações preventivas detalhadas e o plano de ação estão apresentados na seção 10 — Plano de Ação Recomendado, elaborado a partir do Inventário de Riscos Ocupacionais para o PGR."
+      "As recomendações preventivas detalhadas e o plano de ação estão apresentados na seção 10 — Plano de Ação Recomendado, elaborado a partir do Inventário de Riscos Ocupacionais para o PGR.",
     );
-
-
-
 
     // ============== 08. CLASSIFICAÇÃO E AVALIAÇÃO DOS RISCOS PSICOSSOCIAIS ==============
     sectionTitle("Classificação e Avaliação dos Riscos Psicossociais");
     paragraph(
       "A classificação utiliza a matriz 5×5 (Probabilidade × Severidade), adotada como critério " +
-      "técnico interno para integração dos achados psicossociais ao Inventário de Riscos do PGR " +
-      "(NR-01 / GRO), resultando nas categorias TRIVIAL, TOLERÁVEL, MODERADO, SUBSTANCIAL e " +
-      "INTOLERÁVEL."
+        "técnico interno para integração dos achados psicossociais ao Inventário de Riscos do PGR " +
+        "(NR-01 / GRO), resultando nas categorias TRIVIAL, TOLERÁVEL, MODERADO, SUBSTANCIAL e " +
+        "INTOLERÁVEL.",
     );
 
     // ---- Matriz 5x5 ----
     ensure(260);
-    const matProbAxisW = 56;       // célula própria do eixo "PROBABILIDADE"
-    const matRowLabelW = 70;       // coluna dos rótulos das linhas (MUITO PROVÁVEL, etc.)
+    const matProbAxisW = 56; // célula própria do eixo "PROBABILIDADE"
+    const matRowLabelW = 70; // coluna dos rótulos das linhas (MUITO PROVÁVEL, etc.)
     const matLegendW = 90;
     const matCellW = (pageW - margin * 2 - matProbAxisW - matRowLabelW - matLegendW) / 5;
     const matCellH = 32;
@@ -773,18 +855,30 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     fillRgb(PRIMARY);
     doc.rect(margin, y, matProbAxisW + matRowLabelW, matCellH, "F");
     doc.rect(matX, y, matCellW * 5, matCellH, "F");
-    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-    doc.text("MATRIZ 5×5", margin + (matProbAxisW + matRowLabelW) / 2, y + matCellH / 2 + 3, { align: "center" });
+    rgb([255, 255, 255]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("MATRIZ 5×5", margin + (matProbAxisW + matRowLabelW) / 2, y + matCellH / 2 + 3, {
+      align: "center",
+    });
     doc.text("SEVERIDADE", matX + (matCellW * 5) / 2, y + matCellH / 2 + 3, { align: "center" });
 
     // Linha de rótulos da severidade
     const sevLabels = ["LEVE\n1", "BAIXO\n2", "MODERADO\n3", "ALTO\n4", "EXTREMO\n5"];
-    const probLabels = ["MUITO PROVÁVEL\n5", "PROVÁVEL\n4", "POSSÍVEL\n3", "POUCO PROVÁVEL\n2", "RARA\n1"];
+    const probLabels = [
+      "MUITO PROVÁVEL\n5",
+      "PROVÁVEL\n4",
+      "POSSÍVEL\n3",
+      "POUCO PROVÁVEL\n2",
+      "RARA\n1",
+    ];
     const probVals = [5, 4, 3, 2, 1];
 
     fillRgb([239, 246, 255]);
     doc.rect(matX, matY, matCellW * 5, matCellH, "F");
-    rgb(PRIMARY); doc.setFontSize(7); doc.setFont("helvetica", "bold");
+    rgb(PRIMARY);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
     sevLabels.forEach((lbl, i) => {
       const parts = lbl.split("\n");
       doc.text(parts[0], matX + matCellW * i + matCellW / 2, matY + 13, { align: "center" });
@@ -800,9 +894,20 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     doc.rect(margin, probStripY, matProbAxisW, probStripH, "F");
     const probAxisPng = createProbabilityAxisPng(matProbAxisW, probStripH);
     if (probAxisPng) {
-      doc.addImage(probAxisPng, "PNG", margin, probStripY, matProbAxisW, probStripH, undefined, "FAST");
+      doc.addImage(
+        probAxisPng,
+        "PNG",
+        margin,
+        probStripY,
+        matProbAxisW,
+        probStripH,
+        undefined,
+        "FAST",
+      );
     } else {
-      rgb(PRIMARY); doc.setFontSize(8); doc.setFont("helvetica", "bold");
+      rgb(PRIMARY);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
       doc.text("Probabilidade", margin + matProbAxisW / 2, probStripY + 14, { align: "center" });
     }
 
@@ -811,7 +916,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // Rótulo da linha
       fillRgb([248, 250, 252]);
       doc.rect(margin + matProbAxisW, ry, matRowLabelW, matCellH, "F");
-      rgb(PRIMARY); doc.setFontSize(6.8); doc.setFont("helvetica", "bold");
+      rgb(PRIMARY);
+      doc.setFontSize(6.8);
+      doc.setFont("helvetica", "bold");
       const ls = probLabels[rowIdx].split("\n");
       doc.text(ls[0], margin + matProbAxisW + matRowLabelW / 2, ry + 13, { align: "center" });
       doc.setFont("helvetica", "normal");
@@ -823,34 +930,49 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const cls = classificarRisco(p, s);
         fillRgb(cls.cor);
         doc.rect(cx, ry, matCellW, matCellH, "F");
-        rgb([255, 255, 255]); doc.setFontSize(10); doc.setFont("helvetica", "bold");
+        rgb([255, 255, 255]);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
         doc.text(String(p * s), cx + matCellW / 2, ry + matCellH / 2 + 4, { align: "center" });
       });
     });
 
     // Legenda
     const legX = matX + matCellW * 5;
-    fillRgb(PRIMARY); doc.rect(legX, y, matLegendW, matCellH, "F");
-    rgb([255, 255, 255]); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+    fillRgb(PRIMARY);
+    doc.rect(legX, y, matLegendW, matCellH, "F");
+    rgb([255, 255, 255]);
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
     doc.text("LEGENDA", legX + matLegendW / 2, y + 13, { align: "center" });
-    doc.setFontSize(6.8); doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.8);
+    doc.setFont("helvetica", "normal");
     doc.text("NÍVEL DE RISCO", legX + matLegendW / 2, y + 24, { align: "center" });
     const legendaItens: Array<[Nivel5, string]> = [
       ["INTOLERÁVEL", NIVEL5_FAIXA.INTOLERÁVEL],
       ["SUBSTANCIAL", NIVEL5_FAIXA.SUBSTANCIAL],
-      ["MODERADO",    NIVEL5_FAIXA.MODERADO],
-      ["TOLERÁVEL",   NIVEL5_FAIXA.TOLERÁVEL],
-      ["TRIVIAL",     NIVEL5_FAIXA.TRIVIAL],
+      ["MODERADO", NIVEL5_FAIXA.MODERADO],
+      ["TOLERÁVEL", NIVEL5_FAIXA.TOLERÁVEL],
+      ["TRIVIAL", NIVEL5_FAIXA.TRIVIAL],
     ];
     legendaItens.forEach((it, i) => {
       // Alinhar com as linhas da matriz (que começam em matY + matCellH, após linha de labels de severidade)
       const ly = matY + matCellH + i * matCellH;
       fillRgb(NIVEL5_FILL[it[0]]);
       doc.rect(legX, ly, matLegendW, matCellH, "F");
-      rgb(NIVEL5_COR[it[0]]); doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-      doc.text(it[0], legX + matLegendW / 2, ly + matCellH / 2 - 2, { align: "center", baseline: "middle" } as any);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(6.8);
-      doc.text(it[1], legX + matLegendW / 2, ly + matCellH / 2 + 9, { align: "center", baseline: "middle" } as any);
+      rgb(NIVEL5_COR[it[0]]);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.text(it[0], legX + matLegendW / 2, ly + matCellH / 2 - 2, {
+        align: "center",
+        baseline: "middle",
+      } as any);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      doc.text(it[1], legX + matLegendW / 2, ly + matCellH / 2 + 9, {
+        align: "center",
+        baseline: "middle",
+      } as any);
     });
 
     y = matY + matCellH * 6 + 24;
@@ -895,7 +1017,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     y = (doc as any).lastAutoTable.finalY + 14;
 
     // Manter o bloco "Métodos de Controle e Ação" sempre na mesma página
-    if (y + 200 > pageH - 60) { doc.addPage(); y = margin + 30; }
+    if (y + 200 > pageH - 60) {
+      doc.addPage();
+      y = margin + 30;
+    }
     subTitle("Métodos de Controle e Ação");
     autoTable(doc, {
       startY: y,
@@ -903,9 +1028,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       body: [
         ["INTOLERÁVEL", "ações imediatas"],
         ["SUBSTANCIAL", "controle necessário"],
-        ["MODERADO",    "controle adicional"],
-        ["TOLERÁVEL",   "monitoramento"],
-        ["TRIVIAL",     "nenhuma ação"],
+        ["MODERADO", "controle adicional"],
+        ["TOLERÁVEL", "monitoramento"],
+        ["TRIVIAL", "nenhuma ação"],
       ],
       headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 9 },
       styles: { fontSize: 9, cellPadding: 5 },
@@ -914,7 +1039,13 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       pageBreak: "avoid",
       didParseCell: (h) => {
         if (h.section === "body" && h.column.index === 0) {
-          const niveis: Nivel5[] = ["INTOLERÁVEL", "SUBSTANCIAL", "MODERADO", "TOLERÁVEL", "TRIVIAL"];
+          const niveis: Nivel5[] = [
+            "INTOLERÁVEL",
+            "SUBSTANCIAL",
+            "MODERADO",
+            "TOLERÁVEL",
+            "TRIVIAL",
+          ];
           const lvl = niveis[h.row.index];
           h.cell.styles.fillColor = NIVEL5_FILL[lvl];
           h.cell.styles.textColor = NIVEL5_COR[lvl];
@@ -947,7 +1078,7 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     const perigoNaoIdentificado = (m: { perigo: string }) =>
       /perigo a identificar em campo/i.test(m.perigo);
     const cleanFuncNomeInv = (nome: string) => nome.replace(/[,;\s]+$/g, "").trim();
-    const dedupFuncoesInv = (fs: typeof data.setores[number]["funcoes"]) => {
+    const dedupFuncoesInv = (fs: (typeof data.setores)[number]["funcoes"]) => {
       const seen = new Set<string>();
       const out: string[] = [];
       fs.forEach((f) => {
@@ -962,9 +1093,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // Índice setor.nome (normalizado) → setor.id, para casar com controles cadastrados.
     const setorNomeParaId = new Map<string, string>();
     (data.empresa?.setoresFull ?? []).forEach((s) => {
-      setorNomeParaId.set(String(s.nome ?? "").trim().toLowerCase(), s.id);
+      setorNomeParaId.set(
+        String(s.nome ?? "")
+          .trim()
+          .toLowerCase(),
+        s.id,
+      );
     });
-    const STATUS_VALIDADO_SET = new Set(["implementado", "eficaz", "em_acompanhamento", "concluido"]);
+    const STATUS_VALIDADO_SET = new Set([
+      "implementado",
+      "eficaz",
+      "em_acompanhamento",
+      "concluido",
+    ]);
     // Contadores para o log final de auditoria
     let controlesAplicadosCount = 0;
     let controlesLookupCount = 0;
@@ -990,7 +1131,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       let controles: any[] | undefined;
       for (const k of chavesTentativas) {
         const hit = opts.controlesMap.get(k);
-        if (hit && hit.length > 0) { controles = hit; break; }
+        if (hit && hit.length > 0) {
+          controles = hit;
+          break;
+        }
       }
       if (!controles || controles.length === 0) return CONTROLE_PADRAO;
       controlesAplicadosCount++;
@@ -1009,7 +1153,9 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       });
       const body = descs.join("; ");
       if (algumValidado && !algumPendente) {
-        const dt = dataValidacao ? ` — validado em campo em ${new Date(dataValidacao).toLocaleDateString("pt-BR")}` : " — validado em campo";
+        const dt = dataValidacao
+          ? ` — validado em campo em ${new Date(dataValidacao).toLocaleDateString("pt-BR")}`
+          : " — validado em campo";
         return `${body}${dt}.`;
       }
       if (algumValidado && algumPendente) {
@@ -1025,7 +1171,10 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         if (!fp || fp.n === 0) return;
         const mte = mteParaDim(fp.dim.id, fp.risco.nivel);
         // Uma função por linha → autoTable nunca precisa quebrar dentro da palavra.
-        const funcoesTxt = dedupFuncoesInv(s.funcoes).map((f) => protectWords(f)).join("\n") || "—";
+        const funcoesTxt =
+          dedupFuncoesInv(s.funcoes)
+            .map((f) => protectWords(f))
+            .join("\n") || "—";
         const controleTxt = textoControleParaLinha(s.setor, fp.dim.id);
         const semPerigo = perigoNaoIdentificado(mte);
         invBody.push([
@@ -1070,12 +1219,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // (e nas seções subsequentes) bata com o sumário.
     secCount += 1;
     const invNum = String(secCount).padStart(2, "0");
-    fillRgb(ACCENT); doc.roundedRect(margin, 36, 38, 28, 4, 4, "F");
-    rgb([255, 255, 255]); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    fillRgb(ACCENT);
+    doc.roundedRect(margin, 36, 38, 28, 4, 4, "F");
+    rgb([255, 255, 255]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
     doc.text(invNum, margin + 19, 55, { align: "center" });
-    rgb(PRIMARY); doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    rgb(PRIMARY);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
     doc.text("INVENTÁRIO DE RISCOS OCUPACIONAIS PARA O PGR", margin + 48, 55);
-    doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]); doc.setLineWidth(0.6);
+    doc.setDrawColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+    doc.setLineWidth(0.6);
     doc.line(margin, 68, lwPageW - margin, 68);
     doc.setLineWidth(0.2);
     doc.setFont("helvetica", "normal");
@@ -1090,9 +1245,29 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     autoTable(doc, {
       startY: invStartY,
-      head: [["GES / Setores", "Função", "Domínio", "Agente / Situação", "Perigo", "Possível Consequência", "Controles", "P", "S", "Nível de\nrisco PGR"]],
+      head: [
+        [
+          "GES / Setores",
+          "Função",
+          "Domínio",
+          "Agente / Situação",
+          "Perigo",
+          "Possível Consequência",
+          "Controles",
+          "P",
+          "S",
+          "Nível de\nrisco PGR",
+        ],
+      ],
       body: invBody.length ? invBody : [["—", "—", "—", "—", "—", "—", "—", "—", "—", "—"]],
-      headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 7.5, halign: "center", valign: "middle", cellPadding: 3 },
+      headStyles: {
+        fillColor: ACCENT,
+        textColor: 255,
+        fontSize: 7.5,
+        halign: "center",
+        valign: "middle",
+        cellPadding: 3,
+      },
       styles: { fontSize: 7.5, cellPadding: 3, valign: "top", overflow: "linebreak" },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       // Soma ≈ 760pt — cabe na A4 paisagem (842 - 80 de margens = 762).
@@ -1108,14 +1283,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         8: { halign: "center", cellWidth: 14 },
         9: { halign: "center", cellWidth: 70, fontStyle: "bold" },
       },
-      didParseCell: (h: any) => { colorirNivel(9)(h); },
+      didParseCell: (h: any) => {
+        colorirNivel(9)(h);
+      },
       margin: { left: margin, right: margin },
     });
 
     // ---- GES cadastrados pendentes de avaliação (sem P/S, sem nível) ----
     if (!somenteAvaliados && data.gesSemAvaliacao.length > 0) {
       const pendStartY = (doc as any).lastAutoTable.finalY + 18;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); rgb(PRIMARY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      rgb(PRIMARY);
       doc.text("GES cadastrados pendentes de avaliação", margin, pendStartY);
       autoTable(doc, {
         startY: pendStartY + 8,
@@ -1145,23 +1324,19 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       y = 60;
     }
 
-
-
-
     // ============== 10. PLANO DE AÇÃO ==============
     if (incluirPlanoAcao) {
       sectionTitle("Plano de Ação Recomendado");
       paragraph(
         "As medidas abaixo são SUGESTÕES técnicas, derivadas do perigo identificado em cada GES. " +
-        "Não são obrigações e não substituem a decisão da empresa: cabe à organização, na devolutiva " +
-        "técnica, escolher as medidas que vai adotar e definir, para cada uma, o responsável formal, " +
-        "a data prevista, a forma de acompanhamento e a evidência esperada (NR-01, item 1.5.5)."
+          "Não são obrigações e não substituem a decisão da empresa: cabe à organização, na devolutiva " +
+          "técnica, escolher as medidas que vai adotar e definir, para cada uma, o responsável formal, " +
+          "a data prevista, a forma de acompanhamento e a evidência esperada (NR-01, item 1.5.5).",
       );
       paragraph(
         "O prazo e a prioridade sugeridos seguem o Nível de Risco PGR do Inventário " +
-        "(Probabilidade × Severidade), e não o percentual do COPSOQBR."
+          "(Probabilidade × Severidade), e não o percentual do COPSOQBR.",
       );
-
 
       const ordem: NivelRisco[] = ["Crítico", "Alto", "Médio", "Baixo"];
       const planoBody: any[] = [];
@@ -1174,7 +1349,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
           if (nivelPgr !== nivel) return;
           const mte = mteParaDim(fp.dim.id, nivelPgr);
           const acoes = getRecomendacoes(fp.dim.id, fp.scorePct);
-          const acaoBase = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
+          const acaoBase = acoes.length
+            ? acoes
+                .slice(0, 2)
+                .map((a) => "• " + a.titulo)
+                .join("\n")
+            : "Monitorar";
           planoBody.push([
             formatLabelGes(s.label),
             mte.perigo,
@@ -1189,7 +1369,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
             .forEach((f) => {
               const mte = mteParaDim(f.dim.id, f.risco.nivel);
               const acoes = getRecomendacoes(f.dim.id, f.scorePct);
-              const acaoTxt = acoes.length ? acoes.slice(0, 2).map((a) => "• " + a.titulo).join("\n") : "Monitorar";
+              const acaoTxt = acoes.length
+                ? acoes
+                    .slice(0, 2)
+                    .map((a) => "• " + a.titulo)
+                    .join("\n")
+                : "Monitorar";
               planoBody.push([
                 data.empresaNome,
                 mte.perigo,
@@ -1212,8 +1397,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       // do A4 retrato: 595,28 − 80 de margens).
       autoTable(doc, {
         startY: y,
-        head: [["GES / Setores", "Perigo relacionado", "Medidas sugeridas", "Prazo\nsugerido", "Prioridade\nsugerida"]],
-        body: planoBody.length ? planoBody : [["—", "—", "Sem medidas a sugerir no recorte", "—", "—"]],
+        head: [
+          [
+            "GES / Setores",
+            "Perigo relacionado",
+            "Medidas sugeridas",
+            "Prazo\nsugerido",
+            "Prioridade\nsugerida",
+          ],
+        ],
+        body: planoBody.length
+          ? planoBody
+          : [["—", "—", "Sem medidas a sugerir no recorte", "—", "—"]],
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8.5, halign: "center" },
         styles: { fontSize: 8.5, cellPadding: 5, valign: "top", overflow: "linebreak" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -1235,14 +1430,18 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
     // ============== 11. CONCLUSÃO TÉCNICA ==============
     sectionTitle("Conclusão Técnica");
     const nivelGeral: NivelRisco =
-      data.contagemNiveis.Crítico > 0 ? "Crítico" :
-      data.contagemNiveis.Alto > 0 ? "Alto" :
-      data.contagemNiveis.Médio > 0 ? "Médio" : "Baixo";
+      data.contagemNiveis.Crítico > 0
+        ? "Crítico"
+        : data.contagemNiveis.Alto > 0
+          ? "Alto"
+          : data.contagemNiveis.Médio > 0
+            ? "Médio"
+            : "Baixo";
 
     paragraph(
       "A AEP identificou e classificou os perigos psicossociais relacionados ao trabalho conforme " +
-      "metodologia técnica integrada à NR-01 (GRO/PGR) e NR-17 (Ergonomia), com nomenclatura " +
-      "alinhada ao Guia de Fatores de Riscos Psicossociais do MTE."
+        "metodologia técnica integrada à NR-01 (GRO/PGR) e NR-17 (Ergonomia), com nomenclatura " +
+        "alinhada ao Guia de Fatores de Riscos Psicossociais do MTE.",
     );
 
     const totalCad = data.gesCadastrados.length;
@@ -1251,58 +1450,58 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     if (opts.contextoReavaliacao) {
       const setores = opts.contextoReavaliacao.setoresEscopo;
-      const setoresTxt = setores.length > 1
-        ? `${setores.slice(0, -1).join(", ")} e ${setores[setores.length - 1]}`
-        : (setores[0] ?? "GES selecionados");
+      const setoresTxt =
+        setores.length > 1
+          ? `${setores.slice(0, -1).join(", ")} e ${setores[setores.length - 1]}`
+          : (setores[0] ?? "GES selecionados");
       callout(
         `A empresa ${data.empresaNome} teve ${data.totalRespostas} respostas válidas nesta Reavaliação Setorial Complementar, ` +
-        `distribuídas nos GES selecionados: ${setoresTxt}. A presente AEP representa exclusivamente o recorte da ` +
-        `reavaliação setorial, não substituindo a avaliação geral anterior da empresa.`,
+          `distribuídas nos GES selecionados: ${setoresTxt}. A presente AEP representa exclusivamente o recorte da ` +
+          `reavaliação setorial, não substituindo a avaliação geral anterior da empresa.`,
         NIVEL_COR[nivelGeral],
       );
       paragraph(
-        "Os achados devem ser interpretados apenas para os setores/GES reavaliados, considerando o período, a amostra e o escopo complementar da nova coleta."
+        "Os achados devem ser interpretados apenas para os setores/GES reavaliados, considerando o período, a amostra e o escopo complementar da nova coleta.",
       );
     } else if (somenteAvaliados) {
       callout(
         `A empresa ${data.empresaNome} teve ${data.totalRespostas} respostas válidas distribuídas em ${totalAva} GES avaliados neste ciclo. ` +
-        `A presente AEP representa o recorte dos GES participantes da avaliação, com integração dos resultados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado.`,
+          `A presente AEP representa o recorte dos GES participantes da avaliação, com integração dos resultados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado.`,
         NIVEL_COR[nivelGeral],
       );
       paragraph(
-        "A avaliação deve ser revista em mudanças significativas ou no ciclo anual do PGR, conforme NR-01."
+        "A avaliação deve ser revista em mudanças significativas ou no ciclo anual do PGR, conforme NR-01.",
       );
     } else {
       callout(
         `A empresa ${data.empresaNome} possui ${totalCad} GES cadastrados. ` +
-        `Nesta avaliação foram obtidas ${data.totalRespostas} respostas válidas em ${totalAva} GES avaliados. ` +
-        (totalSem > 0
-          ? `Os ${totalSem} GES sem respostas foram mantidos no relatório como cadastrados, ` +
-            `porém não compõem o cálculo de risco psicossocial deste ciclo.`
-          : `Todos os GES cadastrados foram avaliados neste ciclo.`),
+          `Nesta avaliação foram obtidas ${data.totalRespostas} respostas válidas em ${totalAva} GES avaliados. ` +
+          (totalSem > 0
+            ? `Os ${totalSem} GES sem respostas foram mantidos no relatório como cadastrados, ` +
+              `porém não compõem o cálculo de risco psicossocial deste ciclo.`
+            : `Todos os GES cadastrados foram avaliados neste ciclo.`),
         NIVEL_COR[nivelGeral],
       );
       paragraph(
         "Os achados foram integrados ao Inventário de Riscos do PGR e ao Plano de Ação recomendado. " +
-        "Os GES sem respostas neste ciclo devem ser priorizados na próxima aplicação ou ter a ausência " +
-        "de participantes formalmente justificada. A avaliação deve ser revista em mudanças significativas " +
-        "ou no ciclo anual do PGR, conforme NR-01."
+          "Os GES sem respostas neste ciclo devem ser priorizados na próxima aplicação ou ter a ausência " +
+          "de participantes formalmente justificada. A avaliação deve ser revista em mudanças significativas " +
+          "ou no ciclo anual do PGR, conforme NR-01.",
       );
     }
 
     // Notas de conformidade adicionais (participação e caráter preliminar)
     paragraph(
       "Participação dos trabalhadores / CIPA na análise: a lógica participativa do GRO/PGR pressupõe " +
-      "envolvimento da CIPA (ou representantes dos trabalhadores) na análise dos resultados, na " +
-      "priorização das ações e no acompanhamento das medidas de controle. A empresa deve registrar " +
-      "formalmente essa participação na devolutiva técnica."
+        "envolvimento da CIPA (ou representantes dos trabalhadores) na análise dos resultados, na " +
+        "priorização das ações e no acompanhamento das medidas de controle. A empresa deve registrar " +
+        "formalmente essa participação na devolutiva técnica.",
     );
     paragraph(
       "O presente relatório possui caráter técnico-preliminar quando houver controles, responsáveis " +
-      "ou evidências pendentes de validação pela empresa em campo. A consolidação final integra-se ao " +
-      "Inventário de Riscos e ao Plano de Ação do PGR após a devolutiva técnica."
+        "ou evidências pendentes de validação pela empresa em campo. A consolidação final integra-se ao " +
+        "Inventário de Riscos e ao Plano de Ação do PGR após a devolutiva técnica.",
     );
-
 
     // ----- Assinaturas: responsável técnico e empresa -----
     // Duas colunas lado a lado. A AEP é ELABORADA pelo responsável técnico e
@@ -1320,9 +1519,11 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         .trim()
         .replace(/Segurnça/gi, "Segurança")
         .replace(/Seguranca/g, "Segurança");
-      const dataE = (rt?.dataEmissao || data.emitidoEm.slice(0, 10));
+      const dataE = rt?.dataEmissao || data.emitidoEm.slice(0, 10);
       const e2 = data.empresa;
-      const razaoEmp = String((e2 as any)?.razao_social ?? e2?.nome ?? data.empresaNome ?? "").trim();
+      const razaoEmp = String(
+        (e2 as any)?.razao_social ?? e2?.nome ?? data.empresaNome ?? "",
+      ).trim();
 
       ensure(150);
       y += 24;
@@ -1332,31 +1533,44 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       const cx1 = margin + larg / 2;
       const cx2 = margin + larg + 40 + larg / 2;
 
-      doc.setDrawColor(120, 120, 120); doc.setLineWidth(0.5);
+      doc.setDrawColor(120, 120, 120);
+      doc.setLineWidth(0.5);
       doc.line(margin, lineY, margin + larg, lineY);
       doc.line(margin + larg + 40, lineY, pageW - margin, lineY);
 
       // Esquerda: quem elaborou.
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); rgb(PRIMARY);
-      doc.text(nome || "Responsável Técnico", cx1, lineY + 14, { align: "center", maxWidth: larg } as any);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); rgb([60, 60, 60]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      rgb(PRIMARY);
+      doc.text(nome || "Responsável Técnico", cx1, lineY + 14, {
+        align: "center",
+        maxWidth: larg,
+      } as any);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      rgb([60, 60, 60]);
       const linha2 = [form, reg].filter(Boolean).join(" — ") || "Formação / Registro Profissional";
       doc.text(linha2, cx1, lineY + 27, { align: "center", maxWidth: larg } as any);
       if (cargo) doc.text(cargo, cx1, lineY + 39, { align: "center", maxWidth: larg } as any);
       doc.text("Responsável técnico — elaboração", cx1, lineY + 51, { align: "center" });
 
       // Direita: quem toma ciência.
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); rgb(PRIMARY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      rgb(PRIMARY);
       doc.text(razaoEmp || "Empresa", cx2, lineY + 14, { align: "center", maxWidth: larg } as any);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); rgb([60, 60, 60]);
-      doc.text("Nome e cargo do representante", cx2, lineY + 27, { align: "center", maxWidth: larg } as any);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      rgb([60, 60, 60]);
+      doc.text("Nome e cargo do representante", cx2, lineY + 27, {
+        align: "center",
+        maxWidth: larg,
+      } as any);
       doc.text("Empresa — ciência e recebimento", cx2, lineY + 51, { align: "center" });
 
       doc.text(`Data de emissão: ${dataE}`, pageW / 2, lineY + 72, { align: "center" });
       y = lineY + 86;
     }
-
-
 
     // ============== 12. ANEXOS ==============
     if (incluirAnexos) {
@@ -1365,19 +1579,26 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       subTitle("Anexo I — Mapeamento técnico COPSOQBR - Guia MTE");
       paragraph(
         "As colunas 'Perigo (fator de risco)' e 'Possível consequência' são transcrição literal da " +
-        "listagem exemplificativa do Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho " +
-        "(MTE) — treze fatores, nesta ordem. O Inventário não imprime nenhum perigo nem nenhum agravo " +
-        "fora desta tabela."
+          "listagem exemplificativa do Guia de Fatores de Riscos Psicossociais Relacionados ao Trabalho " +
+          "(MTE) — treze fatores, nesta ordem. O Inventário não imprime nenhum perigo nem nenhum agravo " +
+          "fora desta tabela.",
       );
       paragraph(
         "As colunas 'Domínio COPSOQBR' e 'Agente / Situação' não constam do Guia: são a leitura " +
-        "técnica que justifica o enquadramento de cada domínio do questionário no perigo " +
-        "correspondente.",
-        8.5
+          "técnica que justifica o enquadramento de cada domínio do questionário no perigo " +
+          "correspondente.",
+        8.5,
       );
       autoTable(doc, {
         startY: y,
-        head: [["Domínio COPSOQBR", "Agente / Situação", "Perigo (fator de risco)", "Possível consequência (Guia MTE)"]],
+        head: [
+          [
+            "Domínio COPSOQBR",
+            "Agente / Situação",
+            "Perigo (fator de risco)",
+            "Possível consequência (Guia MTE)",
+          ],
+        ],
         body: MTE_MAPA.map((m) => [m.dominio, m.agente, m.perigo, m.consequencia]),
         headStyles: { fillColor: ACCENT, textColor: 255, fontSize: 8, halign: "center" },
         styles: { fontSize: 8, cellPadding: 4, valign: "top" },
@@ -1427,13 +1648,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
       doc.setPage(p);
       fillRgb(PRIMARY);
       doc.rect(0, 0, pageW, 18, "F");
-      rgb([255, 255, 255]); doc.setFontSize(8); doc.setFont("helvetica", "bold");
+      rgb([255, 255, 255]);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
       doc.text("AEP — AVALIAÇÃO ERGONÔMICA PRELIMINAR  •  RISCOS PSICOSSOCIAIS", margin, 12);
       doc.setFont("helvetica", "normal");
       doc.text(truncate(data.empresaNome, 50), pageW - margin, 12, { align: "right" });
-      doc.setDrawColor(220); doc.setLineWidth(0.4);
+      doc.setDrawColor(220);
+      doc.setLineWidth(0.4);
       doc.line(margin, pageH - 30, pageW - margin, pageH - 30);
-      rgb([110, 110, 110]); doc.setFontSize(8);
+      rgb([110, 110, 110]);
+      doc.setFontSize(8);
       doc.text("PSICOSAFETY  •  NR-01 / NR-17 / Guia MTE", margin, pageH - 16);
       doc.text(`Página ${p} de ${pages}`, pageW - margin, pageH - 16, { align: "right" });
 
@@ -1442,10 +1667,15 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
         const curPageW = doc.internal.pageSize.getWidth();
         const curPageH = doc.internal.pageSize.getHeight();
         doc.setGState(new (doc as any).GState({ opacity: 0.18 }));
-        doc.setFont("helvetica", "bold"); doc.setFontSize(70); doc.setTextColor(220, 38, 38);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(70);
+        doc.setTextColor(220, 38, 38);
         doc.text("RASCUNHO", curPageW / 2, curPageH / 2, { align: "center", angle: 30 });
         doc.setFontSize(14);
-        doc.text("NÃO VÁLIDO PARA FISCALIZAÇÃO", curPageW / 2, curPageH / 2 + 50, { align: "center", angle: 30 });
+        doc.text("NÃO VÁLIDO PARA FISCALIZAÇÃO", curPageW / 2, curPageH / 2 + 50, {
+          align: "center",
+          angle: 30,
+        });
         doc.setGState(new (doc as any).GState({ opacity: 1 }));
         doc.setTextColor(40, 40, 40);
       }
@@ -1456,9 +1686,12 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     step("salvando arquivo");
     console.log(
-      "[AUDITORIA-CONTROLES] resumo — mapa:", opts.controlesMap?.size ?? 0,
-      "lookups:", controlesLookupCount,
-      "controles_aplicados_pdf:", controlesAplicadosCount,
+      "[AUDITORIA-CONTROLES] resumo — mapa:",
+      opts.controlesMap?.size ?? 0,
+      "lookups:",
+      controlesLookupCount,
+      "controles_aplicados_pdf:",
+      controlesAplicadosCount,
     );
     if ((opts.controlesMap?.size ?? 0) > 0 && controlesAplicadosCount === 0) {
       console.warn(
@@ -1476,14 +1709,17 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
   }
 }
 
-
-
 // Helper de coloração de coluna por nível
 function colorirNivel(colIdx: number, _ord: boolean = false) {
   return (h: any) => {
     if (h.section === "body" && h.column.index === colIdx) {
       const raw = String(h.cell.raw ?? "").toUpperCase();
-      const map: Record<string, NivelRisco> = { BAIXO: "Baixo", MÉDIO: "Médio", ALTO: "Alto", CRÍTICO: "Crítico" };
+      const map: Record<string, NivelRisco> = {
+        BAIXO: "Baixo",
+        MÉDIO: "Médio",
+        ALTO: "Alto",
+        CRÍTICO: "Crítico",
+      };
       let lvl: NivelRisco | undefined = map[raw];
       if (!lvl) {
         // Nomenclatura PGR 5x5 → cor equivalente do nível psicossocial 4
@@ -1504,8 +1740,17 @@ function colorirNivel(colIdx: number, _ord: boolean = false) {
   };
 }
 
-function truncate(s: string, n: number) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
-function slug(s: string) { return s.toLowerCase().normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); }
+function truncate(s: string, n: number) {
+  return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+function slug(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[^\w]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
 
 // jsPDF.splitTextToSize quebra apenas em espaços normais (" "), nunca dentro
 // de uma palavra — desde que cada palavra individual caiba na largura da

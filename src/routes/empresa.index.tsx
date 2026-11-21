@@ -3,16 +3,37 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileDown, Users, FileText, AlertTriangle } from "lucide-react";
-import { getCurrentEmpresa, listRespostasEmpresa, type Empresa, type Resposta } from "@/lib/storage";
-import { aggregateDimensions, aggregateBySetor, distribSeveridade, colorForScore } from "@/lib/empresa-stats";
+import {
+  getCurrentEmpresa,
+  listRespostasEmpresa,
+  type Empresa,
+  type Resposta,
+} from "@/lib/storage";
+import {
+  aggregateDimensions,
+  aggregateBySetor,
+  distribSeveridade,
+  colorForScore,
+} from "@/lib/empresa-stats";
 import { gerarPgrPdf } from "@/lib/pgr-pdf";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  PieChart, Pie, Cell, Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/empresa/")({
-  head: () => ({ meta: [{ title: "Dashboard | Portal da Empresa" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Dashboard | Portal da Empresa" }, { name: "robots", content: "noindex" }],
+  }),
   component: Dashboard,
 });
 
@@ -32,7 +53,9 @@ function Dashboard() {
   const setores = useMemo(() => aggregateBySetor(respostas), [respostas]);
   const distrib = useMemo(() => distribSeveridade(respostas), [respostas]);
 
-  const criticos = dimAggs.filter((a) => a.n > 0 && (a.severidade === "alto" || a.severidade === "critico")).length;
+  const criticos = dimAggs.filter(
+    (a) => a.n > 0 && (a.severidade === "alto" || a.severidade === "critico"),
+  ).length;
   const setoresCount = new Set(respostas.map((r) => r.setor || "(sem)")).size;
 
   const dimChartData = dimAggs.map((a) => ({
@@ -51,16 +74,32 @@ function Dashboard() {
             Visão geral dos riscos psicossociais — {empresa?.nome}
           </p>
         </div>
-        <Button onClick={() => empresa && gerarPgrPdf(empresa, respostas)} disabled={!empresa || respostas.length === 0}>
+        <Button
+          onClick={() => empresa && gerarPgrPdf(empresa, respostas)}
+          disabled={!empresa || respostas.length === 0}
+        >
           <FileDown className="h-4 w-4 mr-2" /> Baixar PGR (PDF)
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI icon={<Users className="h-5 w-5" />} label="Respondentes" value={respostas.length} />
-        <KPI icon={<FileText className="h-5 w-5" />} label="Setores avaliados" value={setoresCount} />
-        <KPI icon={<AlertTriangle className="h-5 w-5" />} label="Dimensões em alerta" value={criticos} accent={criticos > 0 ? "text-warning-foreground" : undefined} />
-        <KPI icon={<FileDown className="h-5 w-5" />} label="Total de dimensões" value={dimAggs.length} />
+        <KPI
+          icon={<FileText className="h-5 w-5" />}
+          label="Setores avaliados"
+          value={setoresCount}
+        />
+        <KPI
+          icon={<AlertTriangle className="h-5 w-5" />}
+          label="Dimensões em alerta"
+          value={criticos}
+          accent={criticos > 0 ? "text-warning-foreground" : undefined}
+        />
+        <KPI
+          icon={<FileDown className="h-5 w-5" />}
+          label="Total de dimensões"
+          value={dimAggs.length}
+        />
       </div>
 
       {respostas.length === 0 ? (
@@ -70,7 +109,9 @@ function Dashboard() {
               Ainda não há respostas. Compartilhe o link do questionário com seus colaboradores:
             </p>
             <code className="mt-3 inline-block px-3 py-1.5 rounded-md bg-secondary font-mono text-sm">
-              {typeof window !== "undefined" ? `${window.location.origin}/q/${empresa?.codigo}` : `/q/${empresa?.codigo}`}
+              {typeof window !== "undefined"
+                ? `${window.location.origin}/q/${empresa?.codigo}`
+                : `/q/${empresa?.codigo}`}
             </code>
           </CardContent>
         </Card>
@@ -82,16 +123,27 @@ function Dashboard() {
                 <h2 className="font-semibold mb-4">Score por Dimensão (0–100)</h2>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dimChartData} margin={{ top: 5, right: 10, left: -10, bottom: 60 }}>
+                    <BarChart
+                      data={dimChartData}
+                      margin={{ top: 5, right: 10, left: -10, bottom: 60 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="name" angle={-25} textAnchor="end" interval={0} fontSize={11} />
+                      <XAxis
+                        dataKey="name"
+                        angle={-25}
+                        textAnchor="end"
+                        interval={0}
+                        fontSize={11}
+                      />
                       <YAxis domain={[0, 100]} fontSize={11} />
                       <Tooltip
                         formatter={(v: number) => [`${v}%`, "Score"]}
                         labelFormatter={(_, p) => (p?.[0]?.payload as any)?.fullName ?? ""}
                       />
                       <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-                        {dimChartData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                        {dimChartData.map((d, i) => (
+                          <Cell key={i} fill={d.color} />
+                        ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -105,8 +157,18 @@ function Dashboard() {
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={distrib} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                        {distrib.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      <Pie
+                        data={distrib}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {distrib.map((d, i) => (
+                          <Cell key={i} fill={d.color} />
+                        ))}
                       </Pie>
                       <Tooltip />
                       <Legend />
@@ -173,7 +235,17 @@ function Dashboard() {
   );
 }
 
-function KPI({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: string }) {
+function KPI({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  accent?: string;
+}) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -182,7 +254,9 @@ function KPI({ icon, label, value, accent }: { icon: React.ReactNode; label: str
             <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
             <div className={`text-3xl font-bold mt-1 ${accent ?? ""}`}>{value}</div>
           </div>
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary text-muted-foreground">{icon}</div>
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary text-muted-foreground">
+            {icon}
+          </div>
         </div>
       </CardContent>
     </Card>

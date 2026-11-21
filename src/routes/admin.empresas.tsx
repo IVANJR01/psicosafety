@@ -1,14 +1,45 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Copy, Trash2, Plus, ExternalLink, Settings, X, Share2, Pencil, Upload, Building2 } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  Plus,
+  ExternalLink,
+  Settings,
+  X,
+  Share2,
+  Pencil,
+  Upload,
+  Building2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   listEmpresas,
   createEmpresa,
@@ -29,7 +60,9 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { buildQuestionarioUrl } from "@/lib/public-origin";
 
 export const Route = createFileRoute("/admin/empresas")({
-  head: () => ({ meta: [{ title: "Empresas | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Empresas | PsicoSafe Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: Empresas,
 });
 
@@ -45,9 +78,12 @@ function Empresas() {
     const info = await import("@/lib/account").then((m) => m.getCurrentAccountInfo());
     const ownerOnly = info?.accountType === "consultor";
     setEmpresas(await listEmpresas({ ownerOnly }));
-    if (info?.plan) setUsage({ used: info.empresasUsadas, max: info.plan.max_empresas, tipo: info.accountType });
+    if (info?.plan)
+      setUsage({ used: info.empresasUsadas, max: info.plan.max_empresas, tipo: info.accountType });
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const limiteAtingido = usage ? usage.used >= usage.max : false;
 
@@ -64,7 +100,9 @@ function Empresas() {
   };
 
   const empresaAberta = openCodigo ? empresas.find((e) => e.codigo === openCodigo) : null;
-  const empresaEditando = editingCodigo ? empresas.find((e) => e.codigo === editingCodigo) ?? null : null;
+  const empresaEditando = editingCodigo
+    ? (empresas.find((e) => e.codigo === editingCodigo) ?? null)
+    : null;
 
   return (
     <div>
@@ -79,11 +117,19 @@ function Empresas() {
       />
 
       {usage && (
-        <div className={`mt-4 rounded-lg border px-4 py-3 text-sm flex items-center justify-between ${limiteAtingido ? "bg-destructive/10 border-destructive/30 text-destructive" : "bg-primary/5 border-primary/20"}`}>
+        <div
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm flex items-center justify-between ${limiteAtingido ? "bg-destructive/10 border-destructive/30 text-destructive" : "bg-primary/5 border-primary/20"}`}
+        >
           <span>
-            {usage.tipo === "consultor" ? "Empresas da sua carteira" : "Sua empresa"}: <strong>{usage.used}/{usage.max}</strong> do plano
+            {usage.tipo === "consultor" ? "Empresas da sua carteira" : "Sua empresa"}:{" "}
+            <strong>
+              {usage.used}/{usage.max}
+            </strong>{" "}
+            do plano
           </span>
-          {limiteAtingido && <span className="text-xs font-medium">Limite atingido — faça upgrade</span>}
+          {limiteAtingido && (
+            <span className="text-xs font-medium">Limite atingido — faça upgrade</span>
+          )}
         </div>
       )}
 
@@ -103,25 +149,31 @@ function Empresas() {
             </TableHeader>
             <TableBody>
               {empresas.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="py-2">
-                  <EmptyState
-                    icon={Building2}
-                    title="Nenhuma empresa cadastrada"
-                    description="Crie sua primeira empresa para gerar códigos de questionário e cadastrar GES/funções."
-                    action={
-                      <Button onClick={() => setCreatingNew(true)} disabled={limiteAtingido}>
-                        <Plus className="h-4 w-4 mr-1" /> Nova empresa
-                      </Button>
-                    }
-                  />
-                </TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={7} className="py-2">
+                    <EmptyState
+                      icon={Building2}
+                      title="Nenhuma empresa cadastrada"
+                      description="Crie sua primeira empresa para gerar códigos de questionário e cadastrar GES/funções."
+                      action={
+                        <Button onClick={() => setCreatingNew(true)} disabled={limiteAtingido}>
+                          <Plus className="h-4 w-4 mr-1" /> Nova empresa
+                        </Button>
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
               )}
               {empresas.map((e) => (
                 <TableRow key={e.codigo}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2.5">
                       {e.logo_url ? (
-                        <img src={e.logo_url} alt={e.nome} className="h-8 w-8 rounded object-cover border" />
+                        <img
+                          src={e.logo_url}
+                          alt={e.nome}
+                          className="h-8 w-8 rounded object-cover border"
+                        />
                       ) : (
                         <div className="h-8 w-8 rounded bg-muted grid place-items-center text-muted-foreground">
                           <Building2 className="h-4 w-4" />
@@ -129,27 +181,58 @@ function Empresas() {
                       )}
                       <div className="min-w-0">
                         <div className="truncate">{e.nome}</div>
-                        {e.cidade && <div className="text-[11px] text-muted-foreground truncate">{e.cidade}{e.estado ? ` / ${e.estado}` : ""}</div>}
+                        {e.cidade && (
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {e.cidade}
+                            {e.estado ? ` / ${e.estado}` : ""}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{e.cnpj || "—"}</TableCell>
-                  <TableCell><code className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs">{e.codigo}</code></TableCell>
+                  <TableCell>
+                    <code className="px-1.5 py-0.5 rounded bg-muted text-foreground text-xs">
+                      {e.codigo}
+                    </code>
+                  </TableCell>
                   <TableCell className="text-center text-sm">{e.setores?.length ?? 0}</TableCell>
                   <TableCell className="text-center text-sm">{e.funcoes?.length ?? 0}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{new Date(e.criadoEm).toLocaleDateString("pt-BR")}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {new Date(e.criadoEm).toLocaleDateString("pt-BR")}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setEditingCodigo(e.codigo)} title="Editar dados">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingCodigo(e.codigo)}
+                        title="Editar dados"
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setOpenCodigo(e.codigo)} title="Setores e funções">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOpenCodigo(e.codigo)}
+                        title="Setores e funções"
+                      >
                         <Settings className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setShareCodigo(e.codigo)} title="Gerar link compartilhável">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShareCodigo(e.codigo)}
+                        title="Gerar link compartilhável"
+                      >
                         <Share2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => copyLink(e.codigo)} title="Copiar link genérico">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyLink(e.codigo)}
+                        title="Copiar link genérico"
+                      >
                         <Copy className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm" asChild title="Abrir">
@@ -157,7 +240,12 @@ function Empresas() {
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => remove(e.codigo)} title="Excluir">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(e.codigo)}
+                        title="Excluir"
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -172,7 +260,10 @@ function Empresas() {
       <EmpresaFormDialog
         open={creatingNew || !!editingCodigo}
         empresa={empresaEditando}
-        onClose={() => { setCreatingNew(false); setEditingCodigo(null); }}
+        onClose={() => {
+          setCreatingNew(false);
+          setEditingCodigo(null);
+        }}
         onSaved={refresh}
       />
 
@@ -192,20 +283,21 @@ function Empresas() {
                 titulo="GES / Setores"
                 placeholder="Ex.: Produção, Almoxarifado, GES-01"
                 itens={empresaAberta.setores ?? []}
-                onAdd={(v) => { addSetor(empresaAberta.codigo, v).then(refresh); }}
-                onRemove={(v) => { removeSetor(empresaAberta.codigo, v).then(refresh); }}
+                onAdd={(v) => {
+                  addSetor(empresaAberta.codigo, v).then(refresh);
+                }}
+                onRemove={(v) => {
+                  removeSetor(empresaAberta.codigo, v).then(refresh);
+                }}
               />
-              <FuncoesPorSetor
-                empresa={empresaAberta}
-                onChange={refresh}
-              />
+              <FuncoesPorSetor empresa={empresaAberta} onChange={refresh} />
             </div>
           )}
         </DialogContent>
       </Dialog>
       <ShareLinkDialog
         codigo={shareCodigo}
-        empresa={shareCodigo ? empresas.find((e) => e.codigo === shareCodigo) ?? null : null}
+        empresa={shareCodigo ? (empresas.find((e) => e.codigo === shareCodigo) ?? null) : null}
         onClose={() => setShareCodigo(null)}
       />
     </div>
@@ -237,13 +329,25 @@ function ListaEditavel({
     <div>
       <h3 className="font-semibold mb-2">{titulo}</h3>
       <form onSubmit={submit} className="flex gap-2 mb-3">
-        <Input value={valor} onChange={(e) => setValor(e.target.value)} placeholder={placeholder} maxLength={80} />
-        <Button type="submit" size="sm"><Plus className="h-4 w-4" /></Button>
+        <Input
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          placeholder={placeholder}
+          maxLength={80}
+        />
+        <Button type="submit" size="sm">
+          <Plus className="h-4 w-4" />
+        </Button>
       </form>
       <div className="space-y-1.5 max-h-64 overflow-y-auto">
-        {itens.length === 0 && <p className="text-xs text-muted-foreground">Nenhum item cadastrado.</p>}
+        {itens.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum item cadastrado.</p>
+        )}
         {itens.map((it) => (
-          <div key={it} className="flex items-center justify-between gap-2 rounded border bg-card px-3 py-1.5 text-sm">
+          <div
+            key={it}
+            className="flex items-center justify-between gap-2 rounded border bg-card px-3 py-1.5 text-sm"
+          >
             <span className="truncate">{it}</span>
             <button
               type="button"
@@ -295,36 +399,59 @@ function FuncoesPorSetor({ empresa, onChange }: { empresa: Empresa; onChange: ()
       <h3 className="font-semibold mb-2">Funções</h3>
       <form onSubmit={submit} className="space-y-2 mb-3">
         <div className="flex gap-2">
-          <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Operador, Analista, Líder" maxLength={80} />
-          <Button type="submit" size="sm"><Plus className="h-4 w-4" /></Button>
+          <Input
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Ex.: Operador, Analista, Líder"
+            maxLength={80}
+          />
+          <Button type="submit" size="sm">
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
         <Select value={setorId} onValueChange={setSetorId}>
-          <SelectTrigger className="text-xs"><SelectValue placeholder="Vincular ao setor (opcional)" /></SelectTrigger>
+          <SelectTrigger className="text-xs">
+            <SelectValue placeholder="Vincular ao setor (opcional)" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="__none__">Sem setor (genérica)</SelectItem>
-            {setores.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+            {setores.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.nome}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </form>
       <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-        {grupos.map((g) => (
+        {grupos.map((g) =>
           g.itens.length === 0 ? null : (
             <div key={g.titulo}>
               <p className="text-xs font-medium text-muted-foreground mb-1">{g.titulo}</p>
               <div className="space-y-1.5">
                 {g.itens.map((f) => (
-                  <div key={f.id} className="flex items-center justify-between gap-2 rounded border bg-card px-3 py-1.5 text-sm">
+                  <div
+                    key={f.id}
+                    className="flex items-center justify-between gap-2 rounded border bg-card px-3 py-1.5 text-sm"
+                  >
                     <span className="truncate">{f.nome}</span>
-                    <button type="button" onClick={() => remove(f.id)} className="text-muted-foreground hover:text-destructive" title="Remover">
+                    <button
+                      type="button"
+                      onClick={() => remove(f.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Remover"
+                    >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
               </div>
             </div>
-          )
-        ))}
-        {funcoes.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma função cadastrada.</p>}
+          ),
+        )}
+        {funcoes.length === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhuma função cadastrada.</p>
+        )}
       </div>
     </div>
   );
@@ -365,16 +492,30 @@ function ShareLinkDialog({
 
   // Gera assinatura HMAC sempre que mudar codigo/diasExp (>0)
   useEffect(() => {
-    if (!empresa) { setAssinatura(null); return; }
+    if (!empresa) {
+      setAssinatura(null);
+      return;
+    }
     const dias = Number(diasExp);
-    if (dias <= 0) { setAssinatura(null); return; }
+    if (dias <= 0) {
+      setAssinatura(null);
+      return;
+    }
     let cancelled = false;
     setGerando(true);
     gerarLinkAssinado(empresa.codigo, dias)
-      .then((res) => { if (!cancelled) setAssinatura(res); })
-      .catch((e) => { if (!cancelled) toast.error(e?.message ?? "Não foi possível gerar link assinado"); })
-      .finally(() => { if (!cancelled) setGerando(false); });
-    return () => { cancelled = true; };
+      .then((res) => {
+        if (!cancelled) setAssinatura(res);
+      })
+      .catch((e) => {
+        if (!cancelled) toast.error(e?.message ?? "Não foi possível gerar link assinado");
+      })
+      .finally(() => {
+        if (!cancelled) setGerando(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [empresa, diasExp]);
 
   const url = useMemo(() => {
@@ -407,8 +548,8 @@ function ShareLinkDialog({
         <DialogHeader>
           <DialogTitle>Link compartilhável — {empresa?.nome}</DialogTitle>
           <DialogDescription>
-            O link abre o questionário direto, sem login, com setor/função pré-preenchidos
-            e bloqueados. Defina uma expiração para invalidar o link após o prazo.
+            O link abre o questionário direto, sem login, com setor/função pré-preenchidos e
+            bloqueados. Defina uma expiração para invalidar o link após o prazo.
           </DialogDescription>
         </DialogHeader>
 
@@ -417,11 +558,23 @@ function ShareLinkDialog({
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <Label>GES / Setores</Label>
-                <Select value={setor} onValueChange={(v) => { setSetor(v); setFuncao("__none__"); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={setor}
+                  onValueChange={(v) => {
+                    setSetor(v);
+                    setFuncao("__none__");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Não pré-preencher</SelectItem>
-                    {(empresa.setoresFull ?? []).map((s) => <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>)}
+                    {(empresa.setoresFull ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.nome}>
+                        {s.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {(empresa.setores?.length ?? 0) === 0 && (
@@ -431,7 +584,9 @@ function ShareLinkDialog({
               <div>
                 <Label>Função</Label>
                 <Select value={funcao} onValueChange={setFuncao}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Não pré-preencher</SelectItem>
                     {(() => {
@@ -440,7 +595,11 @@ function ShareLinkDialog({
                       const filtradas = setorObj
                         ? funcoes.filter((f) => f.setor_id === setorObj.id || f.setor_id === null)
                         : funcoes;
-                      return filtradas.map((f) => <SelectItem key={f.id} value={f.nome}>{f.nome}</SelectItem>);
+                      return filtradas.map((f) => (
+                        <SelectItem key={f.id} value={f.nome}>
+                          {f.nome}
+                        </SelectItem>
+                      ));
                     })()}
                   </SelectContent>
                 </Select>
@@ -453,9 +612,15 @@ function ShareLinkDialog({
             <div>
               <Label>Expiração</Label>
               <Select value={diasExp} onValueChange={setDiasExp}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {EXP_OPCOES.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  {EXP_OPCOES.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {expDate && (
@@ -469,15 +634,21 @@ function ShareLinkDialog({
               <Label>Link gerado</Label>
               <div className="flex gap-2">
                 <Input readOnly value={url} className="font-mono text-xs" />
-                <Button type="button" onClick={copiar}><Copy className="h-4 w-4" /></Button>
+                <Button type="button" onClick={copiar}>
+                  <Copy className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
-          <Button onClick={copiar}><Copy className="h-4 w-4 mr-1" /> Copiar link</Button>
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
+          <Button onClick={copiar}>
+            <Copy className="h-4 w-4 mr-1" /> Copiar link
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -485,7 +656,10 @@ function ShareLinkDialog({
 }
 
 function EmpresaFormDialog({
-  open, empresa, onClose, onSaved,
+  open,
+  empresa,
+  onClose,
+  onSaved,
 }: {
   open: boolean;
   empresa: Empresa | null;
@@ -497,10 +671,21 @@ function EmpresaFormDialog({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
-    nome: "", cnpj: "", razao_social: "", telefone: "", email: "",
-    endereco: "", cidade: "", estado: "",
-    responsavel_nome: "", responsavel_cargo: "",
-    cnae: "", grau_risco: "", num_trabalhadores: "", resp_formacao: "", resp_registro: "",
+    nome: "",
+    cnpj: "",
+    razao_social: "",
+    telefone: "",
+    email: "",
+    endereco: "",
+    cidade: "",
+    estado: "",
+    responsavel_nome: "",
+    responsavel_cargo: "",
+    cnae: "",
+    grau_risco: "",
+    num_trabalhadores: "",
+    resp_formacao: "",
+    resp_registro: "",
     logo_url: "" as string,
   });
 
@@ -519,7 +704,10 @@ function EmpresaFormDialog({
       responsavel_cargo: empresa?.responsavel_cargo ?? "",
       cnae: (empresa as any)?.cnae ?? "",
       grau_risco: (empresa as any)?.grau_risco ?? "",
-      num_trabalhadores: (empresa as any)?.num_trabalhadores != null ? String((empresa as any).num_trabalhadores) : "",
+      num_trabalhadores:
+        (empresa as any)?.num_trabalhadores != null
+          ? String((empresa as any).num_trabalhadores)
+          : "",
       resp_formacao: (empresa as any)?.resp_formacao ?? "",
       resp_registro: (empresa as any)?.resp_registro ?? "",
       logo_url: empresa?.logo_url ?? "",
@@ -600,11 +788,22 @@ function EmpresaFormDialog({
                   className="hidden"
                   onChange={(e) => onPickLogo(e.target.files?.[0] ?? null)}
                 />
-                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                >
                   <Upload className="h-4 w-4 mr-1" /> {uploading ? "Enviando..." : "Enviar logo"}
                 </Button>
                 {form.logo_url && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => set("logo_url", "")}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => set("logo_url", "")}
+                  >
                     Remover
                   </Button>
                 )}
@@ -617,31 +816,65 @@ function EmpresaFormDialog({
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
               <Label>Nome fantasia *</Label>
-              <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} maxLength={120} placeholder="Ex.: Acme Indústria" />
+              <Input
+                value={form.nome}
+                onChange={(e) => set("nome", e.target.value)}
+                maxLength={120}
+                placeholder="Ex.: Acme Indústria"
+              />
             </div>
             <div className="sm:col-span-2">
               <Label>Razão social</Label>
-              <Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} maxLength={160} />
+              <Input
+                value={form.razao_social}
+                onChange={(e) => set("razao_social", e.target.value)}
+                maxLength={160}
+              />
             </div>
             <div>
               <Label>CNPJ</Label>
-              <Input value={form.cnpj} onChange={(e) => set("cnpj", e.target.value)} placeholder="00.000.000/0000-00" maxLength={20} />
+              <Input
+                value={form.cnpj}
+                onChange={(e) => set("cnpj", e.target.value)}
+                placeholder="00.000.000/0000-00"
+                maxLength={20}
+              />
             </div>
             <div>
               <Label>Telefone</Label>
-              <Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(00) 0000-0000" maxLength={20} />
+              <Input
+                value={form.telefone}
+                onChange={(e) => set("telefone", e.target.value)}
+                placeholder="(00) 0000-0000"
+                maxLength={20}
+              />
             </div>
             <div className="sm:col-span-2">
               <Label>E-mail</Label>
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} maxLength={160} />
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                maxLength={160}
+              />
             </div>
             <div>
               <Label>CNAE</Label>
-              <Input value={form.cnae} onChange={(e) => set("cnae", e.target.value)} placeholder="00.00-0/00" maxLength={20} />
+              <Input
+                value={form.cnae}
+                onChange={(e) => set("cnae", e.target.value)}
+                placeholder="00.00-0/00"
+                maxLength={20}
+              />
             </div>
             <div>
               <Label>Grau de Risco</Label>
-              <Input value={form.grau_risco} onChange={(e) => set("grau_risco", e.target.value)} placeholder="1, 2, 3 ou 4" maxLength={20} />
+              <Input
+                value={form.grau_risco}
+                onChange={(e) => set("grau_risco", e.target.value)}
+                placeholder="1, 2, 3 ou 4"
+                maxLength={20}
+              />
             </div>
             <div>
               <Label>Nº de Trabalhadores</Label>
@@ -661,15 +894,30 @@ function EmpresaFormDialog({
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <Label>Logradouro</Label>
-                <Textarea value={form.endereco} onChange={(e) => set("endereco", e.target.value)} maxLength={250} rows={2} placeholder="Rua, número, bairro" />
+                <Textarea
+                  value={form.endereco}
+                  onChange={(e) => set("endereco", e.target.value)}
+                  maxLength={250}
+                  rows={2}
+                  placeholder="Rua, número, bairro"
+                />
               </div>
               <div>
                 <Label>Cidade</Label>
-                <Input value={form.cidade} onChange={(e) => set("cidade", e.target.value)} maxLength={80} />
+                <Input
+                  value={form.cidade}
+                  onChange={(e) => set("cidade", e.target.value)}
+                  maxLength={80}
+                />
               </div>
               <div>
                 <Label>Estado (UF)</Label>
-                <Input value={form.estado} onChange={(e) => set("estado", e.target.value.toUpperCase())} maxLength={2} placeholder="SP" />
+                <Input
+                  value={form.estado}
+                  onChange={(e) => set("estado", e.target.value.toUpperCase())}
+                  maxLength={2}
+                  placeholder="SP"
+                />
               </div>
             </div>
           </div>
@@ -680,11 +928,19 @@ function EmpresaFormDialog({
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <Label>Nome do responsável</Label>
-                <Input value={form.responsavel_nome} onChange={(e) => set("responsavel_nome", e.target.value)} maxLength={120} />
+                <Input
+                  value={form.responsavel_nome}
+                  onChange={(e) => set("responsavel_nome", e.target.value)}
+                  maxLength={120}
+                />
               </div>
               <div>
                 <Label>Cargo</Label>
-                <Input value={form.responsavel_cargo} onChange={(e) => set("responsavel_cargo", e.target.value)} maxLength={80} />
+                <Input
+                  value={form.responsavel_cargo}
+                  onChange={(e) => set("responsavel_cargo", e.target.value)}
+                  maxLength={80}
+                />
               </div>
               <div>
                 <Label>Formação</Label>
@@ -708,7 +964,9 @@ function EmpresaFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={saving || uploading}>
               {saving ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar empresa"}
             </Button>

@@ -25,7 +25,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         }
 
         async function activateAndLink(userId: string, patch: Record<string, any>) {
-          await supabaseAdmin.from("profiles").update(patch as any).eq("user_id", userId);
+          await supabaseAdmin
+            .from("profiles")
+            .update(patch as any)
+            .eq("user_id", userId);
 
           // Após ativar, garante empresa vinculada para contas empresa_direta
           const { data: prof } = await supabaseAdmin

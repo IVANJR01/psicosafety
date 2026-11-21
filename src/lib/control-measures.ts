@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DIMENSIONS } from "./copsoq";
 
-
 export type ControlType = "existente" | "recomendada";
 
 export type ControlStatus =
@@ -17,11 +16,7 @@ export type ControlStatus =
   | "concluido";
 
 export type EffectivenessStatus =
-  | "nao_avaliada"
-  | "eficaz"
-  | "parcialmente_eficaz"
-  | "ineficaz"
-  | "requer_nova_acao";
+  "nao_avaliada" | "eficaz" | "parcialmente_eficaz" | "ineficaz" | "requer_nova_acao";
 
 export type ControlMeasure = {
   id: string;
@@ -81,13 +76,15 @@ export const EFFECTIVENESS_LABEL: Record<EffectivenessStatus, string> = {
   requer_nova_acao: "Requer nova ação",
 };
 
-export async function listControlMeasures(filtros: {
-  empresa_id?: string;
-  campanha_id?: string;
-  setor_id?: string;
-  dominio?: string;
-  control_type?: ControlType;
-} = {}): Promise<ControlMeasure[]> {
+export async function listControlMeasures(
+  filtros: {
+    empresa_id?: string;
+    campanha_id?: string;
+    setor_id?: string;
+    dominio?: string;
+    control_type?: ControlType;
+  } = {},
+): Promise<ControlMeasure[]> {
   let q = TB().select("*").order("created_at", { ascending: false });
   if (filtros.empresa_id) q = q.eq("empresa_id", filtros.empresa_id);
   if (filtros.campanha_id) q = q.eq("campanha_id", filtros.campanha_id);
@@ -109,7 +106,11 @@ export async function createControlMeasure(input: ControlMeasureInput): Promise<
 
 export async function updateControlMeasure(
   id: string,
-  patch: Partial<ControlMeasureInput> & { validated?: boolean; validated_at?: string | null; validated_by?: string | null },
+  patch: Partial<ControlMeasureInput> & {
+    validated?: boolean;
+    validated_at?: string | null;
+    validated_by?: string | null;
+  },
 ): Promise<ControlMeasure> {
   const { data, error } = await TB().update(patch).eq("id", id).select("*").single();
   if (error) throw error;
@@ -127,11 +128,17 @@ export async function deleteControlMeasure(id: string): Promise<void> {
 
 export type ControleInventarioMap = Map<string, ControlMeasure[]>;
 
-export function chaveControle(setorId: string | null | undefined, dominio: string | null | undefined) {
+export function chaveControle(
+  setorId: string | null | undefined,
+  dominio: string | null | undefined,
+) {
   return `${(setorId ?? "").toLowerCase()}|${(dominio ?? "").toLowerCase()}`;
 }
 
-export function chaveControleNome(setorNome: string | null | undefined, dominio: string | null | undefined) {
+export function chaveControleNome(
+  setorNome: string | null | undefined,
+  dominio: string | null | undefined,
+) {
   return `nome:${(setorNome ?? "").trim().toLowerCase()}|${(dominio ?? "").toLowerCase()}`;
 }
 
@@ -157,7 +164,9 @@ function aliasesDominio(dominio: string | null | undefined): string[] {
 
 /** Carrega os controles EXISTENTES da empresa e indexa por setor_id+dominio E por setor_nome+dominio.
  *  Indexa cada controle sob múltiplos aliases de domínio (id COPSOQ e título) para tolerar variações. */
-export async function carregarControlesExistentes(empresa_id: string): Promise<ControleInventarioMap> {
+export async function carregarControlesExistentes(
+  empresa_id: string,
+): Promise<ControleInventarioMap> {
   const rows = await listControlMeasures({ empresa_id, control_type: "existente" });
   const setorIds = Array.from(new Set(rows.map((r) => r.setor_id).filter(Boolean))) as string[];
   const nomePorId = new Map<string, string>();
@@ -183,7 +192,12 @@ export async function carregarControlesExistentes(empresa_id: string): Promise<C
       if (!r.setor_id) push(chaveControleNome("", alias), r);
     });
   });
-  console.log("[AUDITORIA-CONTROLES] controles_encontrados:", rows.length, "sem_dominio:", semDominio);
+  console.log(
+    "[AUDITORIA-CONTROLES] controles_encontrados:",
+    rows.length,
+    "sem_dominio:",
+    semDominio,
+  );
   console.log("[AEP-CONTROLES] carregados:", rows.length, "chaves indexadas:", map.size);
   if (semDominio > 0) {
     console.warn(
@@ -195,7 +209,12 @@ export async function carregarControlesExistentes(empresa_id: string): Promise<C
   return map;
 }
 
-const STATUS_VALIDADO: ControlStatus[] = ["implementado", "eficaz", "em_acompanhamento", "concluido"];
+const STATUS_VALIDADO: ControlStatus[] = [
+  "implementado",
+  "eficaz",
+  "em_acompanhamento",
+  "concluido",
+];
 
 /** Gera o texto da coluna "Controles" do Inventário para um bucket setor+dominio. */
 export function textoControlesLinha(
@@ -221,7 +240,9 @@ export function textoControlesLinha(
 
   const body = linhas.join("; ");
   if (algumValidado && !algumPendente) {
-    const dt = dataValidacao ? ` — validado em campo em ${new Date(dataValidacao).toLocaleDateString("pt-BR")}` : " — validado em campo";
+    const dt = dataValidacao
+      ? ` — validado em campo em ${new Date(dataValidacao).toLocaleDateString("pt-BR")}`
+      : " — validado em campo";
     return `${body}${dt}.`;
   }
   if (algumValidado && algumPendente) {

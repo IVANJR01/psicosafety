@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertOctagon, Copy, Check, FileWarning } from "lucide-react";
@@ -124,31 +131,75 @@ export function AEPErrorDialog({ open, onOpenChange, info }: Props) {
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Etapa que falhou: <span className="font-mono">{info.etapa}</span>
-                    {info.errorCode ? <> · código <span className="font-mono">{info.errorCode}</span></> : null}
-                    {info.errorStatus ? <> · HTTP <span className="font-mono">{info.errorStatus}</span></> : null}
+                    {info.errorCode ? (
+                      <>
+                        {" "}
+                        · código <span className="font-mono">{info.errorCode}</span>
+                      </>
+                    ) : null}
+                    {info.errorStatus ? (
+                      <>
+                        {" "}
+                        · HTTP <span className="font-mono">{info.errorStatus}</span>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              <div><span className="text-muted-foreground">Empresa:</span> <strong>{info.empresaNome}</strong> ({info.empresaCodigo || "—"})</div>
-              <div><span className="text-muted-foreground">Campanha:</span> <strong>{info.campanha}</strong></div>
-              <div><span className="text-muted-foreground">Setor/GES:</span> <strong>{info.setor}</strong></div>
-              <div><span className="text-muted-foreground">Respostas:</span> <strong>{info.qtdRespostas}</strong></div>
-              <div><span className="text-muted-foreground">GES cadastrados:</span> <strong>{info.qtdGesCadastrados}</strong></div>
-              <div><span className="text-muted-foreground">GES avaliados:</span> <strong>{info.qtdGesAvaliados ?? "—"}</strong></div>
-              <div><span className="text-muted-foreground">GES sem aval.:</span> <strong>{info.qtdGesSemAvaliacao ?? "—"}</strong></div>
-              <div><span className="text-muted-foreground">Período:</span> <strong>{info.periodoInicio || "—"} → {info.periodoFim || "—"}</strong></div>
-              <div><span className="text-muted-foreground">Somente aval.:</span> <strong>{info.somenteAvaliados ? "sim" : "não"}</strong></div>
-              <div><span className="text-muted-foreground">Rascunho:</span> <strong>{info.rascunho ? "sim" : "não"}</strong></div>
+              <div>
+                <span className="text-muted-foreground">Empresa:</span>{" "}
+                <strong>{info.empresaNome}</strong> ({info.empresaCodigo || "—"})
+              </div>
+              <div>
+                <span className="text-muted-foreground">Campanha:</span>{" "}
+                <strong>{info.campanha}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Setor/GES:</span>{" "}
+                <strong>{info.setor}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Respostas:</span>{" "}
+                <strong>{info.qtdRespostas}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">GES cadastrados:</span>{" "}
+                <strong>{info.qtdGesCadastrados}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">GES avaliados:</span>{" "}
+                <strong>{info.qtdGesAvaliados ?? "—"}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">GES sem aval.:</span>{" "}
+                <strong>{info.qtdGesSemAvaliacao ?? "—"}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Período:</span>{" "}
+                <strong>
+                  {info.periodoInicio || "—"} → {info.periodoFim || "—"}
+                </strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Somente aval.:</span>{" "}
+                <strong>{info.somenteAvaliados ? "sim" : "não"}</strong>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Rascunho:</span>{" "}
+                <strong>{info.rascunho ? "sim" : "não"}</strong>
+              </div>
             </div>
 
             <div>
-              <div className="text-xs font-semibold text-muted-foreground mb-1">Diagnóstico completo</div>
+              <div className="text-xs font-semibold text-muted-foreground mb-1">
+                Diagnóstico completo
+              </div>
               <ScrollArea className="h-56 rounded-md border bg-muted/30">
                 <pre className="p-3 text-[11px] leading-relaxed font-mono whitespace-pre-wrap break-words">
-{texto}
+                  {texto}
                 </pre>
               </ScrollArea>
             </div>
@@ -156,7 +207,9 @@ export function AEPErrorDialog({ open, onOpenChange, info }: Props) {
         )}
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Fechar
+          </Button>
           <Button onClick={copiar} className="gap-2">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copiado" : "Copiar diagnóstico do erro"}

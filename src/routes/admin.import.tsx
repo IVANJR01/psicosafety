@@ -9,7 +9,9 @@ import { bulkImport, type ImportRow, type ImportResult } from "@/lib/storage";
 import { PageHeader } from "@/components/admin/PageHeader";
 
 export const Route = createFileRoute("/admin/import")({
-  head: () => ({ meta: [{ title: "Importar CSV | PsicoSafe Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Importar CSV | PsicoSafe Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: ImportPage,
 });
 
@@ -23,7 +25,10 @@ Beta Serviços Ltda,,Recepcionista
 
 /** Parser CSV simples com suporte a aspas duplas e separador "," ou ";". */
 function parseCSV(text: string): { header: string[]; rows: string[][] } {
-  const clean = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
+  const clean = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
   if (!clean) return { header: [], rows: [] };
   const lines = clean.split("\n");
   const sep = (lines[0].match(/;/g)?.length ?? 0) > (lines[0].match(/,/g)?.length ?? 0) ? ";" : ",";
@@ -35,13 +40,17 @@ function parseCSV(text: string): { header: string[]; rows: string[][] } {
     for (let i = 0; i < line.length; i++) {
       const c = line[i];
       if (inQ) {
-        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (c === '"') inQ = false;
+        if (c === '"' && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else if (c === '"') inQ = false;
         else cur += c;
       } else {
         if (c === '"') inQ = true;
-        else if (c === sep) { out.push(cur); cur = ""; }
-        else cur += c;
+        else if (c === sep) {
+          out.push(cur);
+          cur = "";
+        } else cur += c;
       }
     }
     out.push(cur);
@@ -49,7 +58,10 @@ function parseCSV(text: string): { header: string[]; rows: string[][] } {
   };
 
   const header = parseLine(lines[0]).map((h) => h.toLowerCase());
-  const rows = lines.slice(1).filter((l) => l.trim().length > 0).map(parseLine);
+  const rows = lines
+    .slice(1)
+    .filter((l) => l.trim().length > 0)
+    .map(parseLine);
   return { header, rows };
 }
 
@@ -149,8 +161,9 @@ function ImportPage() {
               <Download className="h-4 w-4 mr-2" /> Baixar modelo
             </Button>
             <div className="text-xs text-muted-foreground">
-              Colunas aceitas: <code>empresa</code>, <code>setor</code> (ou <code>ges</code>), <code>funcao</code> (ou <code>cargo</code>).
-              Separador <code>,</code> ou <code>;</code>.
+              Colunas aceitas: <code>empresa</code>, <code>setor</code> (ou <code>ges</code>),{" "}
+              <code>funcao</code> (ou <code>cargo</code>). Separador <code>,</code> ou{" "}
+              <code>;</code>.
             </div>
           </div>
 
@@ -160,7 +173,10 @@ function ImportPage() {
             </label>
             <Textarea
               value={csvText}
-              onChange={(e) => { setCsvText(e.target.value); setResult(null); }}
+              onChange={(e) => {
+                setCsvText(e.target.value);
+                setResult(null);
+              }}
               onBlur={() => csvText && doPreview(csvText)}
               rows={8}
               placeholder={TEMPLATE_CSV}
@@ -176,7 +192,11 @@ function ImportPage() {
               <div className="max-h-64 overflow-auto text-xs">
                 <table className="w-full">
                   <thead className="text-muted-foreground">
-                    <tr><th className="text-left pr-3">empresa</th><th className="text-left pr-3">setor</th><th className="text-left">funcao</th></tr>
+                    <tr>
+                      <th className="text-left pr-3">empresa</th>
+                      <th className="text-left pr-3">setor</th>
+                      <th className="text-left">funcao</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {preview.slice(0, 50).map((r, i) => (
@@ -189,7 +209,9 @@ function ImportPage() {
                   </tbody>
                 </table>
                 {preview.length > 50 && (
-                  <div className="text-muted-foreground mt-2">… mais {preview.length - 50} linha(s)</div>
+                  <div className="text-muted-foreground mt-2">
+                    … mais {preview.length - 50} linha(s)
+                  </div>
                 )}
               </div>
               <Button className="mt-3" onClick={runImport} disabled={running}>
@@ -216,7 +238,9 @@ function ImportPage() {
                   </div>
                   <ul className="mt-1 text-xs space-y-0.5 max-h-40 overflow-auto">
                     {result.erros.map((e, i) => (
-                      <li key={i}>Linha {e.linha}: {e.mensagem}</li>
+                      <li key={i}>
+                        Linha {e.linha}: {e.mensagem}
+                      </li>
                     ))}
                   </ul>
                 </div>

@@ -23,7 +23,7 @@ export const SEVERIDADE_DIM: Record<string, Nivel> = {
   interface: 3,
   relacoes: 2,
   organizacao: 2,
-  "segurança": 3,
+  segurança: 3,
   seguranca: 3,
   reconhecimento: 2,
 };
@@ -77,11 +77,26 @@ export function faixaPxS(valor: number): FaixaPxS {
 // Apresentação em classes Tailwind (telas). A variante em hexadecimal, para
 // gráficos, fica em `empresa-stats.classifyRisco` — mesma faixa, outro meio.
 const ESTILO_FAIXA: Record<FaixaPxS, { cls: string; soft: string }> = {
-  INTOLERÁVEL: { cls: "bg-destructive text-destructive-foreground", soft: "bg-destructive/15 text-destructive border border-destructive/30" },
-  SUBSTANCIAL: { cls: "bg-orange-500 text-white", soft: "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30" },
-  MODERADO: { cls: "bg-yellow-400 text-yellow-950", soft: "bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-500/15 dark:text-yellow-300 dark:border-yellow-500/30" },
-  TOLERÁVEL: { cls: "bg-emerald-500 text-white", soft: "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30" },
-  TRIVIAL: { cls: "bg-emerald-300 text-emerald-950", soft: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-200 dark:border-emerald-400/30" },
+  INTOLERÁVEL: {
+    cls: "bg-destructive text-destructive-foreground",
+    soft: "bg-destructive/15 text-destructive border border-destructive/30",
+  },
+  SUBSTANCIAL: {
+    cls: "bg-orange-500 text-white",
+    soft: "bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30",
+  },
+  MODERADO: {
+    cls: "bg-yellow-400 text-yellow-950",
+    soft: "bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-500/15 dark:text-yellow-300 dark:border-yellow-500/30",
+  },
+  TOLERÁVEL: {
+    cls: "bg-emerald-500 text-white",
+    soft: "bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
+  },
+  TRIVIAL: {
+    cls: "bg-emerald-300 text-emerald-950",
+    soft: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-200 dark:border-emerald-400/30",
+  },
 };
 
 export function classifyRisco(p: Nivel, s: Nivel) {
@@ -92,7 +107,7 @@ export function classifyRisco(p: Nivel, s: Nivel) {
 
 import type { DIMENSIONS } from "./copsoq";
 export type ApuLinha = {
-  dim: typeof DIMENSIONS[number];
+  dim: (typeof DIMENSIONS)[number];
   score: number;
   prob: Nivel;
   sev: Nivel;
@@ -103,5 +118,10 @@ export type ApuLinha = {
 export type LinhaSetor = {
   setor: string;
   n: number;
-  porDim: { dimId: string; dimTitle: string; score: number; sev: import("./recomendacoes").Severidade }[];
+  porDim: {
+    dimId: string;
+    dimTitle: string;
+    score: number;
+    sev: import("./recomendacoes").Severidade;
+  }[];
 };

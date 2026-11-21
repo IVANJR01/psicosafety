@@ -54,7 +54,9 @@ export async function listClientes(): Promise<ClienteRow[]> {
     // devolveu, normalmente 0, exibido como "—". Antes isto era um `if` vazio
     // com este mesmo texto dentro, o que sugeria um cálculo que não existia.
     const empresasUsadas = ownedEmpresas.length;
-    ownedEmpresas.forEach((id) => { avaliacoes += respByEmpresa.get(id) ?? 0; });
+    ownedEmpresas.forEach((id) => {
+      avaliacoes += respByEmpresa.get(id) ?? 0;
+    });
     return {
       user_id: p.user_id,
       email: p.email,
@@ -75,12 +77,18 @@ export async function listClientes(): Promise<ClienteRow[]> {
 }
 
 export async function setClienteStatus(userId: string, status: "active" | "pending") {
-  const { error } = await supabase.rpc("admin_set_user_status" as any, { p_user_id: userId, p_status: status });
+  const { error } = await supabase.rpc("admin_set_user_status" as any, {
+    p_user_id: userId,
+    p_status: status,
+  });
   if (error) throw error;
 }
 
 export async function setClientePlan(userId: string, planId: string | null) {
-  const { error } = await supabase.rpc("admin_set_user_plan" as any, { p_user_id: userId, p_plan_id: planId });
+  const { error } = await supabase.rpc("admin_set_user_plan" as any, {
+    p_user_id: userId,
+    p_plan_id: planId,
+  });
   if (error) throw error;
 }
 
