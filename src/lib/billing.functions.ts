@@ -38,7 +38,7 @@ export const listAvailablePlans = createServerFn({ method: "GET" })
 
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ planId: z.string().uuid() }).parse(input))
+  .validator((input) => z.object({ planId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const stripe = stripeClient();
@@ -97,7 +97,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
 export const cancelSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ immediately: z.boolean().optional() }).parse(input ?? {}))
+  .validator((input) => z.object({ immediately: z.boolean().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const stripe = stripeClient();
