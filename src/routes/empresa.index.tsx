@@ -137,7 +137,7 @@ function Dashboard() {
                       />
                       <YAxis domain={[0, 100]} fontSize={11} />
                       <Tooltip
-                        formatter={(v: number) => [`${v}%`, "Score"]}
+                        formatter={(v) => [v == null ? "—" : `${v}%`, "Score"]}
                         labelFormatter={(_, p) => (p?.[0]?.payload as any)?.fullName ?? ""}
                       />
                       <Bar dataKey="score" radius={[4, 4, 0, 0]}>
@@ -165,13 +165,14 @@ function Dashboard() {
                         cy="50%"
                         outerRadius={80}
                         label
+                        legendType="circle"
                       >
                         {distrib.map((d, i) => (
                           <Cell key={i} fill={d.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend />
+                      <Legend itemSorter={null} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

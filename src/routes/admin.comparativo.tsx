@@ -348,7 +348,7 @@ function Comparativo() {
                       borderRadius: 8,
                     }}
                   />
-                  <Legend />
+                  <Legend itemSorter={null} />
                   {codigosSel.map((cod, i) => (
                     <Bar
                       key={cod}
@@ -466,7 +466,7 @@ function Comparativo() {
                       borderRadius: 8,
                     }}
                   />
-                  <Legend />
+                  <Legend itemSorter={null} />
                   {codigosSel.map((cod, i) => (
                     <Line
                       key={cod}

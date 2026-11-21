@@ -445,7 +445,7 @@ function Dashboard() {
                           <Cell key={i} fill={d.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => [`${v}%`, "Risco"]} />
+                      <Tooltip formatter={(v) => [v == null ? "—" : `${v}%`, "Risco"]} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 grid place-items-center pointer-events-none">
@@ -575,7 +575,7 @@ function Dashboard() {
                       borderRadius: 8,
                       color: "var(--foreground)",
                     }}
-                    formatter={(v: number) => [`${v}%`, "Risco"]}
+                    formatter={(v) => [v == null ? "—" : `${v}%`, "Risco"]}
                   />
                   <Bar dataKey="score" radius={[8, 8, 0, 0]}>
                     {dimChart.map((d, i) => (
