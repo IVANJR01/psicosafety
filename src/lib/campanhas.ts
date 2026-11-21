@@ -458,7 +458,6 @@ export async function getReavaliacaoStats(campanha: CampanhaComEmpresa): Promise
     ignoradas: ig,
   };
 
-  // eslint-disable-next-line no-console
   console.log("[REAVALIACAO] campaign_id:", campanha.id,
     "\n[REAVALIACAO] company_id:", campanha.empresa_id,
     "\n[REAVALIACAO] setores permitidos:", escopo.map((s) => s.nome),

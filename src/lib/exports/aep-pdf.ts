@@ -616,12 +616,16 @@ export async function gerarRelatorioAEPpdf(data: AepDataset, opts: AepPdfOptions
 
     const resultadoBody = fatoresValidos.length
       ? fatoresValidos.map((f) => {
-          let classif = f.classifPsico.toUpperCase();
-          if (f.scorePct >= 34 && f.scorePct <= 66 && classif === "BAIXO") {
-            classif = "MÉDIO";
-            // eslint-disable-next-line no-console
-            console.warn(`[AEP] Inconsistência de classificação em "${f.dim.title}" (${f.scorePct}%): percentual médio não pode ser classificado como baixo. Corrigido para MÉDIO.`);
-          }
+          // A classificação é a de `classifPsicoFromPct`, e só ela.
+          //
+          // Havia aqui uma guarda que reclassificava 34–66% de BAIXO para
+          // MÉDIO, resto das faixas antigas (0–33 BAIXO / 34–66 MÉDIO). Quando
+          // as faixas viraram 0–49 / 50–79 / 80–100, a função mudou e esta
+          // guarda ficou: 34–49% saía MÉDIO enquanto a linha impressa vinte
+          // linhas acima declarava BAIXO até 49%, e o console registrava como
+          // "inconsistência" justamente o valor correto. Dezesseis percentuais
+          // afetados, na faixa onde mais resultado cai.
+          const classif = f.classifPsico.toUpperCase();
           const leitura =
             leituraPreventivaPorDim[f.dim.id] ??
             "Consolidação da percepção coletiva dos trabalhadores para este domínio psicossocial.";
@@ -1529,7 +1533,7 @@ function formatLabelGes(label: string): string {
   }
   const prefixo = m[1].toUpperCase().replace(/\s+/g, "\u00A0") + "\u00A0—";
   const setores = m[2]
-    .split(/\s*[\/,]\s*/)
+    .split(/\s*[/,]\s*/)
     .map((s) => s.trim().replace(/\s+/g, "\u00A0"))
     .filter(Boolean);
   if (setores.length === 0) return prefixo;

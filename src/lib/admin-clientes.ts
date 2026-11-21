@@ -49,12 +49,11 @@ export async function listClientes(): Promise<ClienteRow[]> {
     const plan = p.plan_id ? planMap.get(p.plan_id) : null;
     const ownedEmpresas = empByOwner.get(p.user_id) ?? [];
     let avaliacoes = 0;
-    let empresasUsadas = ownedEmpresas.length;
-    if (p.account_type === "empresa_direta") {
-      // empresa direta: conta pela empresa vinculada no profile (já existente)
-      // não temos owner_user_id, então vai depender do empresa_id do profile.
-      // simplificação: se não há owned, mostra 0 (será exibido como "—")
-    }
+    // Conta "empresa_direta" não tem owner_user_id, então não há como ligar o
+    // profile às suas empresas aqui: o contador fica com o que `empByOwner`
+    // devolveu, normalmente 0, exibido como "—". Antes isto era um `if` vazio
+    // com este mesmo texto dentro, o que sugeria um cálculo que não existia.
+    const empresasUsadas = ownedEmpresas.length;
     ownedEmpresas.forEach((id) => { avaliacoes += respByEmpresa.get(id) ?? 0; });
     return {
       user_id: p.user_id,
