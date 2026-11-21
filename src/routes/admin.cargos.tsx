@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Building2, Layers, Upload, Download, FileSpreadsheet } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +49,12 @@ function normalizeKey(k: string) {
     .trim();
 }
 
-function parseSpreadsheet(file: File): Promise<ParsedRow[]> {
+// O parser de planilha (xlsx, ~420 kB minificado) é carregado SÓ quando alguém
+// escolhe um arquivo, não ao abrir a página. Antes era `import * as XLSX` no
+// topo, então o peso entrava no chunk da rota e todo acesso a /admin/cargos
+// baixava o parser inteiro — inclusive quem só vinha cadastrar um cargo à mão.
+async function parseSpreadsheet(file: File): Promise<ParsedRow[]> {
+  const XLSX = await import("xlsx");
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Falha ao ler arquivo"));
@@ -62,7 +66,10 @@ function parseSpreadsheet(file: File): Promise<ParsedRow[]> {
         const json: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
         const rows: ParsedRow[] = json
           .flatMap((r) => {
-            const map: Record<string, any> = {};
+            // Object.create(null) em vez de {}: as chaves vêm do cabeçalho da
+            // planilha, que é conteúdo de arquivo enviado. Um objeto sem
+            // protótipo não tem `__proto__` nem `constructor` para sobrescrever.
+            const map: Record<string, any> = Object.create(null);
             for (const k of Object.keys(r)) map[normalizeKey(k)] = r[k];
             const cargoRaw = cleanText(
               map["cargo"] ?? map["funcao"] ?? map["funcao/cargo"] ?? map["funcao cargo"] ?? "",
@@ -262,17 +269,29 @@ function CargosPage() {
     }
   };
 
+  // Modelo em CSV, montado à mão: são duas colunas e quatro linhas de exemplo,
+  // não vale carregar um gerador de .xlsx para isso. O importador aceita .csv.
+  //
+  // Duas escolhas que não são estéticas:
+  //   · separador ";" — é o que o Excel em português usa; com "," ele joga a
+  //     linha toda em uma só coluna.
+  //   · BOM (U+FEFF) — sem ele o Excel lê o arquivo como Latin-1 e "Produção"
+  //     volta como "ProduÃ§Ã£o", que é o que seria gravado no banco.
   const baixarModelo = () => {
-    const ws = XLSX.utils.aoa_to_sheet([
+    const linhas = [
       ["setor", "cargo"],
       ["Produção", "Auxiliar de Produção"],
       ["Expedição", "Auxiliar de Produção"],
       ["Produção", "Líder de Turno"],
       ["Administrativo", "Analista de RH"],
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Cargos");
-    XLSX.writeFile(wb, "modelo-cargos.xlsx");
+    ];
+    const csv = "\uFEFF" + linhas.map((l) => l.join(";")).join("\r\n") + "\r\n";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modelo-cargos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (

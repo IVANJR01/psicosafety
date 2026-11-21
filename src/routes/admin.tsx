@@ -29,7 +29,7 @@ import { getCurrentAccountInfo, type AccountUsage } from "@/lib/account";
 import { getCurrentProfileStatus } from "@/lib/admin-clientes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import logoPsicosafety from "@/assets/psicosafety-logo.png";
+import logoPsicosafety from "@/assets/psicosafety-logo.webp";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
